@@ -203,17 +203,6 @@ const AdminPanel = () => {
                 className="search-input"
               />
             </div>
-
-            <div className="filter-container">
-              <span>Filtrar por estado</span>
-              <label htmlFor="filter-select">Estado:</label>
-              <select id="filter-select" className="filter-select">
-                <option value="todos">Todos los estados</option>
-                <option value="pendiente">Pendiente</option>
-                <option value="aprobada">Aprobada</option>
-                <option value="rechazada">Rechazada</option>
-              </select>
-            </div>
           </div>
 
           <div className="tabs">
