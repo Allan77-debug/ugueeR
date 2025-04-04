@@ -1,0 +1,654 @@
+/* Estilos generales del panel de administración */
+.admin-panel {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+/* Estilos para la barra lateral */
+.admin-sidebar {
+  width: 250px;
+  background-color: white;
+  border-right: 1px solid #e9ecef;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+}
+
+.sidebar-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.sidebar-header h2 {
+  color: #6a5acd;
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.sidebar-nav {
+  padding: 1rem 0;
+  flex-grow: 1;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  color: #495057;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.sidebar-link:hover {
+  background-color: #f8f9fa;
+}
+
+.sidebar-link.active {
+  background-color: #f0f0ff;
+  color: #6a5acd;
+  border-left: 3px solid #6a5acd;
+}
+
+.sidebar-link svg {
+  margin-right: 0.75rem;
+}
+
+.sidebar-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.logout-button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.75rem;
+  background: none;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-radius: 4px;
+}
+
+.logout-button:hover {
+  background-color: #fff5f5;
+}
+
+.logout-button svg {
+  margin-right: 0.75rem;
+}
+
+/* Estilos para el contenido principal */
+.admin-content {
+  flex-grow: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1.5rem;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  background-color: #6a5acd;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.admin-main h1 {
+  color: #212529;
+  margin-bottom: 1.5rem;
+  font-size: 1.75rem;
+}
+
+/* Estilos para las tarjetas de estadísticas */
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.stat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.stat-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #495057;
+}
+
+.stat-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.stat-badge.pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.stat-badge.approved {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.stat-badge.rejected {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.stat-value {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.stat-description {
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+/* Estilos para la búsqueda y filtros */
+.search-filter-container {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.search-container {
+  flex-grow: 1;
+  margin-right: 1rem;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.filter-container {
+  display: flex;
+  align-items: center;
+}
+
+.filter-container span {
+  margin-right: 0.5rem;
+  color: #495057;
+}
+
+.filter-select {
+  padding: 0.75rem 1rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 1rem;
+  background-color: white;
+}
+
+/* Estilos para las pestañas */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #dee2e6;
+  margin-bottom: 1.5rem;
+}
+
+.tab {
+  padding: 0.75rem 1.5rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  color: #6a5acd;
+}
+
+.tab.active {
+  color: #6a5acd;
+  border-bottom-color: #6a5acd;
+}
+
+/* Estilos para la lista de instituciones */
+.institutions-list {
+  background-color: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.institutions-list h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+  color: #212529;
+}
+
+.institutions-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.institutions-table th {
+  text-align: left;
+  padding: 1rem;
+  border-bottom: 2px solid #dee2e6;
+  color: #495057;
+  font-weight: 600;
+}
+
+.institutions-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #dee2e6;
+  color: #212529;
+}
+
+.institution-name {
+  display: flex;
+  align-items: center;
+}
+
+.logo-placeholder {
+  width: 40px;
+  height: 40px;
+  background-color: #e9ecef;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  font-size: 0.75rem;
+  color: #6c757d;
+}
+
+.logo-placeholder.large {
+  width: 60px;
+  height: 60px;
+}
+
+.logo-placeholder.extra-large {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto;
+}
+
+.institution-shortname {
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-badge.pendiente {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.status-badge.aprobada {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-badge.rechazada {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.action-button {
+  background: none;
+  border: none;
+  color: #6c757d;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.action-button:hover {
+  color: #6a5acd;
+}
+
+/* Estilos para el modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-container {
+  background-color: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+  position: relative;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #212529;
+}
+
+.modal-header p {
+  margin: 0.5rem 0 0;
+  color: #6c757d;
+}
+
+.close-button {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: none;
+  border: none;
+  color: #6c757d;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.close-button:hover {
+  color: #212529;
+}
+
+.institution-header {
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.institution-info {
+  margin-left: 1rem;
+}
+
+.institution-info h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #212529;
+}
+
+.institution-info p {
+  margin: 0.25rem 0 0.5rem;
+  color: #6c757d;
+}
+
+.modal-tabs {
+  display: flex;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.modal-tab {
+  padding: 1rem 1.5rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modal-tab:hover {
+  color: #6a5acd;
+}
+
+.modal-tab.active {
+  color: #6a5acd;
+  border-bottom-color: #6a5acd;
+}
+
+.modal-content {
+  padding: 1.5rem;
+}
+
+.tab-content h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  color: #212529;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.info-item label {
+  display: block;
+  font-size: 0.875rem;
+  color: #6c757d;
+  margin-bottom: 0.25rem;
+}
+
+.info-item p {
+  margin: 0;
+  color: #212529;
+}
+
+.visual-identity {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.color-item {
+  margin-bottom: 1.5rem;
+}
+
+.color-item label {
+  display: block;
+  font-size: 0.875rem;
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+}
+
+.color-preview {
+  display: flex;
+  align-items: center;
+}
+
+.color-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  margin-right: 1rem;
+  border: 1px solid #dee2e6;
+}
+
+.preview-box {
+  padding: 1rem;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.decision-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.approve-section,
+.reject-section {
+  padding: 1.5rem;
+  border-radius: 8px;
+}
+
+.approve-section {
+  background-color: #f8f9fa;
+}
+
+.reject-section {
+  background-color: #fff5f5;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #212529;
+}
+
+.role-select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.role-info {
+  font-size: 0.875rem;
+  color: #6c757d;
+  margin-bottom: 1.5rem;
+}
+
+.rejection-reason {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 1rem;
+  min-height: 100px;
+  resize: vertical;
+}
+
+.approve-button,
+.reject-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.approve-button {
+  background-color: #28a745;
+  color: white;
+}
+
+.approve-button:hover {
+  background-color: #218838;
+}
+
+.reject-button {
+  background-color: #dc3545;
+  color: white;
+}
+
+.reject-button:hover {
+  background-color: #c82333;
+}
+
+.approve-button svg,
+.reject-button svg {
+  margin-right: 0.5rem;
+}
+
+.modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e9ecef;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.close-button-text {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.close-button-text:hover {
+  background-color: #f8f9fa;
+}
+
+@media (max-width: 768px) {
+  .admin-panel {
+    flex-direction: column;
+  }
+
+  .admin-sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+  }
+
+  .stat-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .search-filter-container {
+    flex-direction: column;
+  }
+
+  .search-container {
+    margin-right: 0;
+    margin-bottom: 1rem;
+  }
+
+  .info-grid,
+  .visual-identity,
+  .decision-section {
+    grid-template-columns: 1fr;
+  }
+}
