@@ -50,7 +50,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
-    'institutions'
+    'institutions',
+    'drf_yasg', 
     #'django.contrib.gis',  #problema grave con PostGIS
 ]
 
@@ -96,6 +97,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
+        #'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': env("DB_NAME"),
         'USER': env("DB_USER"),
