@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { useState } from "react"
 import AdminSidebar from "../components/admin/AdminSidebar.tsx"
 import AdminHeader from "../components/admin/AdminHeader.tsx"
