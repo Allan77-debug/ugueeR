@@ -59,10 +59,30 @@ const InstitutionRegisterPage = () => {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Datos del formulario:", formData)
-    // Aquí iría la lógica para enviar los datos al servidor
+  
+    const form = new FormData()
+    form.append("official_name", formData.nombreOficial)
+    form.append("short_name", formData.nombreCorto)
+    form.append("email", formData.correo)
+    form.append("phone", formData.telefono)
+    form.append("address", formData.direccion)
+    form.append("city", formData.ciudad)
+    form.append("istate", formData.estado)
+    form.append("postal_code", formData.codigoPostal)
+    form.append("primary_color", formData.colorPrincipal)
+    form.append("secondary_color", formData.colorSecundario)
+    form.append("ipassword", formData.contrasena)
+    if (formData.logo) form.append("logo", formData.logo)
+  
+    const res = await fetch("http://localhost:8000/api/institutions/register/", {
+      method: "POST",
+      body: form,
+    })
+  
+    const data = await res.json()
+    console.log(data)
   }
 
   return (
