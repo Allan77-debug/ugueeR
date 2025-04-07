@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import axios from 'axios';
 
 import { useState } from "react"
 import { Link } from "react-router-dom"
@@ -60,29 +61,44 @@ const InstitutionRegisterPage = () => {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
+
+    try {
+      const form = new FormData();
+      form.append("official_name", formData.nombreOficial);
+      form.append("short_name", formData.nombreCorto);
+      form.append("email", formData.correo);
+      form.append("phone", formData.telefono);
+      form.append("address", formData.direccion);
+      form.append("city", formData.ciudad);
+      form.append("istate", formData.estado);
+      form.append("postal_code", formData.codigoPostal);
+      form.append("primary_color", formData.colorPrincipal);
+      form.append("secondary_color", formData.colorSecundario);
+      form.append("ipassword", formData.contrasena);
+      if (formData.logo) form.append("logo", formData.logo);
   
-    const form = new FormData()
-    form.append("official_name", formData.nombreOficial)
-    form.append("short_name", formData.nombreCorto)
-    form.append("email", formData.correo)
-    form.append("phone", formData.telefono)
-    form.append("address", formData.direccion)
-    form.append("city", formData.ciudad)
-    form.append("istate", formData.estado)
-    form.append("postal_code", formData.codigoPostal)
-    form.append("primary_color", formData.colorPrincipal)
-    form.append("secondary_color", formData.colorSecundario)
-    form.append("ipassword", formData.contrasena)
-    if (formData.logo) form.append("logo", formData.logo)
+      const response = await axios.post(
+        "http://127.0.0.1:8000/api/institutions/register/", 
+        form, 
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          }
+        }
+      );
   
-    const res = await fetch("http://127.0.0.1:8000/api/institutions/register/", {
-      method: "POST",
-      body: form,
-    })
-  
-    const data = await res.json()
-    console.log(data)
+      console.log(response.data);
+      // redirigir
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error("Error en el registro:", error.response?.data || error.message);
+        // errores de la API
+      } else {
+        console.error("Error inesperado:", error);
+      }
+      // mensaje de error al usuario
+    }
   }
 
   return (
