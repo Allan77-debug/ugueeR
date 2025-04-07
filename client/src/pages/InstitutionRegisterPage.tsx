@@ -76,7 +76,7 @@ const InstitutionRegisterPage = () => {
     form.append("ipassword", formData.contrasena)
     if (formData.logo) form.append("logo", formData.logo)
   
-    const res = await fetch("http://localhost:8000/api/institutions/register/", {
+    const res = await fetch("http://127.0.0.1:8000/api/institutions/register/", {
       method: "POST",
       body: form,
     })
