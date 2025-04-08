@@ -177,6 +177,9 @@
   .submit-button:hover {
     background-color: #5a4cbe;
   }
+  .submit-button:disabled {
+    background-color: gray;
+  }
   
   .cancel-button {
     background-color: white;

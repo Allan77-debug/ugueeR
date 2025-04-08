@@ -7,6 +7,7 @@ import { useState } from "react"
 import { Link } from "react-router-dom"
 import Header from "../components/Header.tsx"
 import "../styles/InstitutionRegisterPage.css"
+import {toast, Toaster} from 'react-hot-toast'
 
 interface FormData {
   nombreOficial: string
@@ -42,6 +43,7 @@ const InstitutionRegisterPage = () => {
     confirmarContrasena: "",
     aceptaTerminos: false,
   })
+  const [isSubmiting, setIsSubmiting] = useState<boolean>(false)
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target
@@ -62,6 +64,7 @@ const InstitutionRegisterPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmiting(true)
 
     try {
       const form = new FormData();
@@ -89,7 +92,16 @@ const InstitutionRegisterPage = () => {
       );
   
       console.log(response.data);
+
+      toast.success('Formulario enviado correctamente',{
+        duration: 3000
+      })
+
       // redirigir
+      setTimeout(()=>{
+        location.reload()
+        setIsSubmiting(false)
+      },3000)
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.error("Error en el registro:", error.response?.data || error.message);
@@ -333,7 +345,7 @@ const InstitutionRegisterPage = () => {
             </p>
 
             <div className="form-buttons">
-              <button type="submit" className="submit-button">
+              <button type="submit" className="submit-button" disabled={isSubmiting}>
                 Enviar Solicitud de Registro
               </button>
               <Link to="/" className="cancel-button">
@@ -343,6 +355,12 @@ const InstitutionRegisterPage = () => {
           </section>
         </form>
       </div>
+      <Toaster
+  position="top-left"
+  reverseOrder={false}
+/>
+
+
     </div>
   )
 }
