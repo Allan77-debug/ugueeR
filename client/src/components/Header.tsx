@@ -1,6 +1,6 @@
-import React from "react"
-import { Link } from "react-router-dom"
-import "../styles/Header.css"
+import React from "react";
+import { Link } from "react-router-dom";
+import "../styles/Header.css";
 
 const Header = () => {
   return (
@@ -17,10 +17,12 @@ const Header = () => {
         <Link to="/registro-usuario" className="nav-link">
           Registro usuario
         </Link>
+        <Link to="/login" className="nav-link">
+          Iniciar sesion
+        </Link>
       </nav>
     </header>
-  )
-}
+  );
+};
 
-export default Header
-
+export default Header;
