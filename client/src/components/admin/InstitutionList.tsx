@@ -2,6 +2,7 @@
 
 import { Eye } from "lucide-react"
 import type { Institution } from "../../pages/AdminPanel"
+import React from 'react';
 
 interface InstitutionsListProps {
   institutions: Institution[]
