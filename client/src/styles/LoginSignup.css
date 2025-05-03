@@ -20,8 +20,8 @@ body{
     background-color: #F0F4F3;
 }
 .container{
-    width: 800px;
-    height: 500px;
+    width: 1000px;
+    height: 700px;
     display: flex;
     position: relative;
     background-color: white;
