@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'institutions',
     'drf_yasg', 
+    'admins',
     #'django.contrib.gis',  #problema grave con PostGIS
 ]
 

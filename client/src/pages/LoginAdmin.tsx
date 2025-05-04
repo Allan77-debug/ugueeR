@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "../components/Header.tsx";
 import "../styles/LoginAdmin.css";
 import axios from "axios";
@@ -6,14 +7,50 @@ import axios from "axios";
 const LoginAdmin: React.FC = () => {
   const [isToggle] = useState(false);
   const [loginData, setLoginData] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  // Verificar si ya está autenticado
+  useEffect(() => {
+    const token = localStorage.getItem("adminToken");
+    if (token) {
+      navigate("/admin");
+    }
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError("");
+
     try {
-      const response = await axios.post("/api/login", loginData); // 👉 tu endpoint
+      const response = await axios.post(
+        "http://localhost:8000/api/admins/login/",
+        loginData
+      );
       console.log("Login:", response.data);
+
+      // Guardar el token en localStorage
+      localStorage.setItem(
+        "adminToken",
+        response.data.token || "admin-token-placeholder"
+      );
+      localStorage.setItem(
+        "adminUser",
+        JSON.stringify({
+          email: loginData.email,
+          role: "admin",
+        })
+      );
+
+      // Redireccionar al panel de administración
+      navigate("/admin");
     } catch (error) {
       console.error("Error de login:", error);
+      setError("Credenciales incorrectas. Por favor intente de nuevo.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -48,6 +85,7 @@ const LoginAdmin: React.FC = () => {
                   onChange={(e) =>
                     setLoginData({ ...loginData, email: e.target.value })
                   }
+                  disabled={loading}
                 />
               </div>
               <div className="admin-container-input">
@@ -58,9 +96,13 @@ const LoginAdmin: React.FC = () => {
                   onChange={(e) =>
                     setLoginData({ ...loginData, password: e.target.value })
                   }
+                  disabled={loading}
                 />
               </div>
-              <button className="admin-button">INICIAR SESIÓN</button>
+              {error && <p className="error-message">{error}</p>}
+              <button className="admin-button" disabled={loading}>
+                {loading ? "CARGANDO..." : "INICIAR SESIÓN"}
+              </button>
             </form>
           </div>
         </div>

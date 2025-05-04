@@ -1,8 +1,23 @@
-import React from 'react';
-import { Link } from "react-router-dom"
-import { Building, Settings, LogOut } from "lucide-react"
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Building, Settings, LogOut } from "lucide-react";
 
 const AdminSidebar = () => {
+  const navigate = useNavigate();
+
+  // Función para cerrar sesión
+  const handleLogout = () => {
+    
+    // Eliminar el token y los datos del usuario del localStorage
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminUser");
+
+
+    console.log("Sesión cerrada correctamente");
+
+    // Redireccionar al inicio
+    navigate("/");
+  };
   return (
     <aside className="admin-sidebar">
       <div className="sidebar-header">
@@ -22,14 +37,13 @@ const AdminSidebar = () => {
       </nav>
 
       <div className="sidebar-footer">
-        <button className="logout-button">
+        <button className="logout-button" onClick={handleLogout}>
           <LogOut size={20} />
           <span>Cerrar Sesión</span>
         </button>
       </div>
     </aside>
-  )
-}
+  );
+};
 
-export default AdminSidebar
-
+export default AdminSidebar;

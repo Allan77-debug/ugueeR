@@ -7,6 +7,7 @@ import InstitutionsList from "../components/admin/InstitutionList.tsx";
 import InstitutionDetailsModal from "../components/admin/InstitutionDetailsModal.tsx";
 import StatCards from "../components/admin/StatCards.tsx";
 import "../styles/AdminPanel.css";
+import { useNavigate } from "react-router-dom";
 
 export interface Institution {
   id: string;
@@ -115,11 +116,21 @@ const mockInstitutions: Institution[] = [
 ];
 
 const AdminPanel = () => {
-    // Estado para el filtro activo
+  const navigate = useNavigate();
+
+  // Verificar autenticación
+  useEffect(() => {
+    const token = localStorage.getItem("adminToken");
+    if (!token) {
+      navigate("/login-admin");
+    }
+  }, [navigate]);
+
+  // Estado para el filtro activo
   const [activeFilter, setActiveFilter] = useState<
     "todas" | "pendiente" | "aprobada" | "rechazada"
   >("todas");
-    // Estado para la búsqueda
+  // Estado para la búsqueda
   const [searchQuery, setSearchQuery] = useState("");
 
   // Estado para la institución seleccionada
@@ -132,7 +143,7 @@ const AdminPanel = () => {
     setInstitutions(mockInstitutions);
   }, []);
 
-    // Estadísticas
+  // Estadísticas
   const updateStats = () => {
     const pendientes = institutions.filter(
       (i) => i.status === "pendiente"
@@ -145,7 +156,6 @@ const AdminPanel = () => {
     ).length;
     return { pendientes, aprobadas, rechazadas };
   };
-
 
   // Filtrar instituciones según el filtro activo y la búsqueda
   const filteredInstitutions = institutions.filter((institution) => {
@@ -162,12 +172,11 @@ const AdminPanel = () => {
     return true;
   });
 
-  
   // Manejar la apertura del modal de detalles
   const handleViewDetails = (institution: Institution) => {
     setSelectedInstitution(institution);
   };
-  
+
   // Manejar el cierre del modal de detalles
   const handleCloseModal = () => {
     setSelectedInstitution(null);

@@ -103,3 +103,15 @@
 .admin-container.toggle .admin-sign-up {
   transform: translateX(0);
 }
+
+.error-message {
+  color: #d32f2f;
+  font-size: 14px;
+  margin: 5px 0;
+  text-align: center;
+}
+
+.admin-button:disabled {
+  background-color: #9e9e9e;
+  cursor: not-allowed;
+}
