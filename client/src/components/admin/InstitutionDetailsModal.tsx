@@ -21,6 +21,23 @@ const InstitutionDetailsModal = ({ institution, onClose, onApprove, onReject }: 
   // Estado para el motivo de rechazo
   const [rejectionReason, setRejectionReason] = useState("")
 
+  const adaptedInstitution = {
+    id: institution.id_institution,
+    name: institution.official_name,
+    shortName: institution.short_name,
+    email: institution.email,
+    phone: institution.phone,
+    address: institution.address,
+    city: institution.city,
+    state: institution.istate,
+    postalCode: institution.postal_code,
+    primaryColor: institution.primary_color || "#6a5acd",
+    secondaryColor: institution.secondary_color || "#ffffff",
+    status: institution.status || "pendiente",
+    applicationDate: new Date(institution.application_date).toLocaleDateString(),
+    logo: institution.logo ? `http://localhost:8000${institution.logo}` : undefined
+  };
+
   return (
     <div className="modal-overlay">
       <div className="modal-container">
@@ -33,12 +50,21 @@ const InstitutionDetailsModal = ({ institution, onClose, onApprove, onReject }: 
         </div>
 
         <div className="institution-header">
-          <div className="logo-placeholder large">Logo de {institution.shortName}</div>
+          {adaptedInstitution.logo ? (
+            <img 
+              src={adaptedInstitution.logo} 
+              alt={`Logo de ${adaptedInstitution.shortName}`} 
+              className="institution-logo large"
+            />
+          ) : (
+            <div className="logo-placeholder large">Logo de {adaptedInstitution.shortName}</div>
+          )}
+          
           <div className="institution-info">
-            <h3>{institution.name}</h3>
-            <p>{institution.shortName}</p>
-            <span className={`status-badge ${institution.status}`}>
-              {institution.status.charAt(0).toUpperCase() + institution.status.slice(1)}
+            <h3>{adaptedInstitution.name}</h3>
+            <p>{adaptedInstitution.shortName}</p>
+            <span className={`status-badge ${adaptedInstitution.status}`}>
+              {adaptedInstitution.status.charAt(0).toUpperCase() + adaptedInstitution.status.slice(1)}
             </span>
           </div>
         </div>
@@ -56,12 +82,14 @@ const InstitutionDetailsModal = ({ institution, onClose, onApprove, onReject }: 
           >
             Identidad Visual
           </button>
-          <button
-            className={`modal-tab ${activeTab === "decision" ? "active" : ""}`}
-            onClick={() => setActiveTab("decision")}
-          >
-            Decisión
-          </button>
+          {adaptedInstitution.status === "pendiente" && (
+            <button
+              className={`modal-tab ${activeTab === "decision" ? "active" : ""}`}
+              onClick={() => setActiveTab("decision")}
+            >
+              Decisión
+            </button>
+          )}
         </div>
 
         <div className="modal-content">
@@ -72,32 +100,32 @@ const InstitutionDetailsModal = ({ institution, onClose, onApprove, onReject }: 
               <div className="info-grid">
                 <div className="info-item">
                   <label>Email:</label>
-                  <p>{institution.email}</p>
+                  <p>{adaptedInstitution.email}</p>
                 </div>
 
                 <div className="info-item">
                   <label>Teléfono:</label>
-                  <p>{institution.phone}</p>
+                  <p>{adaptedInstitution.phone}</p>
                 </div>
 
                 <div className="info-item">
                   <label>Dirección:</label>
-                  <p>{institution.address}</p>
+                  <p>{adaptedInstitution.address}</p>
                 </div>
 
                 <div className="info-item">
                   <label>Ciudad:</label>
-                  <p>{institution.city}</p>
+                  <p>{adaptedInstitution.city}</p>
                 </div>
 
                 <div className="info-item">
                   <label>Estado/Provincia:</label>
-                  <p>{institution.state}</p>
+                  <p>{adaptedInstitution.state}</p>
                 </div>
 
                 <div className="info-item">
                   <label>Código Postal:</label>
-                  <p>{institution.postalCode}</p>
+                  <p>{adaptedInstitution.postalCode}</p>
                 </div>
               </div>
 
@@ -106,12 +134,16 @@ const InstitutionDetailsModal = ({ institution, onClose, onApprove, onReject }: 
               <div className="info-grid">
                 <div className="info-item">
                   <label>Fecha de Solicitud:</label>
-                  <p>{institution.applicationDate}</p>
+                  <p>{adaptedInstitution.applicationDate}</p>
                 </div>
 
                 <div className="info-item">
                   <label>Estado:</label>
-                  <p>Pendiente de Revisión</p>
+                  <p>{adaptedInstitution.status === "pendiente" 
+                    ? "Pendiente de Revisión" 
+                    : adaptedInstitution.status === "aprobada" 
+                      ? "Aprobada" 
+                      : "Rechazada"}</p>
                 </div>
               </div>
             </div>
@@ -123,7 +155,15 @@ const InstitutionDetailsModal = ({ institution, onClose, onApprove, onReject }: 
                 <div className="logo-section">
                   <h3>Logo Institucional</h3>
                   <div className="logo-preview">
-                    <div className="logo-placeholder extra-large">Logo de {institution.name}</div>
+                    {adaptedInstitution.logo ? (
+                      <img 
+                        src={adaptedInstitution.logo} 
+                        alt={`Logo de ${adaptedInstitution.name}`} 
+                        className="institution-logo extra-large"
+                      />
+                    ) : (
+                      <div className="logo-placeholder extra-large">Logo de {adaptedInstitution.name}</div>
+                    )}
                   </div>
                 </div>
 
@@ -133,16 +173,16 @@ const InstitutionDetailsModal = ({ institution, onClose, onApprove, onReject }: 
                   <div className="color-item">
                     <label>Color Principal</label>
                     <div className="color-preview">
-                      <div className="color-box" style={{ backgroundColor: institution.primaryColor }}></div>
-                      <span>{institution.primaryColor}</span>
+                      <div className="color-box" style={{ backgroundColor: adaptedInstitution.primaryColor }}></div>
+                      <span>{adaptedInstitution.primaryColor}</span>
                     </div>
                   </div>
 
                   <div className="color-item">
                     <label>Color Secundario</label>
                     <div className="color-preview">
-                      <div className="color-box" style={{ backgroundColor: institution.secondaryColor }}></div>
-                      <span>{institution.secondaryColor}</span>
+                      <div className="color-box" style={{ backgroundColor: adaptedInstitution.secondaryColor }}></div>
+                      <span>{adaptedInstitution.secondaryColor}</span>
                     </div>
                   </div>
 
@@ -150,18 +190,18 @@ const InstitutionDetailsModal = ({ institution, onClose, onApprove, onReject }: 
                   <div
                     className="preview-box"
                     style={{
-                      backgroundColor: institution.primaryColor,
-                      color: institution.secondaryColor,
+                      backgroundColor: adaptedInstitution.primaryColor,
+                      color: adaptedInstitution.secondaryColor,
                     }}
                   >
-                    {institution.name}
+                    {adaptedInstitution.name}
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {activeTab === "decision" && (
+          {activeTab === "decision" && adaptedInstitution.status === "pendiente" && (
             <div className="tab-content">
               <div className="decision-section">
                 <div className="approve-section">
@@ -186,7 +226,7 @@ const InstitutionDetailsModal = ({ institution, onClose, onApprove, onReject }: 
                     El rol determina los permisos y funcionalidades disponibles para la institución.
                   </p>
 
-                  <button className="approve-button" onClick={() => onApprove(institution.id, selectedRole)}>
+                  <button className="approve-button" onClick={() => onApprove(adaptedInstitution.id, selectedRole)}>
                     <Check size={18} /> Aprobar Institución
                   </button>
                 </div>
@@ -195,16 +235,26 @@ const InstitutionDetailsModal = ({ institution, onClose, onApprove, onReject }: 
                   <h3>Rechazar Institución</h3>
 
                   <div className="form-group">
-                    <label>Motivo del Rechazo (Opcional)</label>
+                    <label>Motivo del Rechazo (Obligatorio)</label>
                     <textarea
                       value={rejectionReason}
                       onChange={(e) => setRejectionReason(e.target.value)}
                       placeholder="Explique el motivo del rechazo..."
                       className="rejection-reason"
+                      required
                     ></textarea>
                   </div>
 
-                  <button className="reject-button" onClick={() => onReject(institution.id, rejectionReason)}>
+                  <button 
+                    className="reject-button" 
+                    onClick={() => {
+                      if (!rejectionReason.trim()) {
+                        alert("Por favor proporcione un motivo para el rechazo.");
+                        return;
+                      }
+                      onReject(adaptedInstitution.id, rejectionReason);
+                    }}
+                  >
                     <X size={18} /> Rechazar Institución
                   </button>
                 </div>
@@ -224,4 +274,3 @@ const InstitutionDetailsModal = ({ institution, onClose, onApprove, onReject }: 
 }
 
 export default InstitutionDetailsModal
-

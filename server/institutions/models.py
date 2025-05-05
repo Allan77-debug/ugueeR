@@ -17,6 +17,20 @@ class Institution(models.Model):
     secondary_color = models.CharField(max_length=7, default="#ffffff")
     ipassword = models.CharField(max_length=128)
 
+    # Campos para validación
+    validate_state = models.BooleanField(default=False)
+    status = models.CharField(
+        max_length=10,
+        choices=[
+            ('pendiente', 'Pendiente'),
+            ('aprobada', 'Aprobada'),
+            ('rechazada', 'Rechazada')
+        ],
+        default='pendiente'
+    )
+    rejection_reason = models.TextField(blank=True, null=True)
+    application_date = models.DateTimeField(auto_now_add=True)
+
     class Meta:
         db_table = 'institution'
 

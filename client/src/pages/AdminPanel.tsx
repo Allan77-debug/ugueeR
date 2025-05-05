@@ -8,112 +8,25 @@ import InstitutionDetailsModal from "../components/admin/InstitutionDetailsModal
 import StatCards from "../components/admin/StatCards.tsx";
 import "../styles/AdminPanel.css";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 export interface Institution {
-  id: string;
-  name: string;
-  shortName: string;
+  id_institution: string;
+  official_name: string;
+  short_name: string;
   email: string;
   phone: string;
   address: string;
   city: string;
-  state: string;
-  postalCode: string;
-  logo: string;
-  primaryColor: string;
-  secondaryColor: string;
+  istate: string;
+  postal_code: string;
+  logo?: string;
+  primary_color?: string;
+  secondary_color?: string;
   status: "pendiente" | "aprobada" | "rechazada";
-  applicationDate: string;
-  location: string;
+  application_date: string;
+  rejection_reason?: string;
 }
-
-const mockInstitutions: Institution[] = [
-  {
-    id: "1",
-    name: "Universidad Nacional de Colombia",
-    shortName: "UNAL",
-    email: "info@unal.edu.co",
-    phone: "+57 1 234 5678",
-    address: "Carrera 45 # 26-85",
-    city: "Bogotá",
-    state: "Cundinamarca",
-    postalCode: "111321",
-    logo: "/placeholder.svg",
-    primaryColor: "#6a5acd",
-    secondaryColor: "#ffffff",
-    status: "pendiente",
-    applicationDate: "3/28/2025",
-    location: "Bogotá, Cundinamarca",
-  },
-  {
-    id: "2",
-    name: "Universidad de los Andes",
-    shortName: "Uniandes",
-    email: "admisiones@uniandes.edu.co",
-    phone: "+57 1 332 4545",
-    address: "Carrera 1 # 18A-12",
-    city: "Bogotá",
-    state: "Cundinamarca",
-    postalCode: "111711",
-    logo: "/placeholder.svg",
-    primaryColor: "#6a5acd",
-    secondaryColor: "#ffffff",
-    status: "aprobada",
-    applicationDate: "3/25/2025",
-    location: "Bogotá, Cundinamarca",
-  },
-  {
-    id: "3",
-    name: "Universidad del Valle",
-    shortName: "Univalle",
-    email: "contacto@univalle.edu.co",
-    phone: "+57 2 321 2100",
-    address: "Calle 13 # 100-00",
-    city: "Cali",
-    state: "Valle del Cauca",
-    postalCode: "760032",
-    logo: "/placeholder.svg",
-    primaryColor: "#6a5acd",
-    secondaryColor: "#ffffff",
-    status: "rechazada",
-    applicationDate: "3/20/2025",
-    location: "Cali, Valle del Cauca",
-  },
-  {
-    id: "4",
-    name: "Universidad de Antioquia",
-    shortName: "UdeA",
-    email: "info@udea.edu.co",
-    phone: "+57 4 219 8332",
-    address: "Calle 67 # 53-108",
-    city: "Medellín",
-    state: "Antioquia",
-    postalCode: "050010",
-    logo: "/placeholder.svg",
-    primaryColor: "#6a5acd",
-    secondaryColor: "#ffffff",
-    status: "pendiente",
-    applicationDate: "3/27/2025",
-    location: "Medellín, Antioquia",
-  },
-  {
-    id: "5",
-    name: "Universidad Industrial de Santander",
-    shortName: "UIS",
-    email: "admisiones@uis.edu.co",
-    phone: "+57 7 634 4000",
-    address: "Carrera 27 con Calle 9",
-    city: "Bucaramanga",
-    state: "Santander",
-    postalCode: "680002",
-    logo: "/placeholder.svg",
-    primaryColor: "#6a5acd",
-    secondaryColor: "#ffffff",
-    status: "pendiente",
-    applicationDate: "3/26/2025",
-    location: "Bucaramanga, Santander",
-  },
-];
 
 const AdminPanel = () => {
   const navigate = useNavigate();
@@ -137,11 +50,39 @@ const AdminPanel = () => {
   const [selectedInstitution, setSelectedInstitution] =
     useState<Institution | null>(null);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    // Simula fetch
-    setInstitutions(mockInstitutions);
-  }, []);
+  const fetchInstitutions = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      
+      // Construir la URL de la API según el filtro activo
+      let url = "http://localhost:8000/api/institutions/list/";
+      if (activeFilter !== "todas") {
+        url += `?status=${activeFilter}`;
+      }
+      
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("adminToken")}`
+        }
+      });
+      
+      setInstitutions(response.data);
+    } catch (err) {
+      console.error("Error al cargar instituciones:", err);
+      setError("No se pudieron cargar las instituciones. Por favor, intente de nuevo.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+    // Cargar instituciones cuando cambia el filtro
+    useEffect(() => {
+      fetchInstitutions();
+    }, [activeFilter]);
 
   // Estadísticas
   const updateStats = () => {
@@ -164,7 +105,7 @@ const AdminPanel = () => {
 
     if (
       searchQuery &&
-      !institution.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+      !institution.official_name.toLowerCase().includes(searchQuery.toLowerCase()) &&
       !institution.email.toLowerCase().includes(searchQuery.toLowerCase())
     )
       return false;
@@ -183,25 +124,44 @@ const AdminPanel = () => {
   };
 
   const handleApproveInstitution = async (id: string, role: string) => {
-    // axios.post(`/api/institutions/${id}/approve`, { role })
-    console.log(`Approving institution ${id} with role: ${role}`);
-    setInstitutions((prev) =>
-      prev.map((inst) =>
-        inst.id === id ? { ...inst, status: "aprobada" } : inst
-      )
-    );
-    setSelectedInstitution(null);
+    try {
+      await axios.post(`http://localhost:8000/api/institutions/${id}/approve/`, 
+        { role }, // Añadimos el rol seleccionado
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("adminToken")}`
+          }
+        }
+      );
+      
+      // Actualizar la lista de instituciones tras aprobación exitosa
+      fetchInstitutions();
+      setSelectedInstitution(null);
+      alert("La institución ha sido aprobada exitosamente.");
+    } catch (error) {
+      console.error("Error al aprobar institución:", error);
+      alert("No se pudo aprobar la institución. Inténtelo de nuevo.");
+    }
   };
 
   const handleRejectInstitution = async (id: string, reason: string) => {
-    // axios.post(`/api/institutions/${id}/reject`, { reason })
-    console.log(`Institution ${id} rejected with reason: ${reason}`);
-    setInstitutions((prev) =>
-      prev.map((inst) =>
-        inst.id === id ? { ...inst, status: "rechazada" } : inst
-      )
-    );
-    setSelectedInstitution(null);
+    try {
+      await axios.post(`http://localhost:8000/api/institutions/${id}/reject/`, 
+        { reason }, 
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("adminToken")}`
+          }
+        }
+      );
+      
+      // Actualizar la lista de instituciones tras rechazo exitoso
+      fetchInstitutions();
+      setSelectedInstitution(null);
+    } catch (error) {
+      console.error("Error al rechazar institución:", error);
+      alert("No se pudo rechazar la institución. Inténtelo de nuevo.");
+    }
   };
 
   return (
@@ -238,10 +198,21 @@ const AdminPanel = () => {
               </button>
             ))}
           </div>
-          <InstitutionsList
-            institutions={filteredInstitutions}
-            onViewDetails={handleViewDetails}
-          />
+
+          {loading ? (
+            <div className="loading-indicator">Cargando instituciones...</div>
+          ) : error ? (
+            <div className="error-message">{error}</div>
+          ) : filteredInstitutions.length === 0 ? (
+            <div className="empty-state">
+              No hay instituciones {activeFilter !== "todas" ? `con estado "${activeFilter}"` : ""}.
+            </div>
+          ) : (
+            <InstitutionsList
+              institutions={filteredInstitutions}
+              onViewDetails={handleViewDetails}
+            />
+          )}
         </main>
       </div>
 
