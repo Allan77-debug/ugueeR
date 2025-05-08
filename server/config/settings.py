@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'institutions',
     'drf_yasg', 
     'admins',
+    'users',
     #'django.contrib.gis',  #problema grave con PostGIS
 ]
 
