@@ -23,6 +23,16 @@ class InstitutionSerializer(serializers.ModelSerializer):
             "application_date",
         ]
 
+    def validate_email(self, value):
+        if Institution.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Ya existe una institución con este email.")
+        return value
+
+    def validate_phone(self, value):
+        if Institution.objects.filter(phone=value).exists():
+            raise serializers.ValidationError("Ya existe una institución con este número.")
+        return value
+
     def create(self, validated_data):
         # Hashea la contraseña antes de guardar
         if "ipassword" in validated_data and validated_data["ipassword"]:

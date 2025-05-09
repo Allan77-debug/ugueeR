@@ -2,6 +2,7 @@ import React from "react"
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
 import HomePage from "./pages/HomePage"
 import InstitutionRegisterPage from "./pages/InstitutionRegisterPage"
+import UserRegisterPage from "./pages/UserRegisterPage"
 import AdminPanel from "./pages/AdminPanel"
 import Login from "./pages/LoginPage"
 import LoginAdmin from "./pages/LoginAdmin"
@@ -24,6 +25,7 @@ function App() {
         {/* Rutas públicas */}
         <Route path="/" element={<HomePage />} />
         <Route path="/registro-institucion" element={<InstitutionRegisterPage />} />
+        <Route path="/registro-usuario" element={<UserRegisterPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/login-admin" element={<LoginAdmin />} />
         

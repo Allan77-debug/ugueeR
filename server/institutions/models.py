@@ -6,8 +6,8 @@ class Institution(models.Model):
 
     official_name = models.CharField(max_length=255)
     short_name = models.CharField(max_length=100)
-    email = models.EmailField()
-    phone = models.CharField(max_length=50)
+    email = models.EmailField(unique=True)
+    phone = models.CharField(max_length=50, unique=True)
     address = models.TextField()
     city = models.CharField(max_length=100)
     istate = models.CharField(max_length=100)

@@ -8,11 +8,11 @@ class Users(models.Model):
     user_type = models.CharField(max_length=50)
     institutional_mail = models.EmailField()
     student_code = models.CharField(max_length=100)
-    udocument = models.TextField()
-    institutional_carne = models.TextField()
+    udocument = models.CharField(max_length=50)
+    institutional_carne = models.ImageField(upload_to='carne/', null=True, blank=True)
     direction = models.TextField()
     uphone = models.CharField(max_length=50)
-    upassword = models.TextField()
+    upassword = models.CharField(max_length=255)
     institution_id = models.IntegerField()
     
     class Meta:
