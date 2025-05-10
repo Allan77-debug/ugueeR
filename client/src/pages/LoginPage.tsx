@@ -88,16 +88,6 @@ const LoginPage: React.FC = () => {
               <div className="container-input">
                 <input
                   type="text"
-                  placeholder="Nombre"
-                  value={registerData.name}
-                  onChange={(e) =>
-                    setRegisterData({ ...registerData, name: e.target.value })
-                  }
-                />
-              </div>
-              <div className="container-input">
-                <input
-                  type="text"
                   placeholder="Email"
                   value={registerData.email}
                   onChange={(e) =>
