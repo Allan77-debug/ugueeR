@@ -41,3 +41,7 @@ class UsersSerializer(serializers.ModelSerializer):
         if 'upassword' in validated_data:
             validated_data['upassword'] = make_password(validated_data['upassword'])
         return super().update(instance, validated_data)
+
+class UsersLoginSerializer(serializers.Serializer):
+    institutional_mail = serializers.EmailField()
+    upassword = serializers.CharField(write_only=True)
