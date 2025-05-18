@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Header from "../components/Header.tsx";
+import Header from "../../../components/Header.tsx";
 import "../styles/LoginAdmin.css";
 import axios from "axios";
 

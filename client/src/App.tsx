@@ -1,12 +1,12 @@
 import React from "react"
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
-import HomePage from "./pages/HomePage"
-import InstitutionRegisterPage from "./pages/InstitutionRegisterPage"
-import UserRegisterPage from "./pages/UserRegisterPage"
-import UserDashboard from "./pages/UserDashboard"
-import AdminPanel from "./pages/AdminPanel"
-import Login from "./pages/LoginPage"
-import LoginAdmin from "./pages/LoginAdmin"
+import HomePage from "./features/home/pages/HomePage"
+import InstitutionRegisterPage from "./features/institution/pages/InstitutionRegisterPage"
+import UserRegisterPage from "./features/users/pages/UserRegisterPage"
+import UserDashboard from "./features/users/pages/UserDashboard"
+import AdminPanel from "./features/admin/pages/AdminPanel"
+import Login from "./features/auth/pages/LoginPage"
+import LoginAdmin from "./features/auth/pages/LoginAdmin"
 
 // Componente para proteger rutas
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {

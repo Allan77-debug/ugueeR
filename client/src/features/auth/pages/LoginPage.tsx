@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Header from "../components/Header.tsx";
+import Header from "../../../components/Header.tsx";
 import "../styles/LoginSignup.css";
 import axios from "axios";
 

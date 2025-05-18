@@ -2,7 +2,7 @@
 import axios from "axios";
 import { useForm, Controller } from "react-hook-form";
 import { Link } from "react-router-dom";
-import Header from "../components/Header.tsx";
+import Header from "../../../components/Header.tsx";
 import "../styles/UserRegisterPage.css";
 import { toast, Toaster } from "react-hot-toast";
 import React, { useState } from "react";

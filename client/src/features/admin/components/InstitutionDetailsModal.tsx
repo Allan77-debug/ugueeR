@@ -2,7 +2,7 @@
 import React from 'react';
 import { useState } from "react"
 import { X, Check } from "lucide-react"
-import type { Institution } from "../../pages/AdminPanel"
+import type { Institution } from "../pages/AdminPanel"
 
 interface InstitutionDetailsModalProps {
   institution: Institution

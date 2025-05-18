@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import AdminSidebar from "../components/admin/AdminSidebar.tsx";
-import AdminHeader from "../components/admin/AdminHeader.tsx";
-import InstitutionsList from "../components/admin/InstitutionList.tsx";
-import InstitutionDetailsModal from "../components/admin/InstitutionDetailsModal.tsx";
-import StatCards from "../components/admin/StatCards.tsx";
+import AdminSidebar from "../components/AdminSidebar.tsx";
+import AdminHeader from "../components/AdminHeader.tsx";
+import InstitutionsList from "../components/InstitutionList.tsx";
+import InstitutionDetailsModal from "../components/InstitutionDetailsModal.tsx";
+import StatCards from "../components/StatCards.tsx";
 import "../styles/AdminPanel.css";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
