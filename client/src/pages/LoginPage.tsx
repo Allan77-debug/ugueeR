@@ -5,30 +5,100 @@ import axios from "axios";
 
 const LoginPage: React.FC = () => {
   const [isToggle, setIsToggle] = useState(false);
-  const [loginData, setLoginData] = useState({ email: "", password: "" });
+  const [loginData, setLoginData] = useState({
+    institutional_mail: "",
+    upassword: "",
+  });
   const [registerData, setRegisterData] = useState({
     name: "",
     email: "",
-    password: "",
+    ipassword: "",
   });
+
+  // Estados para los mensajes de error y carga
+  const [loginError, setLoginError] = useState("");
+  const [registerError, setRegisterError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoginError(""); // Limpiar errores previos
+    setIsLoading(true);
+
     try {
-      const response = await axios.post("/api/login", loginData); // 👉 tu endpoint
+      const response = await axios.post(
+        "http://127.0.0.1:8000/api/users/login/",
+        loginData
+      );
       console.log("Login:", response.data);
+      alert("¡Inicio de sesión exitoso!");
     } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        // Mensaje de error específico del servidor
+        const responseData = error.response.data;
+
+        if (error.response.status === 404) {
+          setLoginError(
+            "Usuario no encontrado. Por favor, verifique su correo."
+          );
+        } else if (error.response.status === 401) {
+          setLoginError(
+            "Contraseña incorrecta. Por favor, inténtelo de nuevo."
+          );
+        } else if (error.response.status === 400) {
+          // Errores de validación
+          if (responseData.institutional_mail) {
+            setLoginError(responseData.institutional_mail[0]);
+          } else if (responseData.upassword) {
+            setLoginError(responseData.upassword[0]);
+          } else if (responseData.error) {
+            setLoginError(responseData.error);
+          } else {
+            setLoginError(
+              "Por favor, complete correctamente todos los campos."
+            );
+          }
+        } else {
+          setLoginError(
+            "Error en el servidor. Por favor, inténtelo más tarde."
+          );
+        }
+      }
       console.error("Error de login:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleInstitution = async (e: React.FormEvent) => {
     e.preventDefault();
+    setRegisterError(""); // Limpiar errores previos
+    setIsLoading(true);
+
     try {
-      const response = await axios.post("/api/register", registerData); // 👉 tu endpoint
-      console.log("Registro:", response.data);
+      const response = await axios.post(
+        "http://127.0.0.1:8000/api/institutions/login/",
+        registerData
+      );
+      console.log("Inicio de sesión institución:", response.data);
+      alert("¡Inicio de sesión exitoso!");
     } catch (error) {
-      console.error("Error de registro:", error);
+      if (axios.isAxiosError(error) && error.response) {
+        const responseData = error.response.data;
+
+        if (responseData.error) {
+          setRegisterError(responseData.error);
+        } else {
+          setRegisterError("Error al iniciar sesión. Verifique sus datos.");
+        }
+      } else {
+        setRegisterError(
+          "Error de conexión. Por favor, verifique su internet."
+        );
+      }
+      console.error("Error de inicio de sesión institución:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -48,7 +118,7 @@ const LoginPage: React.FC = () => {
 
       <div className="login-container">
         <div className={`container ${isToggle ? "toggle" : ""}`}>
-           {/* Inicio de sesion institucion */}
+          {/* Inicio de sesion institucion */}
           <div className="container-form">
             <form className="sign-in" onSubmit={handleLogin}>
               <h2>Iniciar Sesión</h2>
@@ -58,30 +128,39 @@ const LoginPage: React.FC = () => {
                 <input
                   type="text"
                   placeholder="Email"
-                  value={loginData.email}
+                  value={loginData.institutional_mail}
                   onChange={(e) =>
-                    setLoginData({ ...loginData, email: e.target.value })
+                    setLoginData({
+                      ...loginData,
+                      institutional_mail: e.target.value,
+                    })
                   }
+                  disabled={isLoading}
                 />
               </div>
               <div className="container-input">
                 <input
                   type="password"
                   placeholder="Password"
-                  value={loginData.password}
+                  value={loginData.upassword}
                   onChange={(e) =>
-                    setLoginData({ ...loginData, password: e.target.value })
+                    setLoginData({ ...loginData, upassword: e.target.value })
                   }
+                  disabled={isLoading}
                 />
               </div>
+              {loginError && <p className="error-message">{loginError}</p>}
+
               <a href="#">¿Olvidaste tu contraseña?</a>
-              <button className="button">INICIAR SESIÓN</button>
+              <button className="button" disabled={isLoading}>
+                {isLoading ? "CARGANDO..." : "INICIAR SESIÓN"}
+              </button>
             </form>
           </div>
 
           {/* Inicio de sesion institucion */}
           <div className="container-form">
-            <form className="sign-up" onSubmit={handleRegister}>
+            <form className="sign-up" onSubmit={handleInstitution}>
               <h2>Iniciar Sesión</h2>
               <div className="social-networks"></div>
               <span></span>
@@ -99,16 +178,22 @@ const LoginPage: React.FC = () => {
                 <input
                   type="password"
                   placeholder="Password"
-                  value={registerData.password}
+                  value={registerData.ipassword}
                   onChange={(e) =>
                     setRegisterData({
                       ...registerData,
-                      password: e.target.value,
+                      ipassword: e.target.value,
                     })
                   }
                 />
               </div>
-              <button className="button">INICIAR SESION</button>
+              {registerError && (
+                <p className="error-message">{registerError}</p>
+              )}
+
+              <button className="button" disabled={isLoading}>
+                {isLoading ? "CARGANDO..." : "INICIAR SESIÓN"}
+              </button>
             </form>
           </div>
 
@@ -126,8 +211,7 @@ const LoginPage: React.FC = () => {
             <div className="welcome-sign-in welcome">
               <h3>¡Bienvenido!</h3>
               <p>
-                Ingrese los datos de su institucion
-                para poder administrarla
+                Ingrese los datos de su institucion para poder administrarla
               </p>
               <button className="button" onClick={() => setIsToggle(false)}>
                 ¿Eres un usuario?
