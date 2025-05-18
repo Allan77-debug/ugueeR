@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import HomePage from "./pages/HomePage"
 import InstitutionRegisterPage from "./pages/InstitutionRegisterPage"
 import UserRegisterPage from "./pages/UserRegisterPage"
+import UserDashboard from "./pages/UserDashboard"
 import AdminPanel from "./pages/AdminPanel"
 import Login from "./pages/LoginPage"
 import LoginAdmin from "./pages/LoginAdmin"
@@ -18,6 +19,18 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const UserProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const isAuthenticated = localStorage.getItem("userToken") !== null
+
+  if (!isAuthenticated) {
+    // Para desarrollo permitimos el acceso sin token
+    // En produccion toca descomentar la lnea:
+    // return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>
+}
+
 function App() {
   return (
     <Router>
@@ -28,6 +41,16 @@ function App() {
         <Route path="/registro-usuario" element={<UserRegisterPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/login-admin" element={<LoginAdmin />} />
+
+        {/* Rutas protegidas de usuario */}
+        <Route
+          path="/dashboard"
+          element={
+            <UserProtectedRoute>
+              <UserDashboard />
+            </UserProtectedRoute>
+          }
+        />
         
         {/* Rutas protegidas */}
         <Route 
