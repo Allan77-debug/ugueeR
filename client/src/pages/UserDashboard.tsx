@@ -463,7 +463,7 @@ const UserDashboard = () => {
       {/* Barra lateral */}
       <aside className="dashboard-sidebar">
         <div className="sidebar-header">
-          <h2>Uguee</h2>
+          <h2>Uway</h2>
         </div>
 
         <div className="user-profile">
