@@ -5,6 +5,7 @@ from rest_framework import generics, status, views
 from django.shortcuts import get_object_or_404
 from .models import Institution
 from users.models import Users
+from users.serializers import UsersSerializer
 from .serializers import InstitutionSerializer, InstitutionDetailSerializer
 from rest_framework.response import Response
 
@@ -62,8 +63,8 @@ class InstitutionApproveView(views.APIView):
             {"message": f"La institución {institution.official_name} ha sido aprobada correctamente."},
             status=status.HTTP_200_OK
         )
-
 class InstitutionRejectView(views.APIView):
+
     """Vista para rechazar una institución"""
     
     def post(self, request, institution_id, *args, **kwargs):
@@ -85,6 +86,7 @@ class InstitutionRejectView(views.APIView):
             {"message": f"La institución {institution.official_name} ha sido rechazada."},
             status=status.HTTP_200_OK
         )
+
 class InstitutionApproveUser(views.APIView):
     """Vista para aceptar un usuario en una institución"""
 
@@ -130,6 +132,7 @@ class InstitutionApproveUser(views.APIView):
             status=status.HTTP_200_OK
         )
 class InstitutionRejectUser(views.APIView):
+
     """Vista para rechazar un usuario de una institución"""
 
     def post(self, request, institution_id, uid, *args, **kwargs):
@@ -177,3 +180,11 @@ class InstitutionRejectUser(views.APIView):
             {"message": f"El usuario {user_to_reject.full_name} ha sido rechazado por la institución {institution_from_url.official_name}."},
             status=status.HTTP_200_OK
         )
+
+class InstitutionUsersView(views.APIView):
+    """Vista para listar todas los miembros de una Institucion para el panel de Instituciones"""
+    def get(self, request, institution_id):
+        institution = get_object_or_404(Institution, pk=institution_id)
+        users = Users.objects.filter(institution_id=institution)
+        serializer = UsersSerializer(users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

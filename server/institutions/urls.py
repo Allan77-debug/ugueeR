@@ -5,7 +5,8 @@ from .views import (
     InstitutionApproveView,
     InstitutionRejectView,
     InstitutionApproveUser,
-    InstitutionRejectUser
+    InstitutionRejectUser,
+    InstitutionUsersView
 )
 
 urlpatterns = [
@@ -14,5 +15,6 @@ urlpatterns = [
     path('<int:institution_id>/approve/', InstitutionApproveView.as_view(), name='institution-approve'),
     path('<int:institution_id>/reject/', InstitutionRejectView.as_view(), name='institution-reject'),
     path('approveUser/<int:institution_id>/<int:uid>/', InstitutionApproveUser.as_view(), name='institution-approve-user'),
-    path('rejectUser/<int:institution_id>/<int:uid>/', InstitutionRejectUser.as_view(), name='institution-reject-user')
+    path('rejectUser/<int:institution_id>/<int:uid>/', InstitutionRejectUser.as_view(), name='institution-reject-user'),
+    path('listUser/<int:institution_id>/users/', InstitutionUsersView.as_view(), name='institution-users')
 ]
