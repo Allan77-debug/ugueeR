@@ -2,8 +2,17 @@ from django.db import models
 
 
 class Users(models.Model):
-    uid = models.AutoField(primary_key=True)
 
+    STATE_PENDING = 'pendiente'
+    STATE_APPROVED = 'aprobado'
+    STATE_REJECTED = 'rechazado'
+    USER_STATE_CHOICES = [
+        (STATE_PENDING, 'Pendiente'),
+        (STATE_APPROVED, 'Aprobado'),
+        (STATE_REJECTED, 'Rechazado'),
+    ]
+
+    uid = models.AutoField(primary_key=True)
     full_name = models.CharField(max_length=255)
     user_type = models.CharField(max_length=50)
     institutional_mail = models.EmailField()
@@ -13,7 +22,19 @@ class Users(models.Model):
     direction = models.TextField()
     uphone = models.CharField(max_length=50)
     upassword = models.CharField(max_length=255)
-    institution_id = models.IntegerField()
+    institution = models.ForeignKey(
+        'institutions.Institution',   # String reference to your Institution model
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='members',       # Allows institution_instance.members.all()
+        db_column='institution_id'    # Tells Django this field uses the DB column named 'institution_id'
+    )
+    user_state = models.CharField(
+        max_length=50,
+        choices=USER_STATE_CHOICES,
+        default=STATE_PENDING  # Default to 'pendiente' when a new user is created
+    )
     
     class Meta:
         db_table = 'users'

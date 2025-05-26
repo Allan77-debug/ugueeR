@@ -4,6 +4,7 @@ from django.shortcuts import render
 from rest_framework import generics, status, views
 from django.shortcuts import get_object_or_404
 from .models import Institution
+from users.models import Users
 from .serializers import InstitutionSerializer, InstitutionDetailSerializer
 from rest_framework.response import Response
 
@@ -82,5 +83,97 @@ class InstitutionRejectView(views.APIView):
         
         return Response(
             {"message": f"La institución {institution.official_name} ha sido rechazada."},
+            status=status.HTTP_200_OK
+        )
+class InstitutionApproveUser(views.APIView):
+    """Vista para aceptar un usuario en una institución"""
+
+    def post(self, request, institution_id, uid, *args, **kwargs):
+        institution_from_url = get_object_or_404(Institution, id_institution=institution_id)
+        user_to_approve = get_object_or_404(Users, uid=uid)
+
+        if user_to_approve.user_state == Users.STATE_APPROVED:
+            if user_to_approve.institution == institution_from_url:
+                return Response(
+                    {"message": f"El usuario {user_to_approve.full_name} ya está aprobado para esta institución."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            else:
+                user_current_institution_name = user_to_approve.institution.official_name if user_to_approve.institution else "ninguna institución"
+                return Response(
+                    {"message": f"El usuario {user_to_approve.full_name} ya está aprobado (posiblemente para {user_current_institution_name}). No se puede volver a procesar la aprobación aquí."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        if user_to_approve.user_state != Users.STATE_PENDING:
+            return Response(
+                {"message": f"Solo se pueden aprobar usuarios en estado 'pendiente'. El estado actual de {user_to_approve.full_name} es '{user_to_approve.get_user_state_display()}'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if user_to_approve.institution is None:
+            pass 
+        elif user_to_approve.institution != institution_from_url:
+            return Response(
+                {"message": f"El usuario {user_to_approve.full_name} está registrado como pendiente para la institución '{user_to_approve.institution.official_name}', "
+                            f"pero se está intentando aprobar desde '{institution_from_url.official_name}'. Esta acción no está permitida."},
+                status=status.HTTP_403_FORBIDDEN # Or HTTP_400_BAD_REQUEST
+            )
+
+
+        user_to_approve.institution = institution_from_url
+        user_to_approve.user_state = Users.STATE_APPROVED
+        user_to_approve.save()
+
+        return Response(
+            {"message": f"El usuario {user_to_approve.full_name} ha sido aprobado para la institución {institution_from_url.official_name}."},
+            status=status.HTTP_200_OK
+        )
+class InstitutionRejectUser(views.APIView):
+    """Vista para rechazar un usuario de una institución"""
+
+    def post(self, request, institution_id, uid, *args, **kwargs):
+        institution_from_url = get_object_or_404(Institution, id_institution=institution_id)
+        user_to_reject = get_object_or_404(Users, uid=uid)
+
+
+        rejection_reason = request.data.get('reason', 'No se especificó un motivo.') 
+
+        if user_to_reject.user_state == Users.STATE_APPROVED:
+            user_current_institution_name = user_to_reject.institution.official_name if user_to_reject.institution else "una institución"
+            return Response(
+                {"message": f"El usuario {user_to_reject.full_name} ya está aprobado por {user_current_institution_name}. "
+                            "Para rechazarlo, primero debe ser removido o su estado de aprobación revertido."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if user_to_reject.user_state == Users.STATE_REJECTED and user_to_reject.institution == institution_from_url:
+            return Response(
+                {"message": f"El usuario {user_to_reject.full_name} ya ha sido rechazado por esta institución."},
+                status=status.HTTP_400_BAD_REQUEST 
+            )
+
+        if user_to_reject.user_state != Users.STATE_PENDING:
+            return Response(
+                {"message": f"Solo se pueden rechazar usuarios en estado 'pendiente'. El estado actual de {user_to_reject.full_name} es '{user_to_reject.get_user_state_display()}'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if user_to_reject.institution is None:
+        
+            pass 
+        elif user_to_reject.institution != institution_from_url:
+            return Response(
+                {"message": f"El usuario {user_to_reject.full_name} está registrado como pendiente para la institución '{user_to_reject.institution.official_name}', "
+                            f"pero se está intentando rechazar desde '{institution_from_url.official_name}'. Esta acción no está permitida."},
+                status=status.HTTP_403_FORBIDDEN # Or HTTP_400_BAD_REQUEST
+            )
+
+        user_to_reject.institution = institution_from_url # Confirm or set the institution
+        user_to_reject.user_state = Users.STATE_REJECTED
+        user_to_reject.save()
+
+        return Response(
+            {"message": f"El usuario {user_to_reject.full_name} ha sido rechazado por la institución {institution_from_url.official_name}."},
             status=status.HTTP_200_OK
         )

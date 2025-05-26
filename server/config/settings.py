@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'drf_yasg', 
     'admins',
     'users',
+    'driver',
     #'django.contrib.gis',  #problema grave con PostGIS
 ]
 
