@@ -12,9 +12,23 @@ class Users(models.Model):
         (STATE_REJECTED, 'Rechazado'),
     ]
 
+    TYPE_ADMIN = 'admin'
+    TYPE_DRIVER = 'driver'
+    TYPE_STUDENT = 'student'
+    TYPE_EMPLOYEE = 'employee'
+    TYPE_TEACHER = 'teacher'
+    USER_TYPE_CHOICES = [
+    (TYPE_ADMIN, 'Administrador'),
+    (TYPE_DRIVER, 'Conductor/a'),    
+    (TYPE_STUDENT,'Estudiante'),
+    (TYPE_EMPLOYEE, 'Empleado/a'),
+    (TYPE_TEACHER, 'Profesor/a'),
+    ]    
+
     uid = models.AutoField(primary_key=True)
     full_name = models.CharField(max_length=255)
-    user_type = models.CharField(max_length=50)
+    user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES)
+
     institutional_mail = models.EmailField()
     student_code = models.CharField(max_length=100)
     udocument = models.CharField(max_length=50)
