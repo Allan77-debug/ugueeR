@@ -55,6 +55,9 @@ INSTALLED_APPS = [
     'admins',
     'users',
     'driver',
+    'route',
+    'vehicle',
+    'travel',
     #'django.contrib.gis',  #problema grave con PostGIS
 ]
 
