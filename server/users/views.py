@@ -1,10 +1,43 @@
-from django.shortcuts import render
-from django.contrib.auth import authenticate
-from django.contrib.auth.hashers import check_password
-from rest_framework import generics, status, views
-from .serializers import UsersSerializer, UsersLoginSerializer
-from .models import Users
+from rest_framework import generics, status
 from rest_framework.response import Response
+from .models import Users
+from .serializers import UsersSerializer, UsersLoginSerializer, DriverApplicationSerializer
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
+from rest_framework.permissions import IsAuthenticated, AllowAny, BasePermission
+from rest_framework.authentication import TokenAuthentication
+from django.shortcuts import get_object_or_404
+from rest_framework.views import APIView
+from institutions.models import Institution  # Import Institution model
+from institutions.serializers import DriverInfoSerializer  # Import the serializer
+from django.contrib.auth.hashers import check_password
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.authentication import JWTAuthentication
+import jwt
+from django.conf import settings
+
+class IsAuthenticatedCustom(BasePermission):
+    """
+    Allows access only to authenticated users.
+    """
+    def has_permission(self, request, view):
+        try:
+            authorization_header = request.META.get('HTTP_AUTHORIZATION')
+            if not authorization_header:
+                return False
+
+            token = authorization_header.split(' ')[1]
+            payload = jwt.decode(
+                token, settings.SECRET_KEY, algorithms=['HS256'])
+            user_id = payload.get('user_id')
+            if not user_id:
+                return False
+            
+            request.user = Users.objects.get(uid=user_id)
+            return True
+        except:
+            return False
 
 class UsersCreateView(generics.CreateAPIView):
     serializer_class = UsersSerializer
@@ -29,19 +62,49 @@ class UsersCreateView(generics.CreateAPIView):
 
 class UsersLoginView(generics.GenericAPIView):
     serializer_class = UsersLoginSerializer
+    permission_classes = [AllowAny]  # Allow unauthenticated access
+
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             email = serializer.validated_data['institutional_mail']
             password = serializer.validated_data['upassword']
 
-            try:
-                user = Users.objects.get(institutional_mail=email)
-                if check_password(password, user.upassword):
-                    return Response({"message": "Login Exitoso"}, status=status.HTTP_200_OK)
-                else:
-                    return Response({"error": "Contraseña incorrecta"}, status=status.HTTP_401_UNAUTHORIZED)
-            except Users.DoesNotExist:
-                return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+            user = Users.objects.filter(institutional_mail=email).first()
+            if user is not None and check_password(password, user.upassword):
+                refresh = RefreshToken.for_user(user)
+                return Response({
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token),
+                    'message': "Login Exitoso"
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "Credenciales invalidas"}, status=status.HTTP_401_UNAUTHORIZED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class UsersDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Users.objects.all()
+    serializer_class = UsersSerializer
+    lookup_field = 'pk'  # Usa 'pk' para buscar por primary key (uid)
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+class ApplyToBeDriverView(APIView):
+    #authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticatedCustom]
+
+    def patch(self, request, uid):
+        try:
+            #user = get_object_or_404(Users, pk=uid)
+            users = get_object_or_404(Users, uid=uid)
+
+            # Update driver_state
+            users.driver_state = 'PENDIENTE'
+            users.save()
+
+            return Response({
+                "message": "Application submitted."
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

@@ -12,6 +12,18 @@ class Users(models.Model):
         (STATE_REJECTED, 'Rechazado'),
     ]
 
+    DRIVER_STATE_NONE = 'ninguno'
+    DRIVER_STATE_APPROVED = 'aprobado'
+    DRIVER_STATE_REJECTED = 'rechazado'
+    DRIVER_STATE_PENDING = 'pendiente'
+
+    DRIVER_STATE_CHOICES = [
+        (DRIVER_STATE_NONE, 'ninguno'),
+        (DRIVER_STATE_APPROVED, 'aprobado'),
+        (DRIVER_STATE_REJECTED, 'rechazado'),
+        (DRIVER_STATE_PENDING, 'pendiente'),
+    ]
+
     uid = models.AutoField(primary_key=True)
     full_name = models.CharField(max_length=255)
     user_type = models.CharField(max_length=50)
@@ -34,6 +46,11 @@ class Users(models.Model):
         max_length=50,
         choices=USER_STATE_CHOICES,
         default=STATE_PENDING  # Default to 'pendiente' when a new user is created
+    )
+
+    driver_state = models.CharField(
+        max_length=50,
+        default=DRIVER_STATE_NONE  # Default to 'ninguno' when a new user is created
     )
     
     class Meta:

@@ -5,8 +5,8 @@ from rest_framework import generics, status, views
 from django.shortcuts import get_object_or_404
 from .models import Institution
 from users.models import Users
+from .serializers import InstitutionSerializer, InstitutionDetailSerializer, DriverInfoSerializer
 from users.serializers import UsersSerializer
-from .serializers import InstitutionSerializer, InstitutionDetailSerializer
 from rest_framework.response import Response
 
 
@@ -187,4 +187,24 @@ class InstitutionUsersView(views.APIView):
         institution = get_object_or_404(Institution, pk=institution_id)
         users = Users.objects.filter(institution_id=institution)
         serializer = UsersSerializer(users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class DriverApplicationsListView(generics.ListAPIView):
+    """Lista todas las solicitudes de usuarios que quieren convertirse en conductores para una institución específica."""
+    serializer_class = DriverInfoSerializer
+
+    def get_queryset(self):
+        institution_id = self.kwargs['institution_id']
+        institution = get_object_or_404(Institution, pk=institution_id)
+        queryset = Users.objects.filter(institution=institution, driver_state='PENDIENTE')
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            return Response({"message": "No hay solicitudes de conductor pendientes."}, status=status.HTTP_200_OK)
+
+        serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

@@ -38,6 +38,29 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# filepath: c:\Users\juanr\OneDrive\Escritorio\ugueeR\server\config\settings.py
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+}
+
+SIMPLE_JWT = {
+    'USER_ID_FIELD': 'uid',
+}
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': 'Token JWT. Ejemplo: **Bearer &lt;tu_token&gt;**'
+        }
+    },
+}
+
 
 # Application definition
 
@@ -48,6 +71,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework_simplejwt',
     'rest_framework',
     'corsheaders',
     'institutions',

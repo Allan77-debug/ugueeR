@@ -45,3 +45,8 @@ class UsersSerializer(serializers.ModelSerializer):
 class UsersLoginSerializer(serializers.Serializer):
     institutional_mail = serializers.EmailField()
     upassword = serializers.CharField(write_only=True)
+
+class DriverApplicationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Users
+        fields = ['driver_state'] 
