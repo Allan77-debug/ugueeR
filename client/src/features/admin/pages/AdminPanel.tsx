@@ -125,7 +125,7 @@ const AdminPanel = () => {
 
   const handleApproveInstitution = async (id: string, role: string) => {
     try {
-      await axios.post(`http://localhost:8000/api/institutions/${id}/approve/`, 
+      await axios.post(`http://localhost:8000/api/admins/${id}/approve/`, 
         { role }, // Añadimos el rol seleccionado
         {
           headers: {
@@ -146,7 +146,7 @@ const AdminPanel = () => {
 
   const handleRejectInstitution = async (id: string, reason: string) => {
     try {
-      await axios.post(`http://localhost:8000/api/institutions/${id}/reject/`, 
+      await axios.post(`http://localhost:8000/api/admins/${id}/reject/`, 
         { reason }, 
         {
           headers: {

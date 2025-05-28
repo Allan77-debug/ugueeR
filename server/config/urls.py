@@ -11,8 +11,8 @@ from rest_framework.authentication import BasicAuthentication # Import BasicAuth
 
 schema_view = get_schema_view(
    openapi.Info(
-      title="UGree API",
-      default_version='v1',
+      title="Uway API",
+      default_version='v3',
       description="Test description",
       terms_of_service="https://www.google.com/policies/terms/",
       contact=openapi.Contact(email="contact@snippets.local"),

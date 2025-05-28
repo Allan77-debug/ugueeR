@@ -47,46 +47,6 @@ class InstitutionListView(generics.ListAPIView):
             
         return queryset.order_by('-application_date')
 
-class InstitutionApproveView(views.APIView):
-    """Vista para aprobar una institución"""
-    
-    def post(self, request, institution_id, *args, **kwargs):
-        role = request.data.get('role', 'Universidad')
-        institution = get_object_or_404(Institution, id_institution=institution_id)
-        
-        # Actualizar estado a aprobado
-        institution.status = 'aprobada'
-        institution.validate_state = True
-        institution.role = role  # Guardar el rol asignado
-        institution.save()
-        
-        return Response(
-            {"message": f"La institución {institution.official_name} ha sido aprobada correctamente."},
-            status=status.HTTP_200_OK
-        )
-class InstitutionRejectView(views.APIView):
-
-    """Vista para rechazar una institución"""
-    
-    def post(self, request, institution_id, *args, **kwargs):
-        reason = request.data.get('reason', '')
-        if not reason:
-            return Response(
-                {"error": "Debe proporcionar un motivo para el rechazo."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-            
-        institution = get_object_or_404(Institution, id_institution=institution_id)
-        
-        # Actualizar estado a rechazado
-        institution.status = 'rechazada'
-        institution.rejection_reason = reason
-        institution.save()
-        
-        return Response(
-            {"message": f"La institución {institution.official_name} ha sido rechazada."},
-            status=status.HTTP_200_OK
-        )
 
 class InstitutionApproveUser(views.APIView):
     """Vista para aceptar un usuario en una institución"""
