@@ -15,6 +15,7 @@ class InstitutionSerializer(serializers.ModelSerializer):
             "address",
             "city",
             "istate",
+            "ipassword",
             "postal_code",
             "logo",
             "primary_color",
@@ -59,3 +60,8 @@ class InstitutionDetailSerializer(serializers.ModelSerializer):
                 "application_date",
                 "rejection_reason",
             ]
+
+
+class InstitutionLoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    ipassword = serializers.CharField(write_only=True)
