@@ -53,40 +53,23 @@ const InstitutionRegisterPage = () => {
 
   const onSubmit = async (data: FormValues) => {
     const form = new FormData();
-    const fieldsName = [
-      "official_name",
-      "short_name",
-      "email",
-      "phone",
-      "address",
-      "city",
-      "istate",
-      "postal_code",
-      "logo",
-      "primary_color",
-      "secondary_color",
-      "ipassword",
-    ];
 
-    const formValuesNames = [
-      "nombreOficial",
-      "nombreCorto",
-      "correo",
-      "telefono",
-      "direccion",
-      "ciudad",
-      "estado",
-      "codigoPostal",
-      "logo",
-      "colorPrincipal",
-      "colorSecundario",
-      "contrasena",
-    ];
-    fieldsName.forEach((name, index) => {
-      form.append(name, data[formValuesNames[index]]);
-    });
+    form.append("official_name", data.nombreOficial);
+    form.append("short_name", data.nombreCorto);
+    form.append("email", data.correo);
+    form.append("phone", data.telefono);
+    form.append("address", data.direccion);
+    form.append("city", data.ciudad);
+    form.append("istate", data.estado);
+    form.append("postal_code", data.codigoPostal);
+    form.append("primary_color", data.colorPrincipal);
+    form.append("secondary_color", data.colorSecundario);
+    form.append("ipassword", data.contrasena); 
 
-    if (data.logo) form.append("logo", data.logo);
+    // Añadir el logo solo si existe
+    if (data.logo) {
+      form.append("logo", data.logo);
+    }
 
     try {
       const response = await axios.post(
@@ -104,17 +87,26 @@ const InstitutionRegisterPage = () => {
         duration: 3000,
       });
 
+      
       setTimeout(() => {
-        location.reload();
+        window.location.href = "/login";
       }, 3000);
     } catch (error) {
       if (axios.isAxiosError(error)) {
+        // Manejo de errores específicos de Axios
+        toast.error(
+          `Error en el registro: ${
+            error.response?.data?.detail || error.message
+          }`,
+          { duration: 5000 }
+        );
         console.error(
           "Error en el registro:",
           error.response?.data || error.message
         );
       } else {
         console.error("Error inesperado:", error);
+        toast.error("Ha ocurrido un error inesperado", { duration: 5000 });
       }
     }
   };

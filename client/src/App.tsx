@@ -7,6 +7,7 @@ import UserDashboard from "./features/users/pages/UserDashboard"
 import AdminPanel from "./features/admin/pages/AdminPanel"
 import Login from "./features/auth/pages/LoginPage"
 import LoginAdmin from "./features/auth/pages/LoginAdmin"
+import InstitutionDashboard from "./features/institution/pages/InstitutionDashboard"
 
 // Componente para proteger rutas
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -26,6 +27,17 @@ const UserProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     // Para desarrollo permitimos el acceso sin token
     // En produccion toca descomentar la lnea:
     // return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>
+}
+
+// Componente para proteger rutas de institución
+const InstitutionProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const isAuthenticated = localStorage.getItem("institutionToken") !== null
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />
   }
 
   return <>{children}</>
@@ -52,6 +64,15 @@ function App() {
           }
         />
         
+        {/* Rutas protegidas de institución */}
+        <Route
+          path="/institucion-dashboard"
+          element={
+            <InstitutionProtectedRoute>
+              <InstitutionDashboard />
+            </InstitutionProtectedRoute>
+          }
+        />
         {/* Rutas protegidas */}
         <Route 
           path="/admin" 
