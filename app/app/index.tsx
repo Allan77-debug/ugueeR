@@ -1,123 +1,137 @@
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import MaskedView from '@react-native-masked-view/masked-view'; 
-import { ThemedText } from '@/components/ThemedText';
-import { LinearGradient } from 'expo-linear-gradient';
-import { ThemedView } from '@/components/ThemedView';
 import React from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, StatusBar, SafeAreaView } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient'; // Necesitarás instalar expo-linear-gradient
 
 export default function HomeScreen() {
   return (
-   <ThemedView style={styles.container}>
-      {/* <Image
-        source={require('@/assets/images/firefit-logo.png')} // Make sure this image exists
-        style={styles.logo}
-      /> */}
-
-       <MaskedView
-        style={styles.maskedView}
-        maskElement={
-          <View style={styles.maskElementView}>
-            {/* This Text component forms the mask. Its color should be opaque. */}
-            <ThemedText style={styles.logoText}>Uway</ThemedText>
-          </View>
-        }
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor="#6A11CB" />
+      <LinearGradient
+        colors={['#FFFF', '#6A11CB']} // Un gradiente púrpura similar al de Firefit
+        style={styles.container}
       >
-        {/* This is the gradient that will be visible through the mask */}
-        <LinearGradient
-          colors={['#a393eb', '#ffffff']} // Gradient colors from your CSS
-          start={{ x: 0, y: 0.5 }} // Corresponds to 'to right'
-          end={{ x: 1, y: 0.5 }}   // Corresponds to 'to right'
-          style={styles.gradient}
-        />
-      </MaskedView>
+        {/* Logo Simulado (Estilo Firefit) */}
+        <View style={styles.logoContainer}>
+          <View style={styles.logoIcon}>
+            {/* Podrías poner un componente <Image> aquí si tuvieras un logo */}
+            <Text style={styles.logoIconText}>U</Text>
+          </View>
+          <Text style={styles.appName}>Uway</Text>
+        </View>
 
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={[styles.button, styles.signUpButton]}>
-          <ThemedText style={styles.signUpButtonText}>Registrarse</ThemedText>
+        <Text style={styles.tagline}>Tu viaje seguro y confiable</Text>
+        <Text style={styles.subtitle}>
+          Regístrate y accede a un transporte validado por instituciones.
+        </Text>
+
+        <TouchableOpacity style={styles.mainButton} onPress={() => console.log('Empieza ahora presionado')}>
+          <Text style={styles.mainButtonText}>Iniciar Sesión</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.button, styles.loginButton]}>
-          <ThemedText style={styles.loginButtonText}>Iniciar Sesión</ThemedText>
+
+        <TouchableOpacity style={styles.secondaryButton} onPress={() => console.log('Registro Institución presionado')}>
+          <Text style={styles.secondaryButtonText}>Registro</Text>
         </TouchableOpacity>
-      </View>
 
-      <TouchableOpacity>
-        <ThemedText style={styles.forgotPasswordText}>Forgot your password?</ThemedText>
-      </TouchableOpacity>
-    </ThemedView>
-
+      </LinearGradient>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#6A11CB', // Color de fondo para el área segura (notch, etc.)
+  },
   container: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#6a5acd', // A purple shade, adjust as needed
-    paddingHorizontal: 20,
+    paddingHorizontal: 30,
   },
- maskedView: {
-    // Height should be enough to contain the text.
-    // You might need to adjust this based on the font size and line height.
-    // Using fontSize from logoText as a base.
-    height: 32 * 1.5, // fontSize * approximate line-height multiplier
-    alignSelf: 'stretch', // Make MaskedView take available width for textAlign to work
-    marginBottom: 8, // This was previously in styles.logo
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 30,
   },
-  maskElementView: {
-    // This view wrapper helps ensure the mask is laid out correctly
-    flex: 1,
-    backgroundColor: 'transparent', // Crucial for the mask
+  logoIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 15,
+    backgroundColor: '#6a5acd', // Color coral/naranja como el logo de Firefit
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 10,
+    // Sombra sutil similar a la de Firefit
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
-  logoText: { // Styles for the text that will become the mask
-    // margin: 0, // From CSS, often default or handled by layout
-    fontSize: 32, // Corresponds to 1.8rem (approx. 29px, 32 is used here)
-    fontWeight: 'bold', // From CSS
-    textAlign: 'center', // From original styles.logo
-    color: 'black', // Mask text needs to be opaque. This color won't be visible in the final result.
-    backgroundColor: 'transparent', // Ensure text component itself has no background interfering with mask
+  logoIconText: { // Si decides poner texto dentro del ícono
+    fontSize: 40,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
   },
-  gradient: {
-    flex: 1, // Gradient fills the MaskedView
-  },
-  subtitleText: {
-    fontSize: 16,
-    color: '#E0E0E0', // Light gray
-    marginBottom: 50,
+  appName: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
     textAlign: 'center',
   },
-  buttonContainer: {
-    width: '90%', // Adjust width as needed
-    marginBottom: 20,
-  },
-  button: {
-    paddingVertical: 16,
-    borderRadius: 30, // For rounded corners
-    alignItems: 'center',
-    justifyContent: 'center',
+  tagline: {
+    fontSize: 20,
+    color: '#FFFFFF',
+    textAlign: 'center',
     marginBottom: 15,
+    fontWeight: '600',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)', // Un blanco ligeramente transparente
+    textAlign: 'center',
+    marginBottom: 40,
+    paddingHorizontal: 20,
+  },
+  mainButton: {
+    backgroundColor: '#FFFF', // Color coral/naranja de Firefit
+    paddingVertical: 18,
+    paddingHorizontal: 60,
+    borderRadius: 30,
+    marginBottom: 20,
+    // Sombra sutil
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
     width: '100%',
+    maxWidth: 300, // Limitar el ancho máximo del botón
+    alignItems: 'center',
   },
-  signUpButton: {
-    backgroundColor: '#FFFFFF', // Coral/Orange-red color
-  },
-  signUpButtonText: {
-    color: '#4B3F72',
+  mainButtonText: {
     fontSize: 18,
+    color: '#4A4A4A',
     fontWeight: 'bold',
   },
-  loginButton: {
-    backgroundColor: '#FFFFFF',
+  secondaryButton: {
+    backgroundColor: '#FFFFFF', // Botón blanco como el de "Login" en Firefit
+    paddingVertical: 18,
+    paddingHorizontal: 60,
+    borderRadius: 30,
+    // Sombra sutil
+        maxWidth: 300, // Limitar el ancho máximo del botón
+
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 4,
+    width: '100%',
+    alignItems: 'center',
   },
-  loginButtonText: {
-    color: '#4B3F72', // Match with background or a darker shade
+  secondaryButtonText: {
     fontSize: 18,
+    color: '#4A4A4A', // Texto oscuro para el botón blanco
     fontWeight: 'bold',
-  },
-  forgotPasswordText: {
-    color: '#E0E0E0', // Light gray
-    fontSize: 14,
   },
 });
