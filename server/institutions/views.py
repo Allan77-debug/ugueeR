@@ -2,10 +2,11 @@ from django.shortcuts import render
 
 # Create your views here.
 from rest_framework import generics, status, views
+from django.contrib.auth.hashers import check_password
 from django.shortcuts import get_object_or_404
 from .models import Institution
 from users.models import Users
-from .serializers import InstitutionSerializer, InstitutionDetailSerializer, DriverInfoSerializer
+from .serializers import InstitutionSerializer, InstitutionDetailSerializer, DriverInfoSerializer, InstitutionLoginSerializer
 from users.serializers import UsersSerializer
 from rest_framework.response import Response
 
@@ -188,6 +189,26 @@ class InstitutionUsersView(views.APIView):
         users = Users.objects.filter(institution_id=institution)
         serializer = UsersSerializer(users, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+class InstitutionLoginView(generics.GenericAPIView):
+    serializer_class = InstitutionLoginSerializer
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            password = serializer.validated_data['ipassword']
+
+            try:
+                institution = Institution.objects.get(email=email)
+                if check_password(password, institution.ipassword):
+                    return Response({"message": "Login Exitoso"}, status=status.HTTP_200_OK)
+                else:
+                    return Response({"error": "Contraseña incorrecta"}, status=status.HTTP_401_UNAUTHORIZED)
+            except Institution.DoesNotExist:
+                return Response({"error": "Institucion no encontrada"}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class DriverApplicationsListView(generics.ListAPIView):

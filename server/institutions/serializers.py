@@ -7,7 +7,23 @@ from django.contrib.auth.hashers import make_password
 class InstitutionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Institution
-        fields = '__all__'
+        fields = [
+            "id_institution",
+            "official_name",
+            "short_name",
+            "email",
+            "phone",
+            "address",
+            "city",
+            "istate",
+            "ipassword",
+            "postal_code",
+            "logo",
+            "primary_color",
+            "secondary_color",
+            "status",
+            "application_date",
+        ]
 
     def validate_email(self, value):
         if Institution.objects.filter(email=value).exists():
@@ -26,25 +42,29 @@ class InstitutionSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 class InstitutionDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Institution
-        fields = [
-            "id_institution",
-            "official_name",
-            "short_name",
-            "email",
-            "phone",
-            "address",
-            "city",
-            "istate",
-            "postal_code",
-            "logo",
-            "primary_color",
-            "secondary_color",
-            "status",
-            "application_date",
-            "rejection_reason",
-        ]
+        class Meta:
+            model = Institution
+            fields = [
+                "id_institution",
+                "official_name",
+                "short_name",
+                "email",
+                "phone",
+                "address",
+                "city",
+                "istate",
+                "postal_code",
+                "logo",
+                "primary_color",
+                "secondary_color",
+                "status",
+                "application_date",
+                "rejection_reason",
+            ]
+
+class InstitutionLoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    ipassword = serializers.CharField(write_only=True)
 
 class DriverInfoSerializer(serializers.ModelSerializer):
     class Meta:

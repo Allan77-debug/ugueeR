@@ -7,7 +7,8 @@ from .views import (
     InstitutionApproveUser,
     InstitutionRejectUser,
     InstitutionUsersView,
-    DriverApplicationsListView,  # Make sure to import this
+    InstitutionLoginView,
+    DriverApplicationsListView,
 )
 
 urlpatterns = [
@@ -17,6 +18,7 @@ urlpatterns = [
     path('<int:institution_id>/reject/', InstitutionRejectView.as_view(), name='institution-reject'),
     path('approveUser/<int:institution_id>/<int:uid>/', InstitutionApproveUser.as_view(), name='institution-approve-user'),
     path('rejectUser/<int:institution_id>/<int:uid>/', InstitutionRejectUser.as_view(), name='institution-reject-user'),
-    path('listUser/<int:institution_id>/users/', InstitutionUsersView.as_view(), name='institution-users'),
-    path('<int:institution_id>/driver-applications/', DriverApplicationsListView.as_view(), name='driver-applications-list'),  # URL for listing driver applications
+    path('listUser/<int:institution_id>/users/', InstitutionUsersView.as_view(), name='institution-users')
+    path('login/', InstitutionLoginView.as_view(), name ='institution-login'),
+    path('<int:institution_id>/driver-applications/', DriverApplicationsListView.as_view(), name='driver-applications-list'),
 ]
