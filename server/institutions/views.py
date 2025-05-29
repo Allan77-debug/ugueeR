@@ -209,13 +209,13 @@ class ApproveDriverView(views.APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if user.driver_state != "PENDIENTE":
+        if user.driver_state != "pendiente":
             return Response(
                 {"error": "Este usuario no tiene una solicitud de conductor pendiente."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        user.driver_state = "APROBADO"
+        user.driver_state = "aprobado"
         user.save()
 
         # Create a Driver instance
@@ -239,13 +239,13 @@ class RejectDriverView(views.APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if user.driver_state != "PENDIENTE":
+        if user.driver_state != "pendiente":
             return Response(
                 {"error": "Este usuario no tiene una solicitud de conductor pendiente."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        user.driver_state = "RECHAZADO"
+        user.driver_state = "rechazado"
         user.save()
 
         return Response(

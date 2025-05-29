@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from users.models import Users
 
 class Driver(models.Model):
@@ -19,7 +20,6 @@ class Driver(models.Model):
         choices=VALIDATE_STATE_CHOICES,
     )
     created_at = models.DateTimeField(auto_now_add=True)
-
     class Meta:
         db_table = 'driver'
         constraints = [
