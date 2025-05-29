@@ -93,18 +93,23 @@ class UsersDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
 
 class ApplyToBeDriverView(APIView):
-    """ Vista para que un usuario solicite ser conductor. """
+    """Vista para que un usuario solicite ser conductor."""
     permission_classes = [IsAuthenticatedCustom]
 
     def patch(self, request, uid):
         try:
             users = get_object_or_404(Users, uid=uid)
 
-            users.driver_state = 'PENDIENTE'
+            if users.user_state != Users.STATE_APPROVED:
+                return Response({
+                    "error": "Solo los usuarios aprobados pueden aplicar para ser conductor."
+                }, status=status.HTTP_403_FORBIDDEN)
+
+            users.driver_state = Users.DRIVER_STATE_PENDING
             users.save()
 
             return Response({
-                "message": "Application submitted."
+                "message": "Aplicación para ser conductor enviada correctamente."
             }, status=status.HTTP_200_OK)
 
         except Exception as e:
