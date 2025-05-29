@@ -50,6 +50,8 @@ SIMPLE_JWT = {
     'USER_ID_FIELD': 'uid',
 }
 
+
+
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
         'Bearer': {

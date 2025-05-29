@@ -1,17 +1,17 @@
 from django.shortcuts import render
-
-# Create your views here.
 from rest_framework import generics, status, views
 from django.contrib.auth.hashers import check_password
 from django.shortcuts import get_object_or_404
 from .models import Institution
 from users.models import Users
+from driver.models import Driver  #
 from .serializers import InstitutionSerializer, InstitutionDetailSerializer, DriverInfoSerializer, InstitutionLoginSerializer
 from users.serializers import UsersSerializer
 from rest_framework.response import Response
 
 
 class InstitutionCreateView(generics.CreateAPIView):
+    """Vista para crear una institución.""" 
     queryset = Institution.objects.all()
     serializer_class = InstitutionSerializer
     
@@ -38,7 +38,6 @@ class InstitutionListView(generics.ListAPIView):
     serializer_class = InstitutionDetailSerializer
     
     def get_queryset(self):
-        # Filtrar por estado si se proporciona en la consulta
         status_filter = self.request.query_params.get('status', None)
         queryset = Institution.objects.all()
         
@@ -80,7 +79,7 @@ class InstitutionApproveUser(views.APIView):
             return Response(
                 {"message": f"El usuario {user_to_approve.full_name} está registrado como pendiente para la institución '{user_to_approve.institution.official_name}', "
                             f"pero se está intentando aprobar desde '{institution_from_url.official_name}'. Esta acción no está permitida."},
-                status=status.HTTP_403_FORBIDDEN # Or HTTP_400_BAD_REQUEST
+                status=status.HTTP_403_FORBIDDEN 
             )
 
 
@@ -130,10 +129,10 @@ class InstitutionRejectUser(views.APIView):
             return Response(
                 {"message": f"El usuario {user_to_reject.full_name} está registrado como pendiente para la institución '{user_to_reject.institution.official_name}', "
                             f"pero se está intentando rechazar desde '{institution_from_url.official_name}'. Esta acción no está permitida."},
-                status=status.HTTP_403_FORBIDDEN # Or HTTP_400_BAD_REQUEST
+                status=status.HTTP_403_FORBIDDEN 
             )
 
-        user_to_reject.institution = institution_from_url # Confirm or set the institution
+        user_to_reject.institution = institution_from_url 
         user_to_reject.user_state = Users.STATE_REJECTED
         user_to_reject.save()
 
@@ -152,6 +151,7 @@ class InstitutionUsersView(views.APIView):
     
 
 class InstitutionLoginView(generics.GenericAPIView):
+    """Vista para el inicio de sesión de instituciones."""
     serializer_class = InstitutionLoginSerializer
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -189,3 +189,60 @@ class DriverApplicationsListView(generics.ListAPIView):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class ApproveDriverView(views.APIView):
+    """Vista para aprobar una solicitud de conductor."""
+
+    def post(self, request, institution_id, uid):
+        institution = get_object_or_404(Institution, pk=institution_id)
+        user = get_object_or_404(Users, uid=uid)
+
+        if user.institution != institution:
+            return Response(
+                {"error": "Este usuario no pertenece a esta institución."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if user.driver_state != "PENDIENTE":
+            return Response(
+                {"error": "Este usuario no tiene una solicitud de conductor pendiente."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user.driver_state = "APROBADO"
+        user.save()
+
+        # Create a Driver instance
+        Driver.objects.create(user=user, validate_state='approved')
+
+        return Response(
+            {"message": f"La solicitud de conductor de {user.full_name} ha sido aprobada."},
+            status=status.HTTP_200_OK,
+        )
+
+class RejectDriverView(views.APIView):
+    """Vista para rechazar una solicitud de conductor."""
+
+    def post(self, request, institution_id, uid):
+        institution = get_object_or_404(Institution, pk=institution_id)
+        user = get_object_or_404(Users, uid=uid)
+
+        if user.institution != institution:
+            return Response(
+                {"error": "Este usuario no pertenece a esta institución."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if user.driver_state != "PENDIENTE":
+            return Response(
+                {"error": "Este usuario no tiene una solicitud de conductor pendiente."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user.driver_state = "RECHAZADO"
+        user.save()
+
+        return Response(
+            {"message": f"La solicitud de conductor de {user.full_name} ha sido rechazada."},
+            status=status.HTTP_200_OK,
+        )

@@ -9,8 +9,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny, BasePermission
 from rest_framework.authentication import TokenAuthentication
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
-from institutions.models import Institution  # Import Institution model
-from institutions.serializers import DriverInfoSerializer  # Import the serializer
+from institutions.models import Institution  
+from institutions.serializers import DriverInfoSerializer 
 from django.contrib.auth.hashers import check_password
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -62,7 +62,7 @@ class UsersCreateView(generics.CreateAPIView):
 
 class UsersLoginView(generics.GenericAPIView):
     serializer_class = UsersLoginSerializer
-    permission_classes = [AllowAny]  # Allow unauthenticated access
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -82,23 +82,21 @@ class UsersLoginView(generics.GenericAPIView):
                 return Response({"error": "Credenciales invalidas"}, status=status.HTTP_401_UNAUTHORIZED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
 class UsersDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Users.objects.all()
     serializer_class = UsersSerializer
-    lookup_field = 'pk'  # Usa 'pk' para buscar por primary key (uid)
+    lookup_field = 'pk'  
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
 class ApplyToBeDriverView(APIView):
-    #authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticatedCustom]
 
     def patch(self, request, uid):
         try:
-            #user = get_object_or_404(Users, pk=uid)
             users = get_object_or_404(Users, uid=uid)
 
-            # Update driver_state
             users.driver_state = 'PENDIENTE'
             users.save()
 
