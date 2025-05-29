@@ -40,6 +40,7 @@ class IsAuthenticatedCustom(BasePermission):
             return False
 
 class UsersCreateView(generics.CreateAPIView):
+    """ Vista para registrar un nuevo usuario. """
     serializer_class = UsersSerializer
     
     def create(self, request, *args, **kwargs):
@@ -61,6 +62,7 @@ class UsersCreateView(generics.CreateAPIView):
             )
 
 class UsersLoginView(generics.GenericAPIView):
+    """ Vista para el inicio de sesión de usuarios. """
     serializer_class = UsersLoginSerializer
     permission_classes = [AllowAny]
 
@@ -82,7 +84,7 @@ class UsersLoginView(generics.GenericAPIView):
                 return Response({"error": "Credenciales invalidas"}, status=status.HTTP_401_UNAUTHORIZED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
 class UsersDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Users.objects.all()
     serializer_class = UsersSerializer
@@ -91,6 +93,7 @@ class UsersDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
 
 class ApplyToBeDriverView(APIView):
+    """ Vista para que un usuario solicite ser conductor. """
     permission_classes = [IsAuthenticatedCustom]
 
     def patch(self, request, uid):
