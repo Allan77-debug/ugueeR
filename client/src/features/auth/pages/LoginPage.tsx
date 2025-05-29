@@ -81,10 +81,10 @@ const LoginPage: React.FC = () => {
         
         // Obtener los datos de la institución del formulario (o de la respuesta si están disponibles)
         const institutionData = {
-          id_institution: response.data.institution?.id_institution || 1, // Ajusta según tu respuesta
-          official_name: response.data.institution?.official_name || registerData.email.split('@')[1] || "Institución",
-          short_name: response.data.institution?.short_name || "INST",
-          email: registerData.email
+          id_institution: response.data.id_institution,
+          official_name: response.data.official_name,
+          short_name: response.data.short_name,
+          email: response.data.email
         }
         
         localStorage.setItem("institutionData", JSON.stringify(institutionData))

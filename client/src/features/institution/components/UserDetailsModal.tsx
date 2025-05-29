@@ -79,8 +79,8 @@ const UserDetailsModal = ({ user, onClose, onApprove, onReject }: UserDetailsMod
           <div className="user-info">
             <h3>{user.full_name}</h3>
             <p>{user.institutional_mail}</p>
-            <span className={`status-badge ${user.status}`}>
-              {user.status === "pendiente" ? "Pendiente" : user.status === "aprobado" ? "Aprobado" : "Rechazado"}
+            <span className={`status-badge ${user.user_state}`}>
+              {user.user_state === "pendiente" ? "Pendiente" : user.user_state === "aprobado" ? "Aprobado" : "Rechazado"}
             </span>
           </div>
         </div>
@@ -98,7 +98,7 @@ const UserDetailsModal = ({ user, onClose, onApprove, onReject }: UserDetailsMod
           >
             Documentos
           </button>
-          {user.status === "pendiente" && (
+          {user.user_state === "pendiente" && (
             <button
               className={`modal-tab ${activeTab === "decision" ? "active" : ""}`}
               onClick={() => setActiveTab("decision")}
@@ -215,7 +215,7 @@ const UserDetailsModal = ({ user, onClose, onApprove, onReject }: UserDetailsMod
             </div>
           )}
 
-          {activeTab === "decision" && user.status === "pendiente" && (
+          {activeTab === "decision" && user.user_state === "pendiente" && (
             <div className="tab-content">
               <div className="decision-section">
                 <div className="approve-section">

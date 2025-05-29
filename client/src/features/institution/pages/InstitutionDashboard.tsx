@@ -18,7 +18,7 @@ export interface InstitutionUser {
   direction: string
   uphone: string
   institutional_carne?: string
-  status: "pendiente" | "aprobado" | "rechazado"
+  user_state: "pendiente" | "aprobado" | "rechazado"
   registration_date: string
 }
 
@@ -83,10 +83,10 @@ const InstitutionDashboard = () => {
         },
       )
 
-      // Asegura que todos los usuarios tengan la propiedad 'status'
-      const apiUsers = response.data.map((user: any) => ({
+      // Asegura que todos los usuarios tengan la propiedad 'user_state'
+      const apiUsers = response.data.map((user: InstitutionUser) => ({
         ...user,
-        status: user.status || user.user_state, // Compatibilidad
+        user_state: user.user_state || user.user_state, // Compatibilidad
       }))
       setUsers(apiUsers)
     } catch (err) {
@@ -117,9 +117,9 @@ const InstitutionDashboard = () => {
     const currentUsers = getCurrentTabUsers()
 
     return {
-      pending: currentUsers.filter((u) => u.status === "pendiente").length,
-      approved: currentUsers.filter((u) => u.status === "aprobado").length,
-      rejected: currentUsers.filter((u) => u.status === "rechazado").length,
+      pending: currentUsers.filter((u) => u.user_state === "pendiente").length,
+      approved: currentUsers.filter((u) => u.user_state === "aprobado").length,
+      rejected: currentUsers.filter((u) => u.user_state === "rechazado").length,
       total: currentUsers.length,
     }
   }
@@ -130,7 +130,7 @@ const InstitutionDashboard = () => {
 
     // Filtrar por estado
     if (activeFilter !== "all") {
-      filtered = filtered.filter((user) => user.status === activeFilter)
+      filtered = filtered.filter((user) => user.user_state === activeFilter)
     }
 
     // Filtrar por búsqueda
@@ -175,7 +175,7 @@ const InstitutionDashboard = () => {
       )
 
       // Actualizar el estado local
-      setUsers(users.map((user) => (user.uid === uid ? { ...user, status: "aprobado" as const } : user)))
+      setUsers(users.map((user) => (user.uid === uid ? { ...user, user_state: "aprobado" as const } : user)))
 
       setSelectedUser(null)
       alert("Usuario aprobado exitosamente")
@@ -183,7 +183,7 @@ const InstitutionDashboard = () => {
       console.error("Error al aprobar usuario:", error)
 
       // Para pruebas, simular aprobación exitosa
-      setUsers(users.map((user) => (user.uid === uid ? { ...user, status: "aprobado" as const } : user)))
+      setUsers(users.map((user) => (user.uid === uid ? { ...user, user_state: "aprobado" as const } : user)))
       setSelectedUser(null)
       alert("Usuario aprobado exitosamente")
     }
@@ -205,7 +205,7 @@ const InstitutionDashboard = () => {
       )
 
       // Actualizar el estado local
-      setUsers(users.map((user) => (user.uid === uid ? { ...user, status: "rechazado" as const } : user)))
+      setUsers(users.map((user) => (user.uid === uid ? { ...user, user_state: "rechazado" as const } : user)))
 
       setSelectedUser(null)
       alert("Usuario rechazado exitosamente")
@@ -213,7 +213,7 @@ const InstitutionDashboard = () => {
       console.error("Error al rechazar usuario:", error)
 
       // Para pruebas, simular rechazo exitoso
-      setUsers(users.map((user) => (user.uid === uid ? { ...user, status: "rechazado" as const } : user)))
+      setUsers(users.map((user) => (user.uid === uid ? { ...user, user_state: "rechazado" as const } : user)))
       setSelectedUser(null)
       alert("Usuario rechazado exitosamente")
     }

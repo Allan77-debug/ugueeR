@@ -162,7 +162,13 @@ class InstitutionLoginView(generics.GenericAPIView):
             try:
                 institution = Institution.objects.get(email=email)
                 if check_password(password, institution.ipassword):
-                    return Response({"message": "Login Exitoso"}, status=status.HTTP_200_OK)
+                    return Response({
+                        "message": "Login Exitoso",
+                        "id_institution": institution.id_institution,
+                        "official_name": institution.official_name,
+                        "short_name": institution.short_name,
+                        "email": institution.email,
+                    }, status=status.HTTP_200_OK)
                 else:
                     return Response({"error": "Contraseña incorrecta"}, status=status.HTTP_401_UNAUTHORIZED)
             except Institution.DoesNotExist:
