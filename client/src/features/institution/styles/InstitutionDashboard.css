@@ -1,38 +1,82 @@
 /* Estilos generales del dashboard de institución */
 .institution-dashboard {
+  display: flex;
   min-height: 100vh;
   background-color: #f8f9fa;
 }
 
-/* Header del dashboard */
-.dashboard-header {
+/* Sidebar */
+.dashboard-sidebar {
+  width: 280px;
   background-color: white;
-  border-bottom: 1px solid #e9ecef;
-  padding: 1.5rem 2rem;
-}
-
-.header-content {
+  border-right: 1px solid #e9ecef;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 1200px;
-  margin: 0 auto;
+  flex-direction: column;
+  height: 100vh;
+  position: sticky;
+  top: 0;
 }
 
-.institution-info h1 {
+.sidebar-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.sidebar-header .institution-info h2 {
   margin: 0;
   color: #6a5acd;
-  font-size: 1.75rem;
+  font-size: 1.5rem;
 }
 
-.institution-info p {
+.sidebar-header .institution-info p {
   margin: 0.25rem 0 0;
   color: #6c757d;
+  font-size: 0.875rem;
+}
+
+.sidebar-nav {
+  padding: 1.5rem 0;
+  flex-grow: 1;
+}
+
+.nav-button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  background: none;
+  border: none;
+  color: #495057;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
   font-size: 0.9rem;
 }
 
+.nav-button:hover {
+  background-color: #f8f9fa;
+}
+
+.nav-button.active {
+  background-color: #f0f0ff;
+  color: #6a5acd;
+  border-right: 3px solid #6a5acd;
+}
+
+.nav-button svg {
+  margin-right: 0.75rem;
+}
+
+.sidebar-footer {
+  padding: 1.5rem;
+  border-top: 1px solid #e9ecef;
+}
+
 .logout-button {
-  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.75rem 1rem;
   background-color: #dc3545;
   color: white;
   border: none;
@@ -40,17 +84,32 @@
   cursor: pointer;
   font-weight: 500;
   transition: background-color 0.2s;
+  font-size: 0.9rem;
 }
 
 .logout-button:hover {
   background-color: #c82333;
 }
 
+.logout-button svg {
+  margin-right: 0.5rem;
+}
+
 /* Contenido principal */
-.dashboard-main {
-  max-width: 1200px;
-  margin: 0 auto;
+.dashboard-content {
+  flex-grow: 1;
   padding: 2rem;
+  overflow-y: auto;
+}
+
+.content-header {
+  margin-bottom: 2rem;
+}
+
+.content-header h1 {
+  margin: 0;
+  color: #212529;
+  font-size: 1.75rem;
 }
 
 /* Sección de estadísticas */
@@ -105,22 +164,32 @@
 }
 
 .search-container {
+  display: flex;
+  align-items: center;
+  background-color: #f8f9fa;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  padding: 0 0.75rem;
   margin-bottom: 1rem;
+  max-width: 500px;
+}
+
+.search-container svg {
+  color: #6c757d;
+  margin-right: 0.5rem;
 }
 
 .search-input {
-  width: 100%;
-  max-width: 400px;
-  padding: 0.75rem 1rem;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  font-size: 1rem;
+  flex: 1;
+  padding: 0.75rem 0;
+  border: none;
+  background: none;
+  outline: none;
+  font-size: 0.9rem;
 }
 
-.search-input:focus {
-  outline: none;
-  border-color: #6a5acd;
-  box-shadow: 0 0 0 2px rgba(106, 90, 205, 0.2);
+.search-input::placeholder {
+  color: #6c757d;
 }
 
 .filter-tabs {
@@ -216,6 +285,11 @@
 .user-type-badge.employee {
   background-color: #f8d7da;
   color: #721c24;
+}
+
+.user-type-badge.driver {
+  background-color: #e1ecf4;
+  color: #0c5460;
 }
 
 .status-badge {
@@ -611,32 +685,40 @@
 }
 
 /* Responsive */
-@media (max-width: 768px) {
-  .dashboard-main {
-    padding: 1rem;
+@media (max-width: 992px) {
+  .institution-dashboard {
+    flex-direction: column;
   }
 
-  .header-content {
-    flex-direction: column;
-    gap: 1rem;
+  .dashboard-sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+  }
+
+  .sidebar-nav {
+    padding: 1rem;
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .nav-button {
+    flex: 1;
     text-align: center;
+    padding: 0.75rem 0.5rem;
+  }
+
+  .nav-button.active {
+    border-right: none;
+    border-bottom: 3px solid #6a5acd;
+  }
+
+  .dashboard-content {
+    padding: 1rem;
   }
 
   .stats-section {
     grid-template-columns: repeat(2, 1fr);
-  }
-
-  .filter-tabs {
-    justify-content: center;
-  }
-
-  .users-table {
-    font-size: 0.875rem;
-  }
-
-  .users-table th,
-  .users-table td {
-    padding: 0.75rem 0.5rem;
   }
 
   .decision-section {
@@ -646,16 +728,15 @@
   .info-grid {
     grid-template-columns: 1fr;
   }
-
-  .modal-container {
-    margin: 1rem;
-    max-height: calc(100vh - 2rem);
-  }
 }
 
 @media (max-width: 480px) {
   .stats-section {
     grid-template-columns: 1fr;
+  }
+
+  .filter-tabs {
+    justify-content: center;
   }
 
   .users-table {

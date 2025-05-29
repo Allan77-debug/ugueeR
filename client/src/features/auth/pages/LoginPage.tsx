@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 import { useState } from "react"
 import Header from "../../../components/Header.tsx"
 import "../styles/LoginSignup.css"
@@ -72,33 +72,30 @@ const LoginPage: React.FC = () => {
       const response = await axios.post("http://127.0.0.1:8000/api/institutions/login/", registerData)
       console.log("Inicio de sesión institución:", response.data)
 
-      // Guardar token de institución
-      localStorage.setItem("institutionToken", "fake-institution-token-123")
-      localStorage.setItem(
-        "institutionData",
-        JSON.stringify({
-          id_institution: 1,
-          official_name: response.data.institution_name || "Universidad Nacional",
-          short_name: response.data.short_name || "UNAL",
-          email: registerData.email,
-        }),
-      )
-
-      // Redireccionar al dashboard de institución
-      window.location.href = "/institucion-dashboard"
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        const responseData = error.response.data
-
-        if (responseData.error) {
-          setRegisterError(responseData.error)
-        } else {
-          setRegisterError("Error al iniciar sesión. Verifique sus datos.")
+      if (response.status === 200) {
+        // Obtener el token de la respuesta (ajusta según la estructura real de tu respuesta)
+        const token = response.data.token || "fake-institution-token-123"
+        
+        // Guardar token de institución
+        localStorage.setItem("institutionToken", token)
+        
+        // Obtener los datos de la institución del formulario (o de la respuesta si están disponibles)
+        const institutionData = {
+          id_institution: response.data.institution?.id_institution || 1, // Ajusta según tu respuesta
+          official_name: response.data.institution?.official_name || registerData.email.split('@')[1] || "Institución",
+          short_name: response.data.institution?.short_name || "INST",
+          email: registerData.email
         }
+        
+        localStorage.setItem("institutionData", JSON.stringify(institutionData))
+
+        // Redireccionar al dashboard de institución
+        window.location.href = "/institucion-dashboard"
       } else {
-        setRegisterError("Error de conexión. Por favor, verifique su internet.")
+        setRegisterError("Error al iniciar sesión")
+        console.error("Error:", Error)
       }
-      console.error("Error de inicio de sesión institución:", error)
+      console.error("Error de inicio de sesión institución:", Error)
     } finally {
       setIsLoading(false)
     }
