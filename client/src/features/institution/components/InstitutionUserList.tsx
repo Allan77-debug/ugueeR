@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { Eye } from "lucide-react"
 import type { InstitutionUser } from "../pages/InstitutionDashboard"
 
@@ -75,8 +76,8 @@ const InstitutionUserList = ({ users, onViewDetails }: InstitutionUserListProps)
               <td>{user.institutional_mail}</td>
               <td>{user.student_code}</td>
               <td>
-                <span className={`status-badge ${user.status}`}>
-                  {user.status === "pending" ? "Pendiente" : user.status === "approved" ? "Aprobado" : "Rechazado"}
+                <span className={`status-badge ${user.user_state}`}>
+                  {user.user_state === "pendiente" ? "Pendiente" : user.user_state === "aprobado" ? "Aprobado" : "Rechazado"}
                 </span>
               </td>
               <td>{formatDate(user.registration_date)}</td>
