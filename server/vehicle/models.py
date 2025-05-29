@@ -1,9 +1,14 @@
 from django.db import models
+from driver.models import Driver 
 
-# Create your models here.
-class Vechicle (models.Model):
+class Vehicle (models.Model):
     id = models.AutoField(primary_key=True)
-    driver_id = models.IntegerField()
+    driver = models.ForeignKey(  
+        Driver,  
+        on_delete=models.CASCADE,  
+        related_name='vehicles',  
+        db_column='driver_id'  
+    )
     plate = models.CharField(max_length=20, unique=True)
     brand = models.CharField(max_length=100)
     model = models.CharField(max_length=100)
@@ -14,3 +19,9 @@ class Vechicle (models.Model):
     capacity = models.IntegerField()
     class Meta:
         db_table = 'vehicle'
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(category__in=['intermunicipal', 'metropolitano', 'campus']),
+                name='category_check'
+            )
+        ]
