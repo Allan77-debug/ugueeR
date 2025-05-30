@@ -32,6 +32,8 @@ const LoginPage: React.FC = () => {
       console.log("Login:", response.data)
       alert("¡Inicio de sesión exitoso!")
 
+      localStorage.setItem("userData", JSON.stringify(response.data))
+
       window.location.href = "/dashboard"
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {

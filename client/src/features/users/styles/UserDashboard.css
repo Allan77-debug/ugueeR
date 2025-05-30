@@ -121,6 +121,9 @@
 .sidebar-actions {
   padding: 1.5rem;
   border-top: 1px solid #e9ecef;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .action-button {
@@ -548,4 +551,24 @@
   .trips-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.action-button.logout {
+  background-color: #dc3545;
+  color: white;
+  margin-top: 1rem;
+}
+
+.action-button.logout:hover {
+  background-color: #c82333;
+}
+
+.action-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.action-button:disabled:hover {
+  background-color: #6c757d;
 }

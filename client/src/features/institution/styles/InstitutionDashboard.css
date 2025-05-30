@@ -305,12 +305,12 @@
   color: #856404;
 }
 
-.status-badge.approved {
+.status-badge.aprobado {
   background-color: #d4edda;
   color: #155724;
 }
 
-.status-badge.rejected {
+.status-badge.rechazado {
   background-color: #f8d7da;
   color: #721c24;
 }

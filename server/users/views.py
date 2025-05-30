@@ -68,20 +68,24 @@ class UsersLoginView(generics.GenericAPIView):
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            email = serializer.validated_data['institutional_mail']
-            password = serializer.validated_data['upassword']
+        try:
+            if serializer.is_valid():
+                email = serializer.validated_data['institutional_mail']
+                password = serializer.validated_data['upassword']
 
-            user = Users.objects.filter(institutional_mail=email).first()
-            if user is not None and check_password(password, user.upassword):
-                refresh = RefreshToken.for_user(user)
-                return Response({
+                user = Users.objects.filter(institutional_mail=email).first()
+                if user is not None and check_password(password, user.upassword):
+                    refresh = RefreshToken.for_user(user)
+                    return Response({
                     'refresh': str(refresh),
                     'access': str(refresh.access_token),
+                    'uid': user.uid,  # o user.id, según tu modelo
                     'message': "Login Exitoso"
                 }, status=status.HTTP_200_OK)
-            else:
-                return Response({"error": "Credenciales invalidas"}, status=status.HTTP_401_UNAUTHORIZED)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"error": "Credenciales invalidas"}, status=status.HTTP_401_UNAUTHORIZED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -119,3 +123,15 @@ class UsersProfileView(generics.RetrieveAPIView):
     queryset = Users.objects.all()
     serializer_class = UsersProfileSerializer
     lookup_field = 'uid' 
+    def retrieve(self, request, *args, **kwargs):
+        user = self.get_object()
+        data = {
+            'uid': user.uid,
+            'full_name': user.full_name,
+            'user_type': user.user_type,
+            'institutional_mail': user.institutional_mail,
+            'student_code': user.student_code,
+            'institution_name': user.institution.official_name if user.institution else None,
+            'driver_state': user.driver_state,
+        }
+        return Response(data, status=status.HTTP_200_OK)
