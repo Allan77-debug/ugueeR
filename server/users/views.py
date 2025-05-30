@@ -1,7 +1,7 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from .models import Users
-from .serializers import UsersSerializer, UsersLoginSerializer, DriverApplicationSerializer
+from .serializers import UsersSerializer, UsersLoginSerializer, DriverApplicationSerializer, UsersProfileSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
@@ -114,3 +114,8 @@ class ApplyToBeDriverView(APIView):
 
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class UsersProfileView(generics.RetrieveAPIView):
+    queryset = Users.objects.all()
+    serializer_class = UsersProfileSerializer
+    lookup_field = 'uid' 

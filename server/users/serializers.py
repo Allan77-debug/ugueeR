@@ -3,7 +3,6 @@ from django.contrib.auth.hashers import make_password
 from .models import Users
 from institutions.models import Institution
 
-
 class UsersSerializer(serializers.ModelSerializer):
     class Meta:
         model = Users
@@ -50,3 +49,12 @@ class DriverApplicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Users
         fields = ['driver_state'] 
+
+
+class UsersProfileSerializer(serializers.ModelSerializer):
+    institution_name = serializers.SerializerMethodField()
+    class Meta:
+        model = Users
+        fields = ["uid", "full_name", "user_type", "institutional_mail", "student_code", "institution_name", "driver_state"]
+    def get_institution_name(self, obj):
+        return obj.institution.official_name if obj.institution else None
