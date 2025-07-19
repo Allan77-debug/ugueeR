@@ -1,0 +1,108 @@
+/* Inspirado en UserDashboard.css y las maquetas */
+.pageContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* Espacio entre header, errores, grid/empty state */
+}
+
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap; /* Para que se ajuste en pantallas pequeñas */
+  gap: 1rem; /* Espacio entre título y acciones si se envuelven */
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e0e0e0; /* Separador sutil */
+}
+
+.pageHeader h1 {
+  margin: 0;
+  font-size: 1.8rem; /* Tamaño del título de la página */
+  color: #333;
+  font-weight: 600;
+}
+
+.headerActions {
+  display: flex;
+  gap: 0.75rem; /* Espacio entre botones de acción (Buscar, Filtro, Agregar) */
+}
+
+.cardsGrid {
+  display: grid;
+  /* Como en tu maqueta (2 columnas en desktop, 1 en móvil) */
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(320px, 1fr)
+  ); /* Ajusta minmax según el ancho deseado de las tarjetas */
+  gap: 1.5rem; /* Espacio entre tarjetas */
+}
+
+/* Estados de Carga, Error y Vacío */
+.loadingState,
+.emptyState,
+.errorMessageGlobal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+  border-radius: 8px;
+  min-height: 200px; /* Para que ocupen algo de espacio */
+}
+
+.loadingState {
+  color: #555;
+  font-size: 1.1rem;
+}
+
+.emptyState {
+  background-color: #f9f9f9; /* Un fondo muy sutil */
+  border: 1px dashed #ddd;
+  color: #555;
+}
+.emptyState p {
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+  max-width: 450px;
+}
+.emptyState p:last-of-type {
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  color: #777;
+}
+
+.errorMessageGlobal {
+  background-color: #ffebee; /* Fondo rojo claro para errores globales */
+  color: #c62828; /* Texto rojo oscuro */
+  border: 1px solid #ef9a9a; /* Borde rojo más claro */
+  font-weight: 500;
+}
+
+/* Ajustes responsivos para el grid si es necesario */
+@media (max-width: 768px) {
+  .pageHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .headerActions {
+    width: 100%;
+    /* Podrías hacer que los botones ocupen todo el ancho o se justifiquen al inicio/final */
+  }
+  .cardsGrid {
+    /* Ya se ajusta con auto-fill, pero puedes forzar 1 columna si quieres */
+    grid-template-columns: 1fr;
+  }
+}
+/* En Modal.module.css (ejemplo para un modal grande) */
+.modalContent.large {
+  /* Si ya tenías .large, ajusta el width/height */
+  width: 95vw; /* 90% del ancho de la ventana */
+  max-width: 1200px; /* Un máximo para pantallas muy grandes */
+  height: 85vh; /* 85% del alto de la ventana */
+  /* El contenido (MapView) debería poder usar height: 100% dentro de esto */
+}
+.viewerContainer {
+  width: 100%;
+  height: 70vh; /* O la altura que prefieras para el modal de visualización */
+}

@@ -32,7 +32,8 @@ DEBUG = env.bool("DEBUG", default=False)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-16*s0a%bh==&1h8iw#6^aa+6w__(%5vs#)94hcic*&b78bm@+5'
-
+# Lee la clave de la API de Google Maps desde el archivo .env
+API_KEY_GOOGLE_MAPS = env('API_KEY_GOOGLE_MAPS', default=None)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 

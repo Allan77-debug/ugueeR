@@ -1,0 +1,51 @@
+/* UGUEER/client/src/components/features/driver/pages/VehicleInspectionDetails.module.css */
+.inspectionContainer {
+  padding: 0.5rem; /* Menos padding si el modal ya tiene */
+  font-size: 0.95rem;
+}
+
+.inspectionImage {
+  width: 100%;
+  max-height: 200px;
+  object-fit: contain; /* O 'cover' según prefieras */
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  border: 1px solid #eee;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(200px, 1fr)
+  ); /* 1 o 2 columnas según espacio */
+  gap: 0.8rem 1.5rem; /* Espacio vertical y horizontal */
+  margin-bottom: 1.5rem;
+}
+
+.detailItem {
+  display: flex;
+  flex-direction: column; /* Etiqueta arriba, valor abajo */
+  line-height: 1.5;
+}
+
+.detailItem strong {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  color: #555; /* Un gris para la etiqueta */
+}
+
+.detailItem span {
+  color: #212529;
+  font-size: 1rem; /* El valor un poco más grande */
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end; /* Botón de cerrar a la derecha */
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e9ecef;
+}

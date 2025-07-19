@@ -1,0 +1,39 @@
+.dashboardLayout {
+  display: flex;
+  min-height: 100vh; /* Asegura que ocupe al menos toda la altura de la ventana */
+  background-color: #f8f9fa; /* Un fondo general para el área de contenido, como en UserDashboard */
+}
+
+.mainContent {
+  flex-grow: 1; /* Hace que el contenido principal ocupe el espacio restante */
+  padding: 1.5rem; /* Espaciado interno para el contenido */
+  overflow-y: auto; /* Permite scroll vertical si el contenido es muy largo */
+  /* Si quieres que el header de las páginas tenga una altura fija y el contenido debajo haga scroll:
+  display: flex;
+  flex-direction: column;
+  max-height: 100vh;
+  */
+}
+
+/* Consideraciones responsivas (similares a tu UserDashboard.css) */
+@media (max-width: 992px) { /* Punto de quiebre para tablets/móviles */
+  .dashboardLayout {
+    flex-direction: column; /* Sidebar encima del contenido */
+  }
+
+  /* En el DriverSidebar.module.css ya deberías tener estilos responsivos
+     para que la sidebar se ajuste a width: 100% y height: auto cuando la
+     dirección del flex cambia. Si no, puedes añadir aquí:
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: static; // O relative, para que no sea sticky
+    border-right: none;
+    border-bottom: 1px solid #e9ecef;
+  }
+  */
+
+  .mainContent {
+    padding: 1rem; /* Menos padding en pantallas pequeñas */
+  }
+}

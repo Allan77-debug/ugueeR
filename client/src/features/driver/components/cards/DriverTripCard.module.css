@@ -1,0 +1,93 @@
+.tripCardContainer {
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tripRoute {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.location {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.95rem;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-basis: 45%;
+}
+.location:first-child {
+  justify-content: flex-start;
+}
+.location:last-child {
+  justify-content: flex-end;
+}
+
+.arrow {
+  color: #6a5acd;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.icon {
+  color: #6a5acd;
+  flex-shrink: 0;
+}
+
+.footerInfo {
+  display: flex;
+  justify-content: flex-end; /* Alinea el botón de eliminar a la derecha */
+  align-items: center;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.tripDetailsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.detailItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.detailItem span {
+  color: #333;
+  font-weight: 500;
+}
+
+.actions {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+.miniMapContainer {
+  height: 150px;
+  width: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #eee;
+  cursor: pointer;
+  background-color: #f0f0f0;
+}
+
+/* NUEVA CLASE PARA EL ELEMENTO MAPA DE GOOGLE */
+.mapElement {
+  height: 100%;
+  width: 100%;
+}

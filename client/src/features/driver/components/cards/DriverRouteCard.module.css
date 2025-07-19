@@ -1,0 +1,107 @@
+.routeCardContainer {
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.routeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.routeInfo {
+  display: flex;
+  align-items: center;
+
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+  gap: 0.5rem;
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.locationPoint {
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.locationPoint:last-of-type {
+  text-align: right;
+}
+
+.arrow {
+  color: #6a5acd;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.maximizeButton {
+  padding: 0.3rem 0.5rem !important;
+  flex-shrink: 0;
+  border: 1px solid #ddd !important;
+}
+.maximizeButton:hover {
+  background-color: #f0f0f0 !important;
+}
+
+.miniMapContainer {
+  height: 150px;
+  width: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #eee;
+  cursor: pointer;
+  background-color: #f0f0f0;
+}
+
+.miniMapContainer .leaflet-container {
+  border-radius: 4px;
+}
+
+.mapPlaceholder {
+  height: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9fa;
+  border: 1px dashed #ced4da;
+  border-radius: 4px;
+  color: #6c757d;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.mapPlaceholder:hover {
+  background-color: #e9ecef;
+}
+.mapPlaceholder p {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+.mapElement {
+  height: 100%; /* <--- CRÍTICO: Debe ocupar el 100% de su padre */
+  width: 100%;
+}
+
+.footerInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.departureTime {
+  font-size: 0.9rem;
+  color: #555;
+}
+.departureTime span {
+  font-weight: 500;
+  color: #333;
+}

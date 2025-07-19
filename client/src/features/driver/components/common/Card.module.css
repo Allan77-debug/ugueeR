@@ -1,0 +1,24 @@
+.cardBase {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  overflow: hidden;
+  /* El padding específico (si lo hay) se suele manejar en las tarjetas derivadas
+     (e.g., DriverRouteCard, DriverVehicleCard) para mayor flexibilidad,
+     o puedes añadir un padding base aquí si todas tus tarjetas lo compartirán.
+     Ejemplo: padding: 1rem;
+  */
+}
+
+/* Estilos opcionales para cuando la tarjeta es clickeable */
+.clickable {
+  cursor: pointer;
+}
+
+.cardBase:hover {
+  /* Un efecto de hover sutil, puedes ajustarlo o quitarlo si prefieres
+     que las tarjetas derivadas manejen su propio hover. */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.07);
+}

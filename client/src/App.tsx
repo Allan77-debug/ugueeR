@@ -1,27 +1,34 @@
-import React from "react"
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
-import HomePage from "./features/home/pages/HomePage"
-import InstitutionRegisterPage from "./features/institution/pages/InstitutionRegisterPage"
-import UserRegisterPage from "./features/users/pages/UserRegisterPage"
-import UserDashboard from "./features/users/pages/UserDashboard"
-import AdminPanel from "./features/admin/pages/AdminPanel"
-import Login from "./features/auth/pages/LoginPage"
-import LoginAdmin from "./features/auth/pages/LoginAdmin"
-import InstitutionDashboard from "./features/institution/pages/InstitutionDashboard"
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import HomePage from "./features/home/pages/HomePage";
+import InstitutionRegisterPage from "./features/institution/pages/InstitutionRegisterPage";
+import UserRegisterPage from "./features/users/pages/UserRegisterPage";
+import UserDashboard from "./features/users/pages/UserDashboard";
+import AdminPanel from "./features/admin/pages/AdminPanel";
+import Login from "./features/auth/pages/LoginPage";
+import LoginAdmin from "./features/auth/pages/LoginAdmin";
+import InstitutionDashboard from "./features/institution/pages/InstitutionDashboard";
+import DriverPageLayout from "./features/driver/components/layout/DriverPageLayout";
+import { driverDashboardRoutes } from "./features/driver/driver.Routes";
 
 // Componente para proteger rutas
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const isAuthenticated = localStorage.getItem("adminToken") !== null;
-  
+
   if (!isAuthenticated) {
     return <Navigate to="/login-admin" replace />;
   }
-  
+
   return <>{children}</>;
 };
 
 const UserProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const isAuthenticated = localStorage.getItem("userToken") !== null
+  const isAuthenticated = localStorage.getItem("userToken") !== null;
 
   if (!isAuthenticated) {
     // Para desarrollo permitimos el acceso sin token
@@ -29,19 +36,23 @@ const UserProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     // return <Navigate to="/login" replace />;
   }
 
-  return <>{children}</>
-}
+  return <>{children}</>;
+};
 
 // Componente para proteger rutas de institución
-const InstitutionProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const isAuthenticated = localStorage.getItem("institutionToken") !== null
+const InstitutionProtectedRoute = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  const isAuthenticated = localStorage.getItem("institutionToken") !== null;
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login" replace />;
   }
 
-  return <>{children}</>
-}
+  return <>{children}</>;
+};
 
 function App() {
   return (
@@ -49,7 +60,10 @@ function App() {
       <Routes>
         {/* Rutas públicas */}
         <Route path="/" element={<HomePage />} />
-        <Route path="/registro-institucion" element={<InstitutionRegisterPage />} />
+        <Route
+          path="/registro-institucion"
+          element={<InstitutionRegisterPage />}
+        />
         <Route path="/registro-usuario" element={<UserRegisterPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/login-admin" element={<LoginAdmin />} />
@@ -63,7 +77,7 @@ function App() {
             </UserProtectedRoute>
           }
         />
-        
+
         {/* Rutas protegidas de institución */}
         <Route
           path="/institucion-dashboard"
@@ -73,21 +87,48 @@ function App() {
             </InstitutionProtectedRoute>
           }
         />
+
+        {/* Rutas protegidas del Conductor */}
+        <Route
+          path="/driver/*" // El path base para el módulo del conductor
+          element={
+            <UserProtectedRoute>
+              {/*
+                 Aquí renderizamos directamente el layout que tiene el Outlet,
+                 y React Router se encarga de los children definidos en driverDashboardRoutes
+              */}
+              <DriverPageLayout />
+            </UserProtectedRoute>
+          }
+        >
+          {/* Definimos las rutas hijas directamente aquí, usando los children de driverDashboardRoutes */}
+          {driverDashboardRoutes[0].children?.map((childRoute, childIndex) => (
+            <Route
+              key={`driver-child-${childRoute.path || childIndex}`}
+              index={childRoute.index}
+              path={childRoute.path}
+              element={childRoute.element}
+            />
+          ))}
+          {/* Opcional: un fallback dentro del driver dashboard si ninguna sub-ruta coincide */}
+          <Route path="*" element={<Navigate to="my-routes" replace />} />
+        </Route>
+
         {/* Rutas protegidas */}
-        <Route 
-          path="/admin" 
+        <Route
+          path="/admin"
           element={
             <ProtectedRoute>
               <AdminPanel />
             </ProtectedRoute>
-          } 
+          }
         />
-        
+
         {/* Ruta de fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
-  )
+  );
 }
 
-export default App
+export default App;

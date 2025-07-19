@@ -1,0 +1,194 @@
+/* Inspirado en UserDashboard.css y tu maqueta */
+.sidebar {
+  width: 260px; /* Ajusta según tu maqueta */
+  background-color: white;
+  border-right: 1px solid #e9ecef; /* Borde suave */
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* Ocupa toda la altura */
+  position: sticky; /* Para que se quede fijo al hacer scroll en el contenido principal */
+  top: 0;
+  padding: 1.5rem 0; /* Padding superior e inferior */
+  transition: width 0.3s ease; /* Para futuras expansiones/colapsos */
+}
+
+.sidebarHeader {
+  padding: 0 1.5rem 1.5rem; /* Padding horizontal y abajo */
+  border-bottom: 1px solid #e9ecef;
+  text-align: center; /* O a la izquierda */
+}
+
+.sidebarHeader h2 {
+  color: #6a5acd; /* Color Uway */
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: bold;
+}
+
+.userProfile {
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem; /* Espacio entre avatar e info */
+  border-bottom: 1px solid #e9ecef;
+}
+
+.userAvatar {
+  width: 50px;
+  height: 50px;
+  min-width: 50px; /* Evita que se encoja */
+  background-color: #6a5acd; /* Color Uway para el placeholder */
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem; /* Tamaño de la inicial */
+  font-weight: bold;
+  overflow: hidden; /* Para que la imagen no se salga del círculo */
+}
+
+.userAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.userInfo h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  color: #212529;
+  font-weight: 600;
+}
+
+.userInfo p {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem; /* Más pequeño como en la maqueta */
+  color: #6c757d;
+}
+
+.rating {
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  color: #495057;
+  margin-bottom: 0.5rem;
+}
+
+.starIcon {
+  color: #ffc107; /* Amarillo para la estrella */
+  margin-right: 0.3rem;
+}
+
+.driverBadge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  background-color: #e6f7ff; /* Un color suave para el badge */
+  color: #0070f3; /* Color de texto para el badge */
+  border: 1px solid #0070f3;
+  border-radius: 12px; /* Más redondeado */
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.sidebarNav {
+  padding: 1.5rem;
+  flex-grow: 1; /* Para que ocupe el espacio restante */
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem; /* Espacio entre botones de navegación */
+}
+
+.navButton {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.75rem 1rem; /* Padding interno */
+  background: none;
+  border: none;
+  border-radius: 6px; /* Bordes más suaves */
+  color: #495057; /* Color de texto normal */
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+  font-size: 0.9rem;
+  text-decoration: none; /* Quitar subrayado de NavLink */
+}
+
+.navButton:hover {
+  background-color: #f0f0ff; /* Color Uway claro al hacer hover */
+  color: #6a5acd;
+}
+
+.navButton.active {
+  background-color: #6a5acd; /* Color Uway principal para activo */
+  color: white;
+  font-weight: 500;
+}
+
+.navButton.active svg {
+  color: white; /* Para que el icono también sea blanco */
+}
+
+.navButton svg {
+  margin-right: 0.75rem;
+  color: #6c757d; /* Color de iconos por defecto */
+  transition: color 0.2s;
+}
+.navButton:hover svg,
+.navButton.active:hover svg {
+  color: inherit; /* Hereda el color del texto del botón */
+}
+
+/* Estilos de carga y error */
+.sidebarLoading,
+.sidebarError {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  height: 100%;
+  color: #6c757d;
+}
+
+.loadingSpinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #6a5acd;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+/* --- Media Query para Responsividad (debe coincidir con DriverPageLayout.module.css) --- */
+@media (max-width: 992px) {
+  .sidebar {
+    width: 100%; /* Ocupa todo el ancho */
+    height: auto; /* La altura se ajusta al contenido */
+    position: static; /* Ya no es pegajosa (sticky) */
+    border-right: none; /* Quitamos el borde derecho */
+    border-bottom: 1px solid #e9ecef; /* Añadimos un borde inferior para separarlo del contenido */
+    padding: 1rem 0; /* Menos padding vertical en móvil */
+  }
+
+  .userProfile {
+    padding: 1rem 1.5rem; /* Ajusta padding si es necesario */
+  }
+
+  .sidebarNav {
+    /* Si quieres que los enlaces se muestren horizontalmente en móvil (como tabs) */
+    /* display: flex;
+    justify-content: space-around;
+    padding: 0.5rem; */
+  }
+}
