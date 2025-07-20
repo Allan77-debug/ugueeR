@@ -15,29 +15,8 @@ from django.contrib.auth.hashers import check_password
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.authentication import JWTAuthentication
 import jwt
+from .permissions import IsAuthenticatedCustom
 from django.conf import settings
-
-class IsAuthenticatedCustom(BasePermission):
-    """
-    Allows access only to authenticated users.
-    """
-    def has_permission(self, request, view):
-        try:
-            authorization_header = request.META.get('HTTP_AUTHORIZATION')
-            if not authorization_header:
-                return False
-
-            token = authorization_header.split(' ')[1]
-            payload = jwt.decode(
-                token, settings.SECRET_KEY, algorithms=['HS256'])
-            user_id = payload.get('user_id')
-            if not user_id:
-                return False
-            
-            request.user = Users.objects.get(uid=user_id)
-            return True
-        except:
-            return False
 
 class UsersCreateView(generics.CreateAPIView):
     """ Vista para registrar un nuevo usuario. """
@@ -100,17 +79,17 @@ class ApplyToBeDriverView(APIView):
     """Vista para que un usuario solicite ser conductor."""
     permission_classes = [IsAuthenticatedCustom]
 
-    def patch(self, request, uid):
+    def patch(self, request):
         try:
-            users = get_object_or_404(Users, uid=uid)
+            user = request.user  # ⚠️ YA viene del token
 
-            if users.user_state != Users.STATE_APPROVED:
+            if user.user_state != Users.STATE_APPROVED:
                 return Response({
                     "error": "Solo los usuarios aprobados pueden aplicar para ser conductor."
                 }, status=status.HTTP_403_FORBIDDEN)
 
-            users.driver_state = Users.DRIVER_STATE_PENDING
-            users.save()
+            user.driver_state = Users.DRIVER_STATE_PENDING
+            user.save()
 
             return Response({
                 "message": "Aplicación para ser conductor enviada correctamente."
@@ -118,6 +97,7 @@ class ApplyToBeDriverView(APIView):
 
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class UsersProfileView(generics.RetrieveAPIView):
     queryset = Users.objects.all()
