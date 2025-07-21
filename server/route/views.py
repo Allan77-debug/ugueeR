@@ -35,10 +35,25 @@ class RouteListView(generics.ListAPIView):
         return Route.objects.filter(driver__in=drivers_aprobados)
 
 
-class RouteDetailView(generics.RetrieveAPIView):
-    queryset = Route.objects.all()
+class RouteDetailView(generics.ListAPIView): 
     serializer_class = RouteSerializer
-    lookup_field = 'driver_id'
+    permission_classes = [IsAuthenticatedCustom] 
+
+    def get_queryset(self):
+        user = self.request.user
+
+        if not hasattr(user, 'driver'):
+            logger.warning(f"Usuario {user.uid} ({user.user_type}) intentó acceder a rutas de conductor pero no tiene un perfil de Driver asociado.")
+            raise PermissionDenied("Acceso denegado: Este usuario no está asociado a un perfil de conductor.")
+
+
+       
+        if user.driver.validate_state != 'approved':
+             logger.info(f"Conductor {user.uid} no está aprobado. Estado de validación: {user.driver.validate_state}")
+             raise PermissionDenied(f"Acceso denegado: Su perfil de conductor no está aprobado (estado: {user.driver.validate_state}).")
+
+    
+        return Route.objects.filter(driver=user.driver)
 
 class RouteDeleteView(generics.DestroyAPIView):
     queryset = Route.objects.all()
