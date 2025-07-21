@@ -234,7 +234,7 @@ const MyDriverRoutesPage: React.FC = () => {
       !newRouteData.startPointCoords ||
       !newRouteData.endPointCoords
     ) {
-      setError("Faltan datos de la ruta para guardar.");
+      setError("Faltan datos de la ruta para guardar");
       return;
     }
 
