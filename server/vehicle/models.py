@@ -14,8 +14,8 @@ class Vehicle (models.Model):
     model = models.CharField(max_length=100)
     vehicle_type = models.CharField(max_length=50)
     category = models.CharField(max_length=50)
-    soat = models.DateTimeField()
-    tecnomechanical = models.DateTimeField()
+    soat = models.DateField()
+    tecnomechanical = models.DateField()
     capacity = models.IntegerField()
     class Meta:
         db_table = 'vehicle'
