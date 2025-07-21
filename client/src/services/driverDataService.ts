@@ -157,12 +157,30 @@ export const addDriverVehicle = async (
 // };
 
 // (Opcional) Si necesitas una función para "inspeccionar" que podría traer más detalles
+// export const inspectVehicle = async (
+//   vehicleId: number
+// ): Promise<DriverVehicle | null> => {
+//   // TODO: Reemplazar con llamada a API GET /api/driver/vehicles/:vehicleId
+//   const vehicle = mockDriverVehicles.find((v) => v.id === vehicleId);
+//   return simulateApiCall(vehicle || null);
+// };
+
 export const inspectVehicle = async (
   vehicleId: number
 ): Promise<DriverVehicle | null> => {
-  // TODO: Reemplazar con llamada a API GET /api/driver/vehicles/:vehicleId
-  const vehicle = mockDriverVehicles.find((v) => v.id === vehicleId);
-  return simulateApiCall(vehicle || null);
+  // Nota: Esta función asume que el backend ha creado un endpoint para obtener un solo vehículo.
+  // Si no existe, esta función no se podrá usar. La URL es una suposición.
+
+  const response = await fetch(`/api/vehicle/vehicles/${vehicleId}/`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    if (response.status === 404) return null; // Si no se encuentra, devolvemos null
+    throw new Error("Error al inspeccionar el vehículo");
+  }
+
+  return response.json();
 };
 
 // --- Viajes Publicados por el Conductor ---
