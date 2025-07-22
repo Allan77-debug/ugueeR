@@ -2,7 +2,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from .models import Vehicle
 from driver.models import Driver
-from users.models import Users # Make sure this import is correct based on your project structure
+from users.models import Users # Make sure this import is correct
 from .serializers import VehicleSerializer
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import BasePermission
@@ -21,7 +21,7 @@ class VehicleCreateView(generics.CreateAPIView):
         try:
             user = request.user
 
-            # Check if the user is an approved driver at the start
+    
             if user.driver_state != Users.DRIVER_STATE_APPROVED:
                 return Response(
                     {"error": "Solo los conductores aprobados pueden crear vehículos."},
@@ -36,10 +36,6 @@ class VehicleCreateView(generics.CreateAPIView):
                     status=status.HTTP_404_NOT_FOUND,
                 )
 
-            # This check is now redundant if user.driver_state is already checked,
-            # but keeping it for robustness if 'driver.validate_state' and
-            # 'user.driver_state' could ever be out of sync.
-            # However, ideally, they should reflect the same approval status.
             if driver.validate_state != "approved":
                 return Response(
                     {"error": "El conductor no está aprobado."},
@@ -98,7 +94,6 @@ class VehicleDeleteView(APIView):
     def delete(self, request, vehicle_id):
         user = request.user
 
-        # Check if the user is an approved driver at the start
         if user.driver_state != Users.DRIVER_STATE_APPROVED:
             return Response(
                 {"error": "Solo los conductores aprobados pueden eliminar vehículos."},
@@ -123,3 +118,41 @@ class VehicleDeleteView(APIView):
 
         vehicle.delete()
         return Response({"message": "Vehículo eliminado exitosamente."}, status=status.HTTP_204_NO_CONTENT)
+
+
+
+
+class VehicleDetailView(APIView):
+    """
+    Vista para obtener los detalles de un vehículo específico
+    perteneciente al conductor autenticado.
+    """
+    permission_classes = [IsAuthenticatedCustom]
+
+    def get(self, request, vehicle_id):
+        user = request.user
+
+        if not hasattr(user, 'driver') or user.driver.validate_state != 'approved':
+            return Response(
+                {"error": "Acceso denegado. Solo los conductores aprobados pueden realizar esta acción."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        try:
+
+            vehicle = Vehicle.objects.get(id=vehicle_id)
+        except Vehicle.DoesNotExist:
+            return Response(
+                {"error": "No se encontró un vehículo con el ID proporcionado."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+
+        if vehicle.driver != user.driver:
+            return Response(
+                {"error": "Este vehículo no te pertenece."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        serializer = VehicleSerializer(vehicle)
+        return Response(serializer.data, status=status.HTTP_200_OK)
