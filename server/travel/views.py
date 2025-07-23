@@ -1,3 +1,65 @@
 from django.shortcuts import render
 
-# Create your views here.
+from rest_framework import generics, status
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .models import Driver, Travel
+from .serializers import TravelSerializer,TravelInfoSerializer
+
+
+
+class TravelCreateView(generics.CreateAPIView):
+    """
+    Endpoint para registrar un nuevo viaje.
+
+    POST /api/travel/create/
+
+    Requiere:
+    - driver (ID)
+    - vehicle (ID)
+    - route (ID)
+    - time (datetime en formato ISO)
+    - price (entero)
+    - travel_state ("scheduled, in_progress, cancelled")
+
+    Retorna:
+    - 201 Created con los datos del viaje creado
+    """
+    serializer_class = TravelSerializer
+    queryset = Travel.objects.all()
+
+
+class DriverTravelListView(generics.ListAPIView):
+    """
+    Endpoint para listar todos los viajes de un conductor.
+
+    GET /api/travel/driver/<driver_id>/
+
+    Parámetros:
+    - driver_id (int): ID del conductor
+
+    Retorna:
+    - Lista de viajes asociados al conductor
+    """
+    serializer_class = TravelInfoSerializer
+
+    def get_queryset(self):
+        driver_id = self.kwargs.get('driver_id')
+        return Travel.objects.filter(driver_id=driver_id)
+
+
+class TravelDeleteView(generics.DestroyAPIView):
+    """
+    Endpoint para eliminar un viaje por ID.
+
+    DELETE /api/travel/delete/<id>/
+
+    Parámetros:
+    - id (int): ID del viaje a eliminar
+
+    Retorna:
+    - 204 No Content si fue exitoso
+    - 404 Not Found si el viaje no existe
+    """
+    queryset = Travel.objects.all()
+    lookup_field = 'id'

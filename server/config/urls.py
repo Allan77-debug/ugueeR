@@ -28,6 +28,8 @@ urlpatterns = [
     path("api/users/", include("users.urls")),
     path("api/vehicle/", include("vehicle.urls")),  # Add this line
     path("api/driver/", include("driver.urls")), 
+    path("api/route/", include("route.urls")),
+    path("api/travel/", include("travel.urls")),
     # Documentacion
     re_path(
         r"^swagger(?P<format>\.json|\.yaml)$",
