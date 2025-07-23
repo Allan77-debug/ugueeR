@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import { Button } from "~/components/ui/button";
+import { useRouter } from "expo-router";
+import React, { useMemo, useState } from "react";
 import {
-  StyleSheet,
   Text,
   View,
   TextInput,
@@ -9,231 +10,170 @@ import {
   Platform,
   StatusBar,
   SafeAreaView,
-  Image,
-} from 'react-native';
+} from "react-native";
+import { useForm, Controller } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+import { cn } from "@/lib/utils";
 
-// Opcional: Si quieres usar iconos, puedes instalar react-native-vector-icons
-// import Icon from 'react-native-vector-icons/Ionicons';
-
-const PURPLE_COLOR = '#6a5acd'; // slateblue [14]
+const PURPLE_COLOR = "#6a5acd"; // slateblue
 
 const LoginScreen: React.FC = () => {
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
+  const validationSchema = useMemo(() => {
+    return yup.object({
+      email: yup
+        .string()
+        .required("El correo electrónico es requerido")
+        .matches(
+          /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/g,
+          "Ingrese una dirección de correo electrónico válida"
+        ),
+      password: yup
+        .string()
+        .required("La contraseña es requerida")
+        .min(5, "La contraseña tiene que ser de minimo 5 caracteres"),
+    });
+  }, []);
+
+  const router = useRouter();
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting, isLoading },
+  } = useForm({
+    resolver: yupResolver(validationSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
   const [isPasswordVisible, setIsPasswordVisible] = useState<boolean>(false);
 
-  const handleLogin = () => {
-    // Aquí va tu lógica de inicio de sesión
-    console.log('Email:', email, 'Password:', password);
-    // Ejemplo: podrías navegar a otra pantalla o mostrar un mensaje
-  };
+  const onSubmit = (data: { email: string; password: string }) =>
+    console.log(data);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView className="flex-1 bg-primary ">
       <StatusBar barStyle="light-content" backgroundColor={PURPLE_COLOR} />
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        className="flex-1 justify-center px-6 bg-gray-100"
       >
-                <View style={styles.logoContainer}>
-                  <View style={styles.logoIcon}>
-                    {/* Podrías poner un componente <Image> aquí si tuvieras un logo */}
-                    <Text style={styles.logoIconText}>U</Text>
-                  </View>
-                  <Text style={styles.appName}>Uway</Text>
-                </View>
-        <View style={styles.headerContainer}>
+        <View className="items-center mb-8">
+          <View className="w-20 h-20 rounded-2xl bg-primary justify-center items-center mb-2.5 shadow-lg">
+            {/* Podrías poner un componente <Image> aquí si tuvieras un logo */}
+            <Text className="text-4xl font-bold text-white">U</Text>
+          </View>
+          {/* <Text className="text-5xl font-bold text-primary  text-center">Uway</Text> */}
+        </View>
+        <View className="items-center mb-10">
           {/* Puedes agregar un logo aquí si lo deseas */}
-          {/* <Image source={require('./assets/logo.png')} style={styles.logo} /> */}
-          <Text style={styles.title}>¡Bienvenido!</Text>
-          <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
+          {/* <Image source={require('./assets/logo.png')} className="w-24 h-24 mb-5" /> */}
+          <Text className="text-3xl font-bold text-primary mb-2">
+            ¡Bienvenido!
+          </Text>
+          <Text className="text-base text-gray-600">
+            Inicia sesión para continuar
+          </Text>
         </View>
 
-        <View style={styles.formContainer}>
-          <View style={styles.inputContainer}>
-            {/* <Icon name="mail-outline" size={22} color="#666" style={styles.inputIcon} /> */}
-            <TextInput
-              style={styles.input}
-              placeholder="Correo electrónico"
-              placeholderTextColor="#A9A9A9"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
-            />
-          </View>
+        <View className="w-full max-w-sm self-center">
+          <Controller
+            control={control}
+            rules={{
+              required: "El correo es requerido",
+            }}
+            render={({ field: { onChange, onBlur, value } }) => (
+              <TextInput
+                className={cn(
+                  errors.email ? "mb-0" : "mb-4",
+                  "bg-white rounded-lg p-3 border border-gray-300 text-base text-primary"
+                )}
+                placeholder="Correo electrónico"
+                placeholderTextColor="#A9A9A9"
+                onBlur={onBlur}
+                onChangeText={onChange}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                value={value}
+              />
+            )}
+            name="email"
+          />
+          {errors.email && (
+            <Text className="text-red-500 mb-4">{errors.email.message}</Text>
+          )}
 
-          <View style={styles.inputContainer}>
-            {/* <Icon name="lock-closed-outline" size={22} color="#666" style={styles.inputIcon} /> */}
-            <TextInput
-              style={styles.input}
-              placeholder="Contraseña"
-              placeholderTextColor="#A9A9A9"
-              secureTextEntry={!isPasswordVisible}
-              value={password}
-              onChangeText={setPassword}
+          <View
+            className={cn(
+              errors.password && "mb-0",
+              "flex-row items-center bg-white rounded-lg border border-gray-300"
+            )}
+          >
+            <Controller
+              control={control}
+              rules={{
+                required: "La contraseña es requerida",
+              }}
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextInput
+                  className="flex-1 h-12 p-3 text-base text-primary"
+                  placeholder="Contraseña"
+                  placeholderTextColor="#A9A9A9"
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  secureTextEntry={!isPasswordVisible}
+                  autoCapitalize="none"
+                  value={value}
+                />
+              )}
+              name="password"
             />
+
             <TouchableOpacity
-              style={styles.eyeIcon}
+              className="p-2"
               onPress={() => setIsPasswordVisible(!isPasswordVisible)}
             >
-              {/* <Icon name={isPasswordVisible ? "eye-off-outline" : "eye-outline"} size={22} color="#666" /> */}
-               <Text style={{color: '#666'}}>{isPasswordVisible ? "Ocultar" : "Mostrar"}</Text>
+              <Text className="text-primary">
+                {isPasswordVisible ? "Ocultar" : "Mostrar"}
+              </Text>
             </TouchableOpacity>
           </View>
+          {errors.password && (
+            <Text className="text-red-500 mb-2">{errors.password.message}</Text>
+          )}
 
-          <TouchableOpacity style={styles.forgotPasswordButton}>
-            <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
+          <TouchableOpacity className="self-end mb-6">
+            <Text className="text-sm text-primary">
+              ¿Olvidaste tu contraseña?
+            </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-            <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
-          </TouchableOpacity>
+          <Button
+            variant={"default"}
+            className={cn(isLoading && "opacity-50", "rounded-full w-full py-7 mb-4 bg-primary")}
+            disabled={isLoading}
+            onPress={handleSubmit(onSubmit)}
+          >
+            <Text className="text-lg font-semibold text-white">
+              {
+                isLoading ? "Cargando..." : "Iniciar Sesión"
+              }
+            </Text>
+          </Button>
         </View>
 
-        <View style={styles.footerContainer}>
-          <Text style={styles.footerText}>¿No tienes una cuenta?</Text>
-          <TouchableOpacity>
-            <Text style={styles.signupText}>Regístrate</Text>
+        <View className="flex-row justify-center items-center">
+          <Text className="text-sm text-gray-600">¿No tienes una cuenta?</Text>
+          <TouchableOpacity onPress={() => router.push("/register")}>
+            <Text className="text-sm text-primary font-bold ml-1">
+              Regístrate
+            </Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  logoIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 15,
-    backgroundColor: '#6a5acd', // Color coral/naranja como el logo de Firefit
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-    // Sombra sutil similar a la de Firefit
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  logoIconText: { // Si decides poner texto dentro del ícono
-    fontSize: 40,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  appName: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#6a5acd',
-    textAlign: 'center',
-  },
-  safeArea: {
-    flex: 1,
-    backgroundColor: PURPLE_COLOR,
-  },
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    backgroundColor: '#f5f5f5', // Un fondo claro para contrastar con el morado
-  },
-  headerContainer: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  logo: {
-    width: 100,
-    height: 100,
-    marginBottom: 20,
-    resizeMode: 'contain',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-  },
-  formContainer: {
-    width: '100%',
-        maxWidth: 400,
-    alignSelf: 'center',
-      },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  inputIcon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    height: 50,
-    fontSize: 16,
-    color: '#333',
-    
-  },
-  eyeIcon: {
-    padding: 8,
-  },
-  forgotPasswordButton: {
-    alignSelf: 'flex-end',
-    marginBottom: 24,
-  },
-  forgotPasswordText: {
-    fontSize: 14,
-    color: PURPLE_COLOR,
-  },
-  loginButton: {
-    backgroundColor: PURPLE_COLOR,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#000', // Sombra para un look moderno
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  loginButtonText: {
-    fontSize: 18,
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-  },
-  footerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  signupText: {
-    fontSize: 14,
-    color: PURPLE_COLOR,
-    fontWeight: 'bold',
-    marginLeft: 4,
-  },
-});
 
 export default LoginScreen;
