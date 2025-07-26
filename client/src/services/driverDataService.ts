@@ -27,64 +27,7 @@ const simulateError = (message: string, delay = 300): Promise<never> =>
     setTimeout(() => reject(new Error(message)), delay)
   );
 
-const TEMP_DRIVER_ID = 40; // <--- DEFINE EL ID DEL CONDUCTOR DE PRUEBA
-const TEMP_USER_UID = 40;
 
-// // --- Profile ---
-// export const getDriverProfile = async (): Promise<DriverProfile> => {
-//   // TODO: Reemplazar con llamada a API GET /api/driver/profile
-//   return simulateApiCall(mockDriverProfileData);
-// };
-
-export const getDriverProfile = async (): Promise<DriverProfile> => {
-  // La URL del backend es `/api/users/profile/<uid>/`
-  const response = await fetch(`/api/users/profile/${TEMP_USER_UID}/`);
-
-  if (!response.ok) throw new Error("Error al obtener el perfil del conductor");
-
-  const userProfile = await response.json();
-
-  // Mapeamos los datos del perfil de usuario a la interfaz `DriverProfile` del frontend.
-  return {
-    name: userProfile.full_name,
-    university: userProfile.institution_name || "Universidad no especificada",
-    rating: 4.1, // El backend no devuelve rating, usamos un valor fijo temporalmente.
-    isDriver: userProfile.driver_state === "aprobado",
-    avatarUrl: undefined, // El backend no devuelve avatar.
-  };
-};
-
-// --- Rutas del Conductor ---
-export const getDriverRoutes = async (): Promise<DriverRoute[]> => {
-  // TODO: Reemplazar con llamada a API GET /api/driver/routes
-  return simulateApiCall([...mockDriverRoutes]); // Devuelve una copia para evitar mutaciones directas del mock
-  // const response = await fetch(`/api/route/${TEMP_DRIVER_ID}/`);
-  // if (!response.ok) throw new Error("Error al obtener rutas");
-  // return response.json();
-};
-
-export const addDriverRoute = async (
-  newRouteData: Omit<DriverRoute, "id">
-): Promise<DriverRoute> => {
-  // TODO: Reemplazar con llamada a API POST /api/driver/routes
-  const addedRoute = serviceAddRoute(newRouteData);
-  return simulateApiCall(addedRoute);
-  // Para simular un error:
-  // return simulateError("Error simulado al agregar ruta");
-};
-
-export const deleteDriverRoute = async (routeId: number): Promise<void> => {
-  // TODO: Reemplazar con llamada a API DELETE /api/driver/routes/:routeId
-  const success = serviceDeleteRoute(routeId);
-  if (!success) return simulateError(`Ruta con ID ${routeId} no encontrada.`);
-  return simulateApiCall(undefined); // Simula una respuesta vacía de éxito
-};
-
-// // --- Vehículos del Conductor ---
-// export const getDriverVehicles = async (): Promise<DriverVehicle[]> => {
-//   // TODO: Reemplazar con llamada a API GET /api/driver/vehicles
-//   return simulateApiCall([...mockDriverVehicles]);
-// };
 
 // Helper para obtener el token. Podría estar en un archivo authService.ts
 const getAuthToken = () => {
@@ -100,6 +43,109 @@ const getAuthHeaders = (): HeadersInit => {
     "Content-Type": "application/json",
   };
 };
+
+// // --- Profile ---
+// export const getDriverProfile = async (): Promise<DriverProfile> => {
+//   // TODO: Reemplazar con llamada a API GET /api/driver/profile
+//   return simulateApiCall(mockDriverProfileData);
+// };
+
+export const getDriverProfile = async (): Promise<DriverProfile> => {
+  const storedUser = localStorage.getItem("userData");
+  const user = storedUser ? JSON.parse(storedUser) : null;
+  const uid = user?.uid;
+
+  if (!uid) throw new Error("No se encontró el UID del usuario logueado.");
+
+  const response = await fetch(`/api/users/profile/${uid}/`);
+  if (!response.ok) throw new Error("Error al obtener el perfil del conductor");
+
+  const userProfile = await response.json();
+
+  return {
+    name: userProfile.full_name,
+    university: userProfile.institution_name || "Universidad no especificada",
+    rating: 4.1,
+    isDriver: userProfile.driver_state === "aprobado",
+    avatarUrl: undefined,
+  };
+};
+
+
+// --- Rutas del Conductor ---
+// Define the interface for the route data from API
+interface ApiRouteData {
+  id: number;
+  startLocation: string;
+  destination: string;
+  startPointCoords: [number, number];
+  endPointCoords: [number, number];
+}
+
+export const getDriverRoutes = async (): Promise<DriverRoute[]> => {
+  // Asumiendo que el backend crea un endpoint `/api/route/my-routes/` que filtra por usuario autenticado.
+  const response = await fetch("/api/route/my-routes/", {
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error("Error al obtener las rutas del conductor");
+  }
+
+  const routesFromApi = await response.json();
+
+  // Mapear snake_case a camelCase si es necesario.
+  // En este caso, los nombres de los campos ya coinciden bastante bien.
+  return routesFromApi.map((route: ApiRouteData) => ({
+    id: route.id,
+    startLocation: route.startLocation,
+    destination: route.destination,
+    startPointCoords: route.startPointCoords,
+    endPointCoords: route.endPointCoords,
+  }));
+};
+
+
+export const addDriverRoute = async (
+  newRouteData: Omit<DriverRoute, "id">
+): Promise<DriverRoute> => {
+  // Asumiendo que el backend usa un endpoint como `/api/route/create/` para la creación.
+  const response = await fetch("/api/route/create/", {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(newRouteData),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Error al agregar la nueva ruta");
+  }
+
+  return response.json();
+};
+
+export const deleteDriverRoute = async (routeId: number): Promise<void> => {
+  // Asumiendo que el endpoint de eliminación es `/api/route/<id>/delete/`
+  const response = await fetch(`/api/route/${routeId}/delete/`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+
+  // Una respuesta exitosa de DELETE a menudo es un 204 No Content.
+  if (!response.ok && response.status !== 204) {
+    throw new Error("Error al eliminar la ruta");
+  }
+};
+
+
+// // --- Vehículos del Conductor ---
+// export const getDriverVehicles = async (): Promise<DriverVehicle[]> => {
+//   // TODO: Reemplazar con llamada a API GET /api/driver/vehicles
+//   return simulateApiCall([...mockDriverVehicles]);
+// };
+
+// Helper para obtener el token. Podría estar en un archivo authService.ts
+
 
 export const getDriverVehicles = async (): Promise<DriverVehicle[]> => {
   const response = await fetch("/api/vehicle/my-vehicles/", {
@@ -184,22 +230,74 @@ export const inspectVehicle = async (
 };
 
 // --- Viajes Publicados por el Conductor ---
-export const getDriverTrips = async (): Promise<DriverTrip[]> => {
-  // TODO: Reemplazar con llamada a API GET /api/driver/trips
-  return simulateApiCall([...mockDriverTrips]);
+// Define the interface for the trip data from API
+interface ApiTripData {
+  id: number;
+  route?: {
+    startLocation: string;
+    destination: string;
+  };
+  vehicle?: {
+    brand: string;
+  };
+  price: number;
+  time: string;
+  available_seats?: number;
+  travel_state: string;
+}
+
+export const getDriverTrips = async (
+  driverId: number
+): Promise<DriverTrip[]> => {
+  // Asumiendo que el backend crea un endpoint `/api/travel/my-trips/` que filtra por usuario
+  const response = await fetch(`/api/travel/info/${driverId}/`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) throw new Error("Error al obtener los viajes");
+
+  const tripsFromApi = await response.json();
+
+  // Mapear snake_case a camelCase y completar datos que falten
+  return tripsFromApi.map((trip: ApiTripData) => ({
+    id: trip.id,
+    startLocation: trip.route?.startLocation || "Origen no disponible",
+    destination: trip.route?.destination || "Destino no disponible",
+    vehicleType: trip.vehicle?.brand || "Vehículo no disponible",
+    price: trip.price,
+    departureDateTime: trip.time,
+    availableSeats: trip.available_seats || 0, // Asumiendo que el backend añade `available_seats`
+    travelState: trip.travel_state,
+  }));
 };
 
 export const addDriverTrip = async (
   newTripData: Omit<DriverTrip, "id">
 ): Promise<DriverTrip> => {
-  // TODO: Reemplazar con llamada a API POST /api/driver/trips
-  const addedTrip = serviceAddTrip(newTripData);
-  return simulateApiCall(addedTrip);
+  // Asumiendo que el endpoint de creación es `/api/travel/create/`
+  const response = await fetch("/api/travel/create/", {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(newTripData),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Error al publicar el viaje");
+  }
+
+  return response.json();
 };
 
+
 export const deleteDriverTrip = async (tripId: number): Promise<void> => {
-  // TODO: Reemplazar con llamada a API DELETE /api/driver/trips/:tripId
-  const success = serviceDeleteTrip(tripId);
-  if (!success) return simulateError(`Viaje con ID ${tripId} no encontrado.`);
-  return simulateApiCall(undefined);
+  // Asumiendo que el endpoint de eliminación es `/api/travel/delete/<id>/`
+  const response = await fetch(`/api/travel/travel/delete/${tripId}/`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok && response.status !== 204) {
+    throw new Error("Error al eliminar el viaje");
+  }
 };
