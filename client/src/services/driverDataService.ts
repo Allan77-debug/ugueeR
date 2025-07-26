@@ -70,9 +70,18 @@ const getAuthHeaders = (): HeadersInit => {
 // };
 
 export const getDriverProfile = async (): Promise<DriverProfile> => {
-  // Asumiendo que el backend crea un endpoint `/api/users/profile/me/`
-  // que devuelve el perfil del usuario asociado al token.
-  const response = await fetch("/api/users/profile/me/", {
+  // Paso 1: Obtener el UID del usuario guardado en el localStorage.
+  const userUid = localStorage.getItem("userUid");
+
+  // Si no hay UID, significa que el usuario no ha iniciado sesión.
+  if (!userUid) {
+    throw new Error(
+      "No se encontró el UID del usuario. Por favor, inicie sesión."
+    );
+  }
+
+  // Paso 2: Construir la URL que el backend espera, usando el UID.
+  const response = await fetch(`/api/users/profile/${userUid}/`, {
     headers: getAuthHeaders(),
   });
 
@@ -82,16 +91,14 @@ export const getDriverProfile = async (): Promise<DriverProfile> => {
 
   const userProfileFromApi = await response.json();
 
-  // Mapeamos los datos del perfil de usuario del backend a la interfaz `DriverProfile` que el frontend espera.
-  // Esto nos protege de cambios en la API y mantiene nuestro frontend consistente.
+  // Paso 3: Mapear la respuesta de la API a la interfaz del frontend (sin cambios).
   return {
     name: userProfileFromApi.full_name || "Nombre no disponible",
     university:
       userProfileFromApi.institution_name || "Universidad no especificada",
-    // El backend debe añadir 'rating' a su UsersProfileSerializer para que esto no sea un valor fijo.
-    rating: userProfileFromApi.rating || 5.0, // Valor por defecto si no viene de la API
+    rating: userProfileFromApi.rating || 5.0,
     isDriver: userProfileFromApi.driver_state === "aprobado",
-    avatarUrl: userProfileFromApi.avatar_url || undefined, // El backend debe añadir 'avatar_url'
+    avatarUrl: userProfileFromApi.avatar_url || undefined,
   };
 };
 
