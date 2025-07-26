@@ -10,7 +10,21 @@ https://docs.djangoproject.com/en/5.2/howto/deployment/asgi/
 import os
 
 from django.core.asgi import get_asgi_application
+from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.auth import AuthMiddlewareStack
+import travel.routing 
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
-application = get_asgi_application()
+# Este es el enrutador principal
+application = ProtocolTypeRouter({
+  # Peticiones web normales (HTTP)
+  "http": get_asgi_application(),
+  # Conexiones WebSocket (WS)
+  "websocket": AuthMiddlewareStack( # AuthMiddlewareStack permite usar la autenticación de Django
+        URLRouter(
+            travel.routing.websocket_urlpatterns
+        )
+    ),
+})
+

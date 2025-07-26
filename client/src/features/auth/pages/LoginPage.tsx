@@ -28,7 +28,7 @@ const LoginPage: React.FC = () => {
     setIsLoading(true)
 
     try {
-      const response = await axios.post("http://127.0.0.1:8000/api/users/login/", loginData)
+      const response = await axios.post("http://10.168.58.145:8000/api/users/login/", loginData)
       console.log("Login:", response.data)
       alert("¡Inicio de sesión exitoso!")
 
@@ -71,7 +71,7 @@ const LoginPage: React.FC = () => {
     setIsLoading(true)
 
     try {
-      const response = await axios.post("http://127.0.0.1:8000/api/institutions/login/", registerData)
+      const response = await axios.post("http://10.168.58.145:8000/api/institutions/login/", registerData)
       console.log("Inicio de sesión institución:", response.data)
 
       if (response.status === 200) {

@@ -37,7 +37,7 @@ API_KEY_GOOGLE_MAPS = env('API_KEY_GOOGLE_MAPS', default=None)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['10.168.58.145', 'localhost', '127.0.0.1']
 
 # filepath: c:\Users\juanr\OneDrive\Escritorio\ugueeR\server\config\settings.py
 REST_FRAMEWORK = {
@@ -68,6 +68,8 @@ SWAGGER_SETTINGS = {
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',       
+    'channels', 
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -184,3 +186,13 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Indica a Django cuál es el archivo principal de configuración para ASGI
+ASGI_APPLICATION = 'config.asgi.application' # ¡Asegúrate que 'config' sea el nombre correcto de tu carpeta!
+
+# Capa de comunicación para Channels. Usamos la opción simple para empezar.
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}

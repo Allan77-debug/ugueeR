@@ -5,6 +5,7 @@ import DriverPageLayout from './components/layout/DriverPageLayout';
 import MyDriverRoutesPage from './pages/MyDriverRoutesPage';
 import MyDriverVehiclesPage from './pages/MyDriverVehiclesPage';
 import MyDriverTripsPage from './pages/MyDriverTripsPage';
+import DriverTrackingPage from './pages/DriverTrackingPage';
 
 export const driverDashboardRoutes: RouteObject[] = [
   {
@@ -33,6 +34,10 @@ export const driverDashboardRoutes: RouteObject[] = [
       {
         path: 'my-trips',
         element: <MyDriverTripsPage />,
+      },
+      {
+        path: 'tracking', // Esto creará la URL /driver/tracking
+        element: <DriverTrackingPage />,
       },
       // Puedes añadir más rutas aquí si el dashboard del conductor crece
       // { path: 'settings', element: <DriverSettingsPage /> },
