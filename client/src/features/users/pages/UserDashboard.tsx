@@ -116,7 +116,7 @@ const UserDashboard = () => {
         const response = await axios.get(`http://127.0.0.1:8000/api/users/profile/${uid}/`)
 
         // Ajusta los nombres de las propiedades según la respuesta real
-        setUserData({
+        const updatedUserData = {
           uid: response.data.uid,
           fullName: response.data.full_name,
           userType: response.data.user_type,
@@ -125,7 +125,13 @@ const UserDashboard = () => {
           institutionName: response.data.institution_name,
           driverState: response.data.driver_state, // si quieres mostrarlo
           // Si tienes otros campos personalizados en tu estado, agrégalos aquí
-        })
+        }
+        
+        setUserData(updatedUserData)
+        
+        // IMPORTANTE: Actualizar localStorage con los datos completos incluyendo driverState
+        localStorage.setItem("userData", JSON.stringify(updatedUserData))
+        
         setLoading(false)
       } catch (error) {
         console.error("Error al cargar datos del usuario:", error)
@@ -450,7 +456,11 @@ const UserDashboard = () => {
         alert("¡Tu solicitud para ser conductor ha sido enviada exitosamente! Te notificaremos cuando sea revisada.")
 
         // Actualizar el estado local del usuario para reflejar que ya aplicó
-        setUserData((prev) => (prev ? { ...prev, hasAppliedDriver: true } : null))
+        const updatedUserData = { ...userData, hasAppliedDriver: true }
+        setUserData(updatedUserData)
+        
+        // IMPORTANTE: Actualizar localStorage con el estado actualizado
+        localStorage.setItem("userData", JSON.stringify(updatedUserData))
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -481,9 +491,9 @@ const UserDashboard = () => {
     }
   }
 
-  // Función para navegar a la gestión de vehículos (solo para conductores)
+  // Función para navegar a la gestión de rutas del conductor
   const navigateToVehicleManagement = () => {
-    navigate("/gestion-vehiculos")
+    navigate("/driver")
   }
 
   // Renderizado condicional basado en el estado de carga
