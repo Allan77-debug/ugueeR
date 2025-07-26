@@ -27,8 +27,7 @@ const simulateError = (message: string, delay = 300): Promise<never> =>
     setTimeout(() => reject(new Error(message)), delay)
   );
 
-const TEMP_DRIVER_ID = 40; // <--- DEFINE EL ID DEL CONDUCTOR DE PRUEBA
-const TEMP_USER_UID = 40;
+
 
 // Helper para obtener el token. Podría estar en un archivo authService.ts
 const getAuthToken = () => {
@@ -52,42 +51,37 @@ const getAuthHeaders = (): HeadersInit => {
 // };
 
 export const getDriverProfile = async (): Promise<DriverProfile> => {
-  // Paso 1: Obtener el UID del usuario guardado en el localStorage.
-  const userUid = localStorage.getItem("userUid");
+  const storedUser = localStorage.getItem("userData");
+  const user = storedUser ? JSON.parse(storedUser) : null;
+  const uid = user?.uid;
 
-  // Si no hay UID, significa que el usuario no ha iniciado sesión.
-  if (!userUid) {
-    throw new Error(
-      "No se encontró el UID del usuario. Por favor, inicie sesión."
-    );
-  }
+  if (!uid) throw new Error("No se encontró el UID del usuario logueado.");
 
-  // Paso 2: Construir la URL que el backend espera, usando el UID.
-  const response = await fetch(`/api/users/profile/${userUid}/`, {
-    headers: getAuthHeaders(),
-  });
+  const response = await fetch(`/api/users/profile/${uid}/`);
+  if (!response.ok) throw new Error("Error al obtener el perfil del conductor");
 
-  if (!response.ok) {
-    throw new Error("Error al obtener el perfil del conductor");
-  }
-
-  const userProfileFromApi = await response.json();
-
-  // Paso 3: Mapear la respuesta de la API a la interfaz del frontend (sin cambios).
+  const userProfile = await response.json();
 
   return {
-    name: userProfileFromApi.full_name || "Nombre no disponible",
-    university:
-      userProfileFromApi.institution_name || "Universidad no especificada",
-    rating: userProfileFromApi.rating || 5.0,
-
-    isDriver: userProfileFromApi.driver_state === "aprobado",
-    avatarUrl: userProfileFromApi.avatar_url || undefined,
+    name: userProfile.full_name,
+    university: userProfile.institution_name || "Universidad no especificada",
+    rating: 4.1,
+    isDriver: userProfile.driver_state === "aprobado",
+    avatarUrl: undefined,
   };
 };
 
 
 // --- Rutas del Conductor ---
+// Define the interface for the route data from API
+interface ApiRouteData {
+  id: number;
+  startLocation: string;
+  destination: string;
+  startPointCoords: [number, number];
+  endPointCoords: [number, number];
+}
+
 export const getDriverRoutes = async (): Promise<DriverRoute[]> => {
   // Asumiendo que el backend crea un endpoint `/api/route/my-routes/` que filtra por usuario autenticado.
   const response = await fetch("/api/route/my-routes/", {
@@ -102,7 +96,7 @@ export const getDriverRoutes = async (): Promise<DriverRoute[]> => {
 
   // Mapear snake_case a camelCase si es necesario.
   // En este caso, los nombres de los campos ya coinciden bastante bien.
-  return routesFromApi.map((route: any) => ({
+  return routesFromApi.map((route: ApiRouteData) => ({
     id: route.id,
     startLocation: route.startLocation,
     destination: route.destination,
@@ -236,6 +230,22 @@ export const inspectVehicle = async (
 };
 
 // --- Viajes Publicados por el Conductor ---
+// Define the interface for the trip data from API
+interface ApiTripData {
+  id: number;
+  route?: {
+    startLocation: string;
+    destination: string;
+  };
+  vehicle?: {
+    brand: string;
+  };
+  price: number;
+  time: string;
+  available_seats?: number;
+  travel_state: string;
+}
+
 export const getDriverTrips = async (
   driverId: number
 ): Promise<DriverTrip[]> => {
@@ -249,7 +259,7 @@ export const getDriverTrips = async (
   const tripsFromApi = await response.json();
 
   // Mapear snake_case a camelCase y completar datos que falten
-  return tripsFromApi.map((trip: any) => ({
+  return tripsFromApi.map((trip: ApiTripData) => ({
     id: trip.id,
     startLocation: trip.route?.startLocation || "Origen no disponible",
     destination: trip.route?.destination || "Destino no disponible",
