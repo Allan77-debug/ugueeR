@@ -85,7 +85,7 @@ INSTALLED_APPS = [
     'route',
     'vehicle',
     'travel',
-    #'django.contrib.gis',  #problema grave con PostGIS
+    'assessment',
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
