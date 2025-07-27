@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF, Polyline } from '@react-google-maps/api';
 import styles from './RealTimeMap.module.css';
 
 const containerStyle = {
@@ -21,6 +21,9 @@ interface Vehicle {
   plate: string;
   available: boolean;
   vehicleType: string;
+  destination: string;
+  rating: number;
+  estimatedTime: string;
 }
 
 const RealTimeMap: React.FC = () => {
@@ -30,6 +33,9 @@ const RealTimeMap: React.FC = () => {
   });
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [showRoute, setShowRoute] = useState<boolean>(false);
+  const [routePath, setRoutePath] = useState<google.maps.LatLng[]>([]);
 
   // Simular vehículos en movimiento
   useEffect(() => {
@@ -40,7 +46,10 @@ const RealTimeMap: React.FC = () => {
         driver: "Carlos Rodríguez",
         plate: "ABC123",
         available: true,
-        vehicleType: "Sedan"
+        vehicleType: "Sedan",
+        destination: "Terminal de Transporte",
+        rating: 4.8,
+        estimatedTime: "5 min"
       },
       {
         id: 2,
@@ -48,7 +57,10 @@ const RealTimeMap: React.FC = () => {
         driver: "Ana Martínez",
         plate: "XYZ789",
         available: false,
-        vehicleType: "SUV"
+        vehicleType: "SUV",
+        destination: "Centro Comercial Chipichape",
+        rating: 4.5,
+        estimatedTime: "En viaje"
       },
       {
         id: 3,
@@ -56,7 +68,10 @@ const RealTimeMap: React.FC = () => {
         driver: "Luis Gómez",
         plate: "DEF456",
         available: true,
-        vehicleType: "Hatchback"
+        vehicleType: "Hatchback",
+        destination: "Estación MIO Universidades",
+        rating: 4.9,
+        estimatedTime: "8 min"
       },
       {
         id: 4,
@@ -64,7 +79,10 @@ const RealTimeMap: React.FC = () => {
         driver: "María López",
         plate: "GHI789",
         available: true,
-        vehicleType: "Sedan"
+        vehicleType: "Sedan",
+        destination: "Parque del Perro",
+        rating: 4.7,
+        estimatedTime: "3 min"
       },
       {
         id: 5,
@@ -72,7 +90,10 @@ const RealTimeMap: React.FC = () => {
         driver: "Pedro Sánchez",
         plate: "JKL012",
         available: false,
-        vehicleType: "SUV"
+        vehicleType: "SUV",
+        destination: "Ciudad Jardín",
+        rating: 4.6,
+        estimatedTime: "En viaje"
       }
     ];
 
@@ -107,6 +128,43 @@ const RealTimeMap: React.FC = () => {
       strokeWeight: 2,
       scale: 8
     };
+  };
+
+  const handleVehicleClick = (vehicle: Vehicle) => {
+    setSelectedVehicle(vehicle);
+  };
+
+  const handleClosePopup = () => {
+    setSelectedVehicle(null);
+    setShowRoute(false);
+    setRoutePath([]);
+  };
+
+  const handleViewRoute = async (vehicle: Vehicle) => {
+    setShowRoute(true);
+    
+    // Simular una ruta desde la posición del vehículo hasta su destino
+    // En una implementación real, esto vendría de una API
+    const mockDestination = {
+      lat: vehicle.position.lat + (Math.random() - 0.5) * 0.01,
+      lng: vehicle.position.lng + (Math.random() - 0.5) * 0.01
+    };
+
+    // Crear una ruta simulada con algunos puntos intermedios
+    const simulatedRoute = [
+      new google.maps.LatLng(vehicle.position.lat, vehicle.position.lng),
+      new google.maps.LatLng(
+        vehicle.position.lat + (mockDestination.lat - vehicle.position.lat) * 0.3,
+        vehicle.position.lng + (mockDestination.lng - vehicle.position.lng) * 0.3
+      ),
+      new google.maps.LatLng(
+        vehicle.position.lat + (mockDestination.lat - vehicle.position.lat) * 0.7,
+        vehicle.position.lng + (mockDestination.lng - vehicle.position.lng) * 0.7
+      ),
+      new google.maps.LatLng(mockDestination.lat, mockDestination.lng)
+    ];
+
+    setRoutePath(simulatedRoute);
   };
 
   if (!isLoaded) {
@@ -145,13 +203,60 @@ const RealTimeMap: React.FC = () => {
             key={vehicle.id}
             position={vehicle.position}
             icon={getMarkerIcon(vehicle)}
-            title={`${vehicle.driver} - ${vehicle.plate} (${vehicle.available ? 'Disponible' : 'No disponible'})`}
-          />
+            title={`${vehicle.driver} - ${vehicle.plate}`}
+            onClick={() => handleVehicleClick(vehicle)}
+          >
+            {selectedVehicle && selectedVehicle.id === vehicle.id && (
+              <InfoWindowF
+                onCloseClick={handleClosePopup}
+                options={{
+                  pixelOffset: new google.maps.Size(0, -10)
+                }}
+              >
+                <div className={styles.infoWindow}>
+                  <div className={styles.infoWindowHeader}>
+                    <h4>{selectedVehicle.driver}</h4>
+                    <span className={`${styles.status} ${selectedVehicle.available ? styles.available : styles.unavailable}`}>
+                      {selectedVehicle.available ? 'Disponible' : 'No disponible'}
+                    </span>
+                  </div>
+                  <div className={styles.infoWindowBody}>
+                    <p><strong>Placa:</strong> {selectedVehicle.plate}</p>
+                    <p><strong>Destino:</strong> {selectedVehicle.destination}</p>
+                    <p><strong>Tipo:</strong> {selectedVehicle.vehicleType}</p>
+                    <p><strong>Tiempo:</strong> {selectedVehicle.estimatedTime}</p>
+                  </div>
+                  <div className={styles.infoWindowActions}>
+                    <button 
+                      className={styles.routeButton}
+                      onClick={() => handleViewRoute(selectedVehicle)}
+                      disabled={showRoute}
+                    >
+                      {showRoute ? 'Ruta mostrada' : 'Ver Ruta'}
+                    </button>
+                  </div>
+                </div>
+              </InfoWindowF>
+            )}
+          </MarkerF>
         ))}
+        
+        {/* Mostrar la ruta si está activa */}
+        {showRoute && routePath.length > 0 && (
+          <Polyline
+            path={routePath}
+            options={{
+              strokeColor: '#3b82f6',
+              strokeOpacity: 0.8,
+              strokeWeight: 4,
+              geodesic: true,
+            }}
+          />
+        )}
       </GoogleMap>
       
       {/* Leyenda */}
-      <div className={styles.mapLegend} style={{ backgroundColor: 'red', color: 'white' }}>
+      <div className={styles.mapLegend}>
         <div className={styles.legendTitle}>Leyenda:</div>
         <div className={styles.legendItem}>
           <div className={`${styles.legendDot} ${styles.available}`}></div>
@@ -164,7 +269,7 @@ const RealTimeMap: React.FC = () => {
       </div>
 
       {/* Info de vehículos */}
-      <div className={styles.mapInfo} style={{ backgroundColor: 'blue', color: 'white' }}>
+      <div className={styles.mapInfo}>
         <div className={styles.infoTitle}>
           Vehículos activos: {vehicles.length}
         </div>
