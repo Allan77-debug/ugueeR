@@ -5,6 +5,7 @@ import {
   DriverVehicle,
   DriverTrip,
 } from "../types/driver.types";
+import authService from "./authService";
 // Ajusta la ruta para importar desde la carpeta de mocks del driver
 import {
   mockDriverProfileData,
@@ -29,19 +30,14 @@ const simulateError = (message: string, delay = 300): Promise<never> =>
 
 
 
-// Helper para obtener el token. Podría estar en un archivo authService.ts
+// Helper para obtener el token usando el servicio de auth
 const getAuthToken = () => {
-  return localStorage.getItem("accessToken");
+  return authService.getToken();
 };
 
-// Helper para crear las cabeceras de autenticación
+// Helper para crear las cabeceras de autenticación usando el servicio de auth
 const getAuthHeaders = (): HeadersInit => {
-  const token = getAuthToken();
-  if (!token) return {}; // Si no hay token, devuelve cabeceras vacías
-  return {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
-  };
+  return authService.getAuthHeaders();
 };
 
 // // --- Profile ---
@@ -57,7 +53,10 @@ export const getDriverProfile = async (): Promise<DriverProfile> => {
 
   if (!uid) throw new Error("No se encontró el UID del usuario logueado.");
 
-  const response = await fetch(`/api/users/profile/${uid}/`);
+  const response = await fetch(`http://127.0.0.1:8000/api/users/profile/${uid}/`, {
+    headers: getAuthHeaders(), // Usar headers con token
+  });
+  
   if (!response.ok) throw new Error("Error al obtener el perfil del conductor");
 
   const userProfile = await response.json();
@@ -84,7 +83,7 @@ interface ApiRouteData {
 
 export const getDriverRoutes = async (): Promise<DriverRoute[]> => {
   // Asumiendo que el backend crea un endpoint `/api/route/my-routes/` que filtra por usuario autenticado.
-  const response = await fetch("/api/route/my-routes/", {
+  const response = await fetch("http://127.0.0.1:8000/api/route/my-routes/", {
     headers: getAuthHeaders(),
   });
 
@@ -110,7 +109,7 @@ export const addDriverRoute = async (
   newRouteData: Omit<DriverRoute, "id">
 ): Promise<DriverRoute> => {
   // Asumiendo que el backend usa un endpoint como `/api/route/create/` para la creación.
-  const response = await fetch("/api/route/create/", {
+  const response = await fetch("http://127.0.0.1:8000/api/route/create/", {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify(newRouteData),
@@ -126,7 +125,7 @@ export const addDriverRoute = async (
 
 export const deleteDriverRoute = async (routeId: number): Promise<void> => {
   // Asumiendo que el endpoint de eliminación es `/api/route/<id>/delete/`
-  const response = await fetch(`/api/route/${routeId}/delete/`, {
+  const response = await fetch(`http://127.0.0.1:8000/api/route/${routeId}/delete/`, {
     method: "DELETE",
     headers: getAuthHeaders(),
   });
@@ -148,7 +147,7 @@ export const deleteDriverRoute = async (routeId: number): Promise<void> => {
 
 
 export const getDriverVehicles = async (): Promise<DriverVehicle[]> => {
-  const response = await fetch("/api/vehicle/my-vehicles/", {
+  const response = await fetch("http://127.0.0.1:8000/api/vehicle/my-vehicles/", {
     headers: getAuthHeaders(), // <-- Se usan las cabeceras dinámicas
   });
   if (!response.ok) throw new Error("Error al obtener los vehículos");
@@ -156,7 +155,7 @@ export const getDriverVehicles = async (): Promise<DriverVehicle[]> => {
 };
 
 export const deleteDriverVehicle = async (vehicleId: number): Promise<void> => {
-  const response = await fetch(`/api/vehicle/${vehicleId}/delete/`, {
+  const response = await fetch(`http://127.0.0.1:8000/api/vehicle/${vehicleId}/delete/`, {
     method: "DELETE",
     headers: getAuthHeaders(), // <-- Se usan las cabeceras dinámicas
   });
@@ -169,7 +168,7 @@ export const addDriverVehicle = async (
   // Nota: Ya no necesitamos pasar el driver_id. El backend lo sabe por el token.
   // El frontend solo envía los datos del vehículo.
 
-  const response = await fetch("/api/vehicle/vehicles/register/", {
+  const response = await fetch("http://127.0.0.1:8000/api/vehicle/vehicles/register/", {
     // O la URL final que defina el backend
     method: "POST",
     headers: getAuthHeaders(), // <-- Usa las cabeceras dinámicas
@@ -217,7 +216,7 @@ export const inspectVehicle = async (
   // Nota: Esta función asume que el backend ha creado un endpoint para obtener un solo vehículo.
   // Si no existe, esta función no se podrá usar. La URL es una suposición.
 
-  const response = await fetch(`/api/vehicle/vehicles/${vehicleId}/`, {
+  const response = await fetch(`http://127.0.0.1:8000/api/vehicle/vehicles/${vehicleId}/`, {
     headers: getAuthHeaders(),
   });
 
@@ -250,7 +249,7 @@ export const getDriverTrips = async (
   driverId: number
 ): Promise<DriverTrip[]> => {
   // Asumiendo que el backend crea un endpoint `/api/travel/my-trips/` que filtra por usuario
-  const response = await fetch(`/api/travel/info/${driverId}/`, {
+  const response = await fetch(`http://127.0.0.1:8000/api/travel/info/${driverId}/`, {
     headers: getAuthHeaders(),
   });
 
@@ -275,7 +274,7 @@ export const addDriverTrip = async (
   newTripData: Omit<DriverTrip, "id">
 ): Promise<DriverTrip> => {
   // Asumiendo que el endpoint de creación es `/api/travel/create/`
-  const response = await fetch("/api/travel/create/", {
+  const response = await fetch("http://127.0.0.1:8000/api/travel/create/", {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify(newTripData),
@@ -292,7 +291,7 @@ export const addDriverTrip = async (
 
 export const deleteDriverTrip = async (tripId: number): Promise<void> => {
   // Asumiendo que el endpoint de eliminación es `/api/travel/delete/<id>/`
-  const response = await fetch(`/api/travel/travel/delete/${tripId}/`, {
+  const response = await fetch(`http://127.0.0.1:8000/api/travel/travel/delete/${tripId}/`, {
     method: "DELETE",
     headers: getAuthHeaders(),
   });
