@@ -88,6 +88,7 @@ INSTALLED_APPS = [
     'vehicle',
     'travel',
     'assessment',
+    'realize',
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
