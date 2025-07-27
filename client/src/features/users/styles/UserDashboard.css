@@ -572,3 +572,29 @@
 .action-button:disabled:hover {
   background-color: #6c757d;
 }
+
+/* Estilos para el contenedor del mapa */
+.map-container {
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  min-height: 600px;
+  padding: 0;
+}
+
+.map-container > div {
+  width: 100% !important;
+  height: 600px !important;
+}
+
+/* Estilos responsivos para el mapa */
+@media (max-width: 768px) {
+  .map-container {
+    min-height: 400px;
+  }
+  
+  .map-container > div {
+    height: 400px !important;
+  }
+}

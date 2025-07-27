@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import "../styles/UserDashboard.css"
 import axios from "axios"
+import RealTimeMap from "../components/RealTimeMap"
 
 // Interfaces basadas en la estructura de la base de datos
 interface UserData {
@@ -757,17 +758,7 @@ const UserDashboard = () => {
           </div>
         ) : (
           <div className="map-container">
-            <div className="map-placeholder">
-              <MapIcon size={48} />
-              <h3>Mapa en Tiempo Real</h3>
-              <p>
-                Aquí se mostrará un mapa interactivo con la ubicación y disponibilidad de los vehículos en tiempo real.
-              </p>
-              <p className="map-note">
-                Esta funcionalidad estará disponible próximamente. Estamos trabajando para ofrecerte la mejor
-                experiencia de viaje.
-              </p>
-            </div>
+            <RealTimeMap />
           </div>
         )}
       </main>

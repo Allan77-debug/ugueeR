@@ -1,0 +1,140 @@
+/* Contenedor principal del mapa */
+.mapWrapper {
+  position: relative !important;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  width: 100% !important;
+  height: 600px !important;
+}
+
+/* Estados de carga */
+.mapLoading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 600px;
+  background-color: #f3f4f6;
+  border-radius: 8px;
+}
+
+.mapLoadingContent {
+  text-align: center;
+  color: #6b7280;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e5e7eb;
+  border-top: 4px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Leyenda del mapa */
+.mapLegend {
+  position: absolute !important;
+  top: 10px !important;
+  right: 10px !important;
+  background-color: white !important;
+  padding: 12px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+  font-size: 14px !important;
+  z-index: 1000 !important;
+  border: 2px solid #e5e7eb !important;
+  min-width: 120px !important;
+}
+
+.legendTitle {
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #374151;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+  color: #6b7280;
+}
+
+.legendItem:last-child {
+  margin-bottom: 0;
+}
+
+.legendDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.legendDot.available {
+  background-color: #22c55e;
+}
+
+.legendDot.unavailable {
+  background-color: #ef4444;
+}
+
+/* Panel de información */
+.mapInfo {
+  position: absolute !important;
+  bottom: 10px !important;
+  left: 10px !important;
+  background-color: white !important;
+  padding: 12px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+  font-size: 12px !important;
+  max-width: 200px !important;
+  z-index: 1000 !important;
+  border: 2px solid #e5e7eb !important;
+  min-width: 150px !important;
+}
+
+.infoTitle {
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #374151;
+}
+
+.infoAvailable {
+  color: #22c55e;
+  margin-bottom: 4px;
+}
+
+.infoOccupied {
+  color: #ef4444;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .mapLegend {
+    top: 5px;
+    right: 5px;
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  .mapInfo {
+    bottom: 5px;
+    left: 5px;
+    padding: 8px;
+    font-size: 10px;
+    max-width: 150px;
+  }
+
+  .legendItem {
+    margin-bottom: 2px;
+  }
+}
