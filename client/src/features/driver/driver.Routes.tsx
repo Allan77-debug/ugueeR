@@ -36,7 +36,7 @@ export const driverDashboardRoutes: RouteObject[] = [
         element: <MyDriverTripsPage />,
       },
       {
-        path: 'tracking', // Esto creará la URL /driver/tracking
+        path: 'tracking/:travelId',        
         element: <DriverTrackingPage />,
       },
       // Puedes añadir más rutas aquí si el dashboard del conductor crece
