@@ -8,14 +8,6 @@ import {
 
 import axios from "axios";
 
-const simulateApiCall = <T>(data: T, delay = 300): Promise<T> =>
-  new Promise((resolve) => setTimeout(() => resolve(data), delay));
-
-const simulateError = (message: string, delay = 300): Promise<never> =>
-  new Promise((_, reject) =>
-    setTimeout(() => reject(new Error(message)), delay)
-  );
-
 // Helper para obtener el token. Podría estar en un archivo authService.ts
 const getAuthToken = () => {
   return localStorage.getItem("accessToken");
