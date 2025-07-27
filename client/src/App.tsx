@@ -14,7 +14,9 @@ import Login from "./features/auth/pages/LoginPage";
 import LoginAdmin from "./features/auth/pages/LoginAdmin";
 import InstitutionDashboard from "./features/institution/pages/InstitutionDashboard";
 import DriverPageLayout from "./features/driver/components/layout/DriverPageLayout";
+import DriverProtectedRoute from "./features/driver/components/DriverProtectedRoute";
 import { driverDashboardRoutes } from "./features/driver/driver.Routes";
+import authService from "./services/authService";
 
 // Componente para proteger rutas
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -28,7 +30,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const UserProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const isAuthenticated = localStorage.getItem("userToken") !== null;
+  const isAuthenticated = authService.isAuthenticated();
 
   if (!isAuthenticated) {
     // Para desarrollo permitimos el acceso sin token
@@ -92,13 +94,13 @@ function App() {
         <Route
           path="/driver/*" // El path base para el módulo del conductor
           element={
-            <UserProtectedRoute>
+            <DriverProtectedRoute>
               {/*
                  Aquí renderizamos directamente el layout que tiene el Outlet,
                  y React Router se encarga de los children definidos en driverDashboardRoutes
               */}
               <DriverPageLayout />
-            </UserProtectedRoute>
+            </DriverProtectedRoute>
           }
         >
           {/* Definimos las rutas hijas directamente aquí, usando los children de driverDashboardRoutes */}
