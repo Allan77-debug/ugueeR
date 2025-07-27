@@ -1,3 +1,6 @@
 /server/config/__pycache__
 /server/institutions/__pycache__
 /server/institutions/migrations/__pycache__
+__pycache__/
+*.py[cod]
+*$py.class

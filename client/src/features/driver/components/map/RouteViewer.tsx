@@ -11,6 +11,7 @@ import { LatLngTuple } from "../../../../types/driver.types";
 
 const LIBRARIES: "geometry"[] = ["geometry"];
 
+// Reciben como propiedades (props) externas
 interface RouteViewerProps {
   startPointCoords: LatLngTuple;
   endPointCoords: LatLngTuple;
