@@ -1,0 +1,155 @@
+// ESTE HTML QUEDO OBSOLETO, USAR MAP_CLIENT Y DRIVER_CLIENT
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Driver Test Client</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
+        h1 { color: #333; }
+        .container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        button { padding: 10px 15px; margin-right: 10px; border: none; border-radius: 5px; cursor: pointer; }
+        button.connect-btn { background-color: #4CAF50; color: white; }
+        button.send-btn { background-color: #2196F3; color: white; }
+        input[type="number"], input[type="text"] { padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-right: 10px; width: 150px; }
+        #connection-status { font-weight: bold; margin-left: 10px; }
+        #messages { border: 1px solid #eee; padding: 10px; margin-top: 15px; max-height: 300px; overflow-y: scroll; background-color: #fafafa; border-radius: 5px; }
+        .log-info { color: #333; }
+        .log-sent { color: #007bff; }
+        .log-received { color: #28a745; }
+        .log-error { color: #dc3545; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Driver Test Client</h1>
+
+    <div class="container">
+        <h3>Configuración del Conductor</h3>
+        <label for="travel-id-input">ID del Viaje:</label>
+        <input type="number" id="travel-id-input" value="1" placeholder="Ej: 1"><br><br>
+        
+        <label for="conductor-token">Token JWT del Conductor:</label>
+        <input type="text" id="conductor-token" size="80" 
+               value="TU_TOKEN_CONDUCTOR_APROBADO_AQUI" 
+               placeholder="Pega aquí el token JWT del conductor aprobado">
+        <br><br>
+        <button class="connect-btn" id="connect-button">Establecer Conexión (Conductor)</button>
+        <p>Estado de la conexión: <span id="connection-status">Desconectado</span></p>
+    </div>
+
+    <div class="container">
+        <h3>Enviar Ubicación</h3>
+        <label for="lat-input">Latitud:</label>
+        <input type="number" id="lat-input" value="4.6097100" step="any">
+        <label for="lon-input">Longitud:</label>
+        <input type="number" id="lon-input" value="-74.0817500" step="any">
+        <button class="send-btn" id="send-button" disabled>Enviar Ubicación</button>
+    </div>
+
+    <div class="container">
+        <h3>Mensajes del WebSocket</h3>
+        <div id="messages"></div>
+    </div>
+
+    <script>
+        let socket;
+        const travelIdInput = document.getElementById('travel-id-input');
+        const conductorTokenInput = document.getElementById('conductor-token');
+        const connectButton = document.getElementById('connect-button');
+        const statusSpan = document.getElementById('connection-status');
+        const messagesDiv = document.getElementById('messages');
+        const sendButton = document.getElementById('send-button');
+        const latInput = document.getElementById('lat-input');
+        const lonInput = document.getElementById('lon-input');
+
+        // Función para registrar mensajes en la UI
+        function logMessage(message, type = 'log-info') {
+            const p = document.createElement('p');
+            p.className = type;
+            p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            messagesDiv.appendChild(p);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll
+        }
+
+        // Función para establecer la conexión WebSocket
+        function establishConnection() {
+            // Aseguramos que solo haya una conexión activa a la vez
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.close(1000, "Nueva conexión solicitada");
+                socket = null; // Limpiamos la referencia
+            }
+
+            const travelId = travelIdInput.value;
+            const conductorToken = conductorTokenInput.value;
+
+            if (!travelId) {
+                logMessage("Por favor, ingresa un ID de Viaje.", 'log-error');
+                return;
+            }
+            if (!conductorToken || conductorToken === "TU_TOKEN_CONDUCTOR_APROBADO_AQUI") {
+                logMessage("Por favor, pega el token JWT del conductor.", 'log-error');
+                return;
+            }
+
+            const websocketUrl = `ws://localhost:8000/ws/travel/${travelId}/?token=${conductorToken}`;
+            socket = new WebSocket(websocketUrl);
+
+            logMessage(`Intentando conectar como Conductor al viaje ${travelId}...`);
+            statusSpan.textContent = 'Conectando...';
+            statusSpan.style.color = 'orange';
+            connectButton.disabled = true; // Deshabilita el botón mientras intenta conectar
+
+            socket.onopen = (event) => {
+                statusSpan.textContent = 'Conectado';
+                statusSpan.style.color = 'green';
+                logMessage(`✅ WebSocket conectado. Listo para enviar ubicación.`, 'log-info');
+                sendButton.disabled = false; // Habilita el botón de enviar
+                connectButton.disabled = false; // Vuelve a habilitar el botón de conectar
+            };
+
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                logMessage(`📍 Recibido: ${JSON.stringify(data)}`, 'log-received');
+            };
+
+            socket.onclose = (event) => {
+                statusSpan.textContent = 'Desconectado';
+                statusSpan.style.color = 'red';
+                logMessage(`❌ WebSocket desconectado. Código: ${event.code}, Razón: ${event.reason}`, 'log-error');
+                sendButton.disabled = true; // Deshabilita el botón de enviar
+                connectButton.disabled = false; // Vuelve a habilitar el botón de conectar
+            };
+
+            socket.onerror = (error) => {
+                statusSpan.textContent = 'Error';
+                statusSpan.style.color = 'red';
+                logMessage(`🔥 Error en WebSocket: ${error.message || error}`, 'log-error');
+                sendButton.disabled = true;
+                connectButton.disabled = false;
+            };
+        }
+
+        // Event Listener para el botón de conexión
+        connectButton.addEventListener('click', establishConnection);
+
+        // Event Listener para el botón de enviar ubicación
+        sendButton.addEventListener('click', () => {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                const lat = parseFloat(latInput.value);
+                const lon = parseFloat(lonInput.value);
+                if (!isNaN(lat) && !isNaN(lon)) {
+                    const message = { lat: lat, lon: lon };
+                    socket.send(JSON.stringify(message));
+                    logMessage(`➡️ Enviado: ${JSON.stringify(message)}`, 'log-sent');
+                } else {
+                    logMessage("Por favor, ingresa latitud y longitud válidas.", 'log-error');
+                }
+            } else {
+                logMessage("WebSocket no está conectado o listo para enviar datos.", 'log-error');
+            }
+        });
+
+        // Opcional: Establecer una conexión automáticamente al cargar la página si el token ya está en el HTML.
+        // establishConnection(); 
+    </script>
+</body>
+</html>

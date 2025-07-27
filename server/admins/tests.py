@@ -1,3 +1,5 @@
-from django.test import TestCase
+# Import all test classes from separated test files
+from .test_models import AdminUserModelTest
 
-# Create your tests here.
+# This file now serves as a central import point for all admin tests
+# Individual test files are organized in the tests/ directory

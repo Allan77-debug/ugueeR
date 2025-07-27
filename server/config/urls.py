@@ -31,6 +31,7 @@ urlpatterns = [
     path("api/route/", include("route.urls")),
     path("api/travel/", include("travel.urls")),
     path("api/assessment/", include("assessment.urls")),
+    path("api/realize/", include("realize.urls")),
     # Documentacion
     re_path(
         r"^swagger(?P<format>\.json|\.yaml)$",

@@ -3,5 +3,9 @@
 /server/institutions/migrations/__pycache__
 __pycache__/
 *.py[cod]
+<<<<<<< HEAD
 *$py.class
 server/venv/
+=======
+
+>>>>>>> bcd0c0544300ff6847e855b6e035635a8e51f75f

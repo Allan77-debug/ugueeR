@@ -1,27 +1,40 @@
-import React from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Building, Settings, LogOut } from "lucide-react";
+"use client"
+import { Link, useNavigate } from "react-router-dom"
+import { Building, Settings, LogOut, Sun, Moon } from "lucide-react"
 
-const AdminSidebar = () => {
-  const navigate = useNavigate();
+interface AdminSidebarProps {
+  isDarkMode: boolean
+  toggleTheme: () => void
+}
+
+const AdminSidebar = ({ isDarkMode, toggleTheme }: AdminSidebarProps) => {
+  const navigate = useNavigate()
 
   // Función para cerrar sesión
   const handleLogout = () => {
-    
     // Eliminar el token y los datos del usuario del localStorage
-    localStorage.removeItem("adminToken");
-    localStorage.removeItem("adminUser");
+    localStorage.removeItem("adminToken")
+    localStorage.removeItem("adminUser")
 
-
-    console.log("Sesión cerrada correctamente");
+    console.log("Sesión cerrada correctamente")
 
     // Redireccionar al inicio
-    navigate("/");
-  };
+    navigate("/")
+  }
   return (
     <aside className="admin-sidebar">
       <div className="sidebar-header">
-        <h2>Admin Panel</h2>
+        <div className="header-content">
+          <h2>Admin Panel</h2>
+          {/* Toggle de tema */}
+          <button
+            className="theme-toggle"
+            onClick={toggleTheme}
+            title={isDarkMode ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+          >
+            {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+        </div>
       </div>
 
       <nav className="sidebar-nav">
@@ -43,7 +56,7 @@ const AdminSidebar = () => {
         </button>
       </div>
     </aside>
-  );
-};
+  )
+}
 
-export default AdminSidebar;
+export default AdminSidebar

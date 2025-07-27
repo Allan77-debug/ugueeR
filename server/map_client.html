@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live Institution Map</title>
+    <style>
+        /* Estilos completos para que se vea bien */
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
+        h1 { color: #333; }
+        .container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        button { padding: 10px 15px; margin-right: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
+        #connect-button { background-color: #5cb85c; color: white; }
+        input[type="text"] { padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-right: 10px; width: 80%; }
+        #connection-status { font-weight: bold; }
+        #messages { border: 1px solid #eee; padding: 10px; margin-top: 15px; max-height: 400px; overflow-y: scroll; background-color: #fafafa; border-radius: 5px; }
+        .log-info { color: #31708f; }
+        .log-received { color: #28a745; font-weight: bold; }
+        .log-error { color: #dc3545; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Mapa Institucional en Tiempo Real</h1>
+    <div class="container">
+        <h3>Conexión</h3>
+        <label for="auth-token">Token de Usuario (de la Institución):</label>
+        <input type="text" id="auth-token" placeholder="Pega aquí el token de sesión del usuario">
+        <br><br>
+        <button id="connect-button">Conectar al Mapa</button>
+        <p>Estado: <span id="connection-status" style="color:red;">Desconectado</span></p>
+    </div>
+    <div class="container">
+        <h3>Log de Ubicaciones Recibidas</h3>
+        <div id="messages"></div>
+    </div>
+    <!-- Aquí iría el div del mapa: <div id="map" style="height: 500px;"></div> -->
+
+    <script>
+        let socket;
+        const authTokenInput = document.getElementById('auth-token');
+        const connectButton = document.getElementById('connect-button');
+        const statusSpan = document.getElementById('connection-status');
+        const messagesDiv = document.getElementById('messages');
+        
+        // Objeto para guardar los marcadores del mapa, la clave sería el travel_id
+        let driverMarkers = {};
+
+        // --- FUNCIÓN 'logMessage' DESCOMENTADA Y COMPLETA ---
+        function logMessage(message, type = 'log-info') {
+            const p = document.createElement('p');
+            p.className = type;
+            p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            messagesDiv.appendChild(p);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll
+        }
+
+        function connectToMap() {
+            if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+                socket.close();
+            }
+
+            const authToken = authTokenInput.value;
+            if (!authToken) {
+                logMessage("Por favor, ingresa un token de usuario.", 'log-error');
+                return;
+            }
+
+            const websocketUrl = `ws://localhost:8000/ws/institution/live_map/?token=${authToken}`;
+            socket = new WebSocket(websocketUrl);
+            
+            logMessage("Intentando conectar al mapa institucional...");
+            statusSpan.textContent = 'Conectando...';
+            statusSpan.style.color = 'orange';
+
+            socket.onopen = () => {
+                logMessage("✅ Conectado. Escuchando a todos los conductores activos de la institución.");
+                statusSpan.textContent = "Conectado";
+                statusSpan.style.color = 'green';
+            };
+
+            socket.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    // Manejo de errores que puedan venir del servidor
+                    if (data.error) {
+                         logMessage(`Error desde el servidor: ${data.error}`, 'log-error');
+                         return;
+                    }
+
+                    // El payload ya contiene todo lo que necesitamos para saber qué conductor movió
+                    const { travel_id, driver_name, lat, lon, speed } = data;
+                    
+                    logMessage(`📍 Viaje ${travel_id} (${driver_name}) -> Lat: ${lat}, Lon: ${lon}`, 'log-received');
+
+                    // LÓGICA DEL MAPA (ejemplo):
+                    // if (driverMarkers[travel_id]) {
+                    //     driverMarkers[travel_id].setLatLng([lat, lon]);
+                    // } else {
+                    //     driverMarkers[travel_id] = L.marker([lat, lon]).addTo(map).bindPopup(driver_name);
+                    // }
+                } catch (e) {
+                    logMessage(`Error procesando mensaje: ${e}`, 'log-error');
+                    logMessage(`Dato recibido: ${event.data}`, 'log-info');
+                }
+            };
+
+            // --- HANDLERS DE 'onclose' Y 'onerror' COMPLETOS ---
+            socket.onclose = (event) => {
+                let reason = event.reason ? `, Razón: ${event.reason}` : '';
+                logMessage(`❌ WebSocket desconectado. Código: ${event.code}${reason}`, 'log-error');
+                statusSpan.textContent = 'Desconectado';
+                statusSpan.style.color = 'red';
+            };
+
+            socket.onerror = (error) => {
+                logMessage('🔥 Error en la conexión WebSocket. Revisa la consola del navegador.', 'log-error');
+                statusSpan.textContent = 'Error';
+                statusSpan.style.color = 'red';
+            };
+        }
+
+        connectButton.addEventListener('click', connectToMap);
+    </script>
+</body>
+</html>

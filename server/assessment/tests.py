@@ -1,3 +1,6 @@
-from django.test import TestCase
+# Import all test classes from separated test files
+from .test_models import AssessmentModelTest
+from .test_views import AssessmentViewsTest
 
-# Create your tests here.
+# This file now serves as a central import point for all assessment tests
+# Individual test files are organized in the tests/ directory

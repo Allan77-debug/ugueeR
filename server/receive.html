@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Observer Test Client</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
+        h1 { color: #333; }
+        .container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        button { padding: 10px 15px; margin-right: 10px; border: none; border-radius: 5px; cursor: pointer; }
+        button.connect-btn { background-color: #5cb85c; color: white; }
+        input[type="number"], input[type="text"] { padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-right: 10px; width: 150px; }
+        #auth-token { width: 80%; }
+        #connection-status { font-weight: bold; margin-left: 10px; }
+        #messages { border: 1px solid #eee; padding: 10px; margin-top: 15px; max-height: 400px; overflow-y: scroll; background-color: #fafafa; border-radius: 5px; }
+        .log-info { color: #31708f; }
+        .log-received { color: #28a745; font-weight: bold; }
+        .log-error { color: #dc3545; font-weight: bold; }
+        .note { font-size: 0.9em; color: #666; font-style: italic; }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Observer Test Client (Solo Escucha)</h1>
+
+    <div class="container">
+        <h3>Configuración de Conexión</h3>
+        <label for="travel-id-input">ID del Viaje:</label>
+        <input type="number" id="travel-id-input" value="1" placeholder="Ej: 1"><br><br>
+        
+        <label for="auth-token">Token de Autenticación:</label>
+        <input type="text" id="auth-token" 
+               value="PEGAR_TOKEN_DE_USUARIO_O_INSTITUCION" 
+               placeholder="Pega aquí el token JWT">
+        <p class="note">
+            <b>Nota:</b> Pega aquí el token de un <b>usuario logueado</b> (admin, estudiante, etc.) que pertenezca a la institución del viaje, O el <b>token especial de la institución</b>.
+        </p>
+        <br>
+        <button class="connect-btn" id="connect-button">Conectar y Escuchar</button>
+        <p>Estado de la conexión: <span id="connection-status">Desconectado</span></p>
+    </div>
+
+    <div class="container">
+        <h3>Ubicaciones Recibidas en Tiempo Real</h3>
+        <div id="messages"></div>
+    </div>
+
+    <script>
+        let socket;
+        const travelIdInput = document.getElementById('travel-id-input');
+        const authTokenInput = document.getElementById('auth-token');
+        const connectButton = document.getElementById('connect-button');
+        const statusSpan = document.getElementById('connection-status');
+        const messagesDiv = document.getElementById('messages');
+
+        // Función para registrar mensajes en la UI
+        function logMessage(message, type = 'log-info') {
+            const p = document.createElement('p');
+            p.className = type;
+            p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            messagesDiv.appendChild(p);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll
+        }
+
+        // Función para establecer la conexión WebSocket
+        function establishConnection() {
+            // Aseguramos que solo haya una conexión activa a la vez
+            if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+                logMessage("Cerrando conexión anterior...", 'log-info');
+                socket.close(1000, "Nueva conexión solicitada");
+            }
+
+            const travelId = travelIdInput.value;
+            const authToken = authTokenInput.value;
+
+            if (!travelId) {
+                logMessage("Por favor, ingresa un ID de Viaje.", 'log-error');
+                return;
+            }
+            if (!authToken || authToken === "PEGAR_TOKEN_DE_USUARIO_O_INSTITUCION") {
+                logMessage("Por favor, pega el token de autenticación (usuario o institución).", 'log-error');
+                return;
+            }
+
+            const websocketUrl = `ws://localhost:8000/ws/travel/${travelId}/?token=${authToken}`;
+            socket = new WebSocket(websocketUrl);
+
+            logMessage(`Intentando conectar como Observador al viaje ${travelId}...`);
+            statusSpan.textContent = 'Conectando...';
+            statusSpan.style.color = 'orange';
+            connectButton.textContent = 'Conectando...';
+            connectButton.disabled = true;
+
+            socket.onopen = (event) => {
+                statusSpan.textContent = 'Conectado (Escuchando)';
+                statusSpan.style.color = 'green';
+                logMessage(`✅ WebSocket conectado. Esperando actualizaciones de ubicación.`, 'log-info');
+                connectButton.textContent = 'Reconectar';
+                connectButton.disabled = false;
+            };
+
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                // Si el mensaje contiene un error del servidor
+                if (data.error) {
+                    logMessage(`Error del Servidor: ${data.error}`, 'log-error');
+                } else {
+                    logMessage(`📍 Ubicación recibida: Lat ${data.lat}, Lon ${data.lon} (Conductor: ${data.driver_name})`, 'log-received');
+                }
+            };
+
+            socket.onclose = (event) => {
+                statusSpan.textContent = 'Desconectado';
+                statusSpan.style.color = 'red';
+                // No mostrar razón si es un cierre limpio iniciado por el cliente
+                const reason = event.reason ? `, Razón: ${event.reason}` : '';
+                logMessage(`❌ WebSocket desconectado. Código: ${event.code}${reason}`, 'log-error');
+                connectButton.textContent = 'Conectar y Escuchar';
+                connectButton.disabled = false;
+            };
+
+            socket.onerror = (error) => {
+                statusSpan.textContent = 'Error';
+                statusSpan.style.color = 'red';
+                logMessage(`🔥 Error en la conexión WebSocket. Revisa la consola del navegador para más detalles.`, 'log-error');
+                connectButton.textContent = 'Conectar y Escuchar';
+                connectButton.disabled = false;
+            };
+        }
+
+        // Event Listener para el botón de conexión
+        connectButton.addEventListener('click', establishConnection);
+    </script>
+</body>
+</html>
