@@ -4,38 +4,34 @@ import {
   DriverRoute,
   DriverVehicle,
   DriverTrip,
+  AddTripPayload,
 } from "../types/driver.types";
 
 import axios from "axios";
-
-// Helper para obtener el token. Podría estar en un archivo authService.ts
+import authService from "./authService";
+// Helper para obtener el token usando el servicio de auth
 const getAuthToken = () => {
-  return localStorage.getItem("accessToken");
+  return authService.getToken();
 };
 
-// Helper para crear las cabeceras de autenticación
-const getAuthHeaders = (): Record<string, string> => {
-  const token = getAuthToken();
-  if (!token) return {};
-  return {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
-  };
+// Helper para crear las cabeceras de autenticación usando el servicio de auth
+const getAuthHeaders = (): { [key: string]: string } => {
+  return authService.getAuthHeaders();
 };
 
 export const getDriverProfile = async (): Promise<DriverProfile> => {
-  const userUid = localStorage.getItem("userUid");
+  const storedUser = localStorage.getItem("userData");
+  const user = storedUser ? JSON.parse(storedUser) : null;
+  const uid = user?.uid;
 
-  if (!userUid) {
-    throw new Error(
-      "No se encontró el UID del usuario. Por favor, inicie sesión."
-    );
-  }
+  if (!uid) throw new Error("No se encontró el UID del usuario logueado.");
 
   try {
     const response = await axios.get(
-      `http://127.0.0.1:8000/api/users/profile/${userUid}/`,
-      { headers: getAuthHeaders() }
+      `http://127.0.0.1:8000/api/users/profile/${uid}/`,
+      {
+        headers: getAuthHeaders(),
+      }
     );
 
     const userProfileFromApi = response.data;
@@ -75,6 +71,8 @@ export const getDriverRoutes = async (): Promise<DriverRoute[]> => {
 
     const routesFromApi = response.data;
 
+    //console.log("Rutas recibidas:", routesFromApi);
+
     // Mapear snake_case a camelCase si es necesario.
     // En este caso, los nombres de los campos ya coinciden bastante bien.
     return routesFromApi.map((route: ApiRouteData) => ({
@@ -96,9 +94,21 @@ export const addDriverRoute = async (
   newRouteData: Omit<DriverRoute, "id">
 ): Promise<DriverRoute> => {
   try {
+    // Recupera el driverId del usuario actual
+    const storedUser = localStorage.getItem("userData");
+    const user = storedUser ? JSON.parse(storedUser) : null;
+    const driverId = user?.uid;
+
+    const dataToSend = {
+      ...newRouteData,
+      driver: driverId, // Este campo es el que espera el backend
+    };
+
+    //console.log("Datos enviados:", dataToSend);
+
     const response = await axios.post(
       "http://127.0.0.1:8000/api/route/create/",
-      newRouteData,
+      dataToSend,
       {
         headers: getAuthHeaders(),
       }
@@ -134,6 +144,7 @@ export const getDriverVehicles = async (): Promise<DriverVehicle[]> => {
         headers: getAuthHeaders(),
       }
     );
+    //console.log("Vehiculos recibidos:", response.data);
     return response.data; // axios ya convierte el JSON automáticamente
   } catch (error: any) {
     const errorMessage =
@@ -161,9 +172,27 @@ export const addDriverVehicle = async (
   newVehicleData: Omit<DriverVehicle, "id" | "imageUrl">
 ): Promise<DriverVehicle> => {
   try {
+    // Recupera el driverId del usuario actual
+    const storedUser = localStorage.getItem("userData");
+    const user = storedUser ? JSON.parse(storedUser) : null;
+    const driverId = user?.uid;
+
+    const dataToSend = {
+      driver: driverId,
+      plate: newVehicleData.plate,
+      brand: newVehicleData.brand,
+      model: newVehicleData.model,
+      vehicle_type: newVehicleData.vehicleType, // Este ya está bien por la interfaz actual
+      category: newVehicleData.category,
+      soat: newVehicleData.soat,
+      tecnomechanical: newVehicleData.tecnomechanical,
+      capacity: newVehicleData.capacity,
+    };
+
+    //console.log("Datos de vehiculos enviados:", dataToSend);
     const response = await axios.post(
       "http://127.0.0.1:8000/api/vehicle/vehicles/register/", // o URL completa si no estás en modo proxy
-      newVehicleData,
+      dataToSend,
       {
         headers: getAuthHeaders(),
       }
@@ -172,6 +201,7 @@ export const addDriverVehicle = async (
   } catch (error: any) {
     const errorMessage =
       error.response?.data?.error || "Error al agregar el vehículo";
+    //console.error("Detalles del error:", error.response?.data);
     throw new Error(errorMessage);
   }
 };
@@ -193,56 +223,59 @@ export const inspectVehicle = async (
 
 // --- Viajes Publicados por el Conductor ---
 // Define the interface for the trip data from API
+// Interfaz para la respuesta de la API (es importante que sea correcta)
 interface ApiTripData {
   id: number;
-  route?: {
+  route: {
+    // El objeto Route está anidado
     startLocation: string;
     destination: string;
   };
-  vehicle?: {
+  vehicle: {
+    // El objeto Vehicle está anidado
     brand: string;
+    model: string; // Añadimos el modelo para más detalle
+    category: string;
   };
   price: number;
   time: string;
-  available_seats?: number;
+  available_seats: number; // La API envía este campo directamente
   travel_state: string;
 }
 
-export const getDriverTrips = async (
-  driverId: number
-): Promise<DriverTrip[]> => {
+// Esta función ahora solo obtiene los datos CRUDOS.
+// El tipo de retorno `any[]` es intencional porque no queremos forzar una estructura aquí.
+export const getDriverTrips = async (): Promise<any[]> => {
   try {
+    const storedUser = localStorage.getItem("userData");
+    const user = storedUser ? JSON.parse(storedUser) : null;
+    const driverId = user?.uid;
+
+    if (!driverId) {
+      console.error("Driver ID no encontrado en getDriverTrips");
+      return []; // Devuelve un array vacío si no hay ID
+    }
+
     const response = await axios.get(
       `http://127.0.0.1:8000/api/travel/info/${driverId}/`,
-      {
-        headers: getAuthHeaders(),
-      }
+      { headers: getAuthHeaders() }
     );
 
-    const tripsFromApi = response.data;
-
-    return tripsFromApi.map((trip: ApiTripData) => ({
-      id: trip.id,
-      startLocation: trip.route?.startLocation || "Origen no disponible",
-      destination: trip.route?.destination || "Destino no disponible",
-      vehicleType: trip.vehicle?.brand || "Vehículo no disponible",
-      price: trip.price,
-      departureDateTime: trip.time,
-      availableSeats: trip.available_seats || 0,
-      travelState: trip.travel_state,
-    }));
-  } catch (error: any) {
-    throw new Error("Error al obtener los viajes");
+    // Simplemente devuelve los datos tal como vienen de la API.
+    return response.data;
+  } catch (error) {
+    console.error("Error al obtener los viajes:", error);
+    throw new Error("Error al obtener los viajes"); // O devuelve [], throw es mejor para que el `catch` del componente lo maneje
   }
 };
 
 export const addDriverTrip = async (
-  newTripData: Omit<DriverTrip, "id">
+  newTripPayload: AddTripPayload
 ): Promise<DriverTrip> => {
   try {
     const response = await axios.post(
       "http://127.0.0.1:8000/api/travel/create/",
-      newTripData,
+      newTripPayload,
       {
         headers: getAuthHeaders(),
       }

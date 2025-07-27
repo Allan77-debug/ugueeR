@@ -192,3 +192,31 @@
     padding: 0.5rem; */
   }
 }
+
+/* AÑADE ESTOS NUEVOS ESTILOS AL FINAL DE TU ARCHIVO CSS */
+
+.sidebarFooter {
+  padding: 20px;
+  margin-top: auto; /* Otra forma de asegurar que esté al fondo */
+}
+
+.logoutButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  background-color: #d9534f; /* Un rojo estándar para "peligro" */
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  gap: 8px; /* Espacio entre el ícono y el texto */
+}
+
+.logoutButton:hover {
+  background-color: #c9302c; /* Un rojo un poco más oscuro al pasar el mouse */
+}

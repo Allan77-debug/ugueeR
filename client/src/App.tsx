@@ -16,6 +16,7 @@ import InstitutionDashboard from "./features/institution/pages/InstitutionDashbo
 import DriverPageLayout from "./features/driver/components/layout/DriverPageLayout";
 import DriverProtectedRoute from "./features/driver/components/DriverProtectedRoute";
 import { driverDashboardRoutes } from "./features/driver/driver.Routes";
+import authService from "./services/authService";
 
 // Componente para proteger rutas
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -29,7 +30,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const UserProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const isAuthenticated = localStorage.getItem("userToken") !== null;
+  const isAuthenticated = authService.isAuthenticated();
 
   if (!isAuthenticated) {
     // Para desarrollo permitimos el acceso sin token

@@ -14,14 +14,17 @@ interface DriverVehicleFormProps {
 }
 
 // Opciones predefinidas (puedes expandirlas o cargarlas desde otro lado)
-const vehicleCategories = [
+const vehicleCategories = ["intermunicipal", "metropolitano", "campus"];
+// Agrega esta nueva constante al inicio de tu componente
+const allVehicleTypes = [
   "Automóvil",
-  "Motocicleta",
   "Camioneta",
   "Buseta",
   "Van",
+  "Motocicleta",
   "Otro",
 ];
+
 const vehicleTypesAutomovil = [
   "Sedán",
   "Hatchback",
@@ -94,32 +97,6 @@ const DriverVehicleForm: React.FC<DriverVehicleFormProps> = ({
     }
   }, [initialData]);
 
-  // Determinar qué tipos de vehículo mostrar basado en la categoría seleccionada
-  const getCurrentVehicleTypes = () => {
-    if (
-      category === "Automóvil" ||
-      category === "Camioneta" ||
-      category === "Buseta" ||
-      category === "Van"
-    ) {
-      return vehicleTypesAutomovil;
-    } else if (category === "Motocicleta") {
-      return vehicleTypesMoto;
-    }
-    return ["Otro"]; // O un array vacío si "Otro" no tiene tipos predefinidos
-  };
-
-  useEffect(() => {
-    // Si la categoría cambia y el vehicleType actual no está en la nueva lista de tipos,
-    // resetea vehicleType al primer tipo disponible o a vacío.
-    const currentTypes = getCurrentVehicleTypes();
-    if (!currentTypes.includes(vehicleType) && currentTypes.length > 0) {
-      setVehicleType(currentTypes[0]);
-    } else if (currentTypes.length === 0) {
-      setVehicleType("");
-    }
-  }, [category, vehicleType]); // Añadí vehicleType a las dependencias
-
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {};
     if (!plate.trim()) newErrors.plate = "La placa es requerida.";
@@ -135,8 +112,9 @@ const DriverVehicleForm: React.FC<DriverVehicleFormProps> = ({
     if (!brand.trim()) newErrors.brand = "La marca es requerida.";
     if (!model.trim()) newErrors.model = "El modelo es requerido.";
     if (!category) newErrors.category = "La categoría es requerida.";
-    if (!vehicleType && getCurrentVehicleTypes().length > 0)
+    if (!vehicleType) {
       newErrors.vehicleType = "El tipo de vehículo es requerido.";
+    }
     if (capacity === "" || Number(capacity) <= 0)
       newErrors.capacity = "La capacidad debe ser un número mayor a 0.";
     // Validaciones opcionales para SOAT y Tecnomecánica
@@ -191,7 +169,6 @@ const DriverVehicleForm: React.FC<DriverVehicleFormProps> = ({
         />
         {errors.plate && <p className={styles.errorMessage}>{errors.plate}</p>}
       </div>
-
       <div className={styles.formGroup}>
         <label htmlFor="brand">Marca</label>
         <input
@@ -208,7 +185,6 @@ const DriverVehicleForm: React.FC<DriverVehicleFormProps> = ({
         />
         {errors.brand && <p className={styles.errorMessage}>{errors.brand}</p>}
       </div>
-
       <div className={styles.formGroup}>
         <label htmlFor="model">Modelo / Línea</label>
         <input
@@ -225,7 +201,6 @@ const DriverVehicleForm: React.FC<DriverVehicleFormProps> = ({
         />
         {errors.model && <p className={styles.errorMessage}>{errors.model}</p>}
       </div>
-
       <div className={styles.formGroup}>
         <label htmlFor="category">Categoría General</label>
         <select
@@ -251,34 +226,36 @@ const DriverVehicleForm: React.FC<DriverVehicleFormProps> = ({
         )}
       </div>
 
-      {getCurrentVehicleTypes().length > 0 && (
-        <div className={styles.formGroup}>
-          <label htmlFor="vehicleType">Tipo de Vehículo (Específico)</label>
-          <select
-            id="vehicleType"
-            value={vehicleType}
-            onChange={(e) => {
-              setVehicleType(e.target.value);
-              if (errors.vehicleType)
-                setErrors((prev) => ({ ...prev, vehicleType: "" }));
-            }}
-            className={errors.vehicleType ? styles.inputError : ""}
-            disabled={isSubmitting || getCurrentVehicleTypes().length === 0}
-          >
-            <option value="" disabled={vehicleType !== ""}>
-              Seleccione un tipo
+      <div className={styles.formGroup}>
+        {/* Opcional: Podrías cambiar el label a "Tipo de Vehículo" simplemente */}
+        <label htmlFor="vehicleType">Tipo de Vehículo (Específico)</label>
+        <select
+          id="vehicleType"
+          value={vehicleType}
+          onChange={(e) => {
+            setVehicleType(e.target.value);
+            if (errors.vehicleType)
+              setErrors((prev) => ({ ...prev, vehicleType: "" }));
+          }}
+          className={errors.vehicleType ? styles.inputError : ""}
+          disabled={isSubmitting}
+        >
+          <option value="" disabled>
+            {" "}
+            {/* "disabled" es suficiente aquí */}
+            Seleccione un tipo
+          </option>
+          {/* Usamos el nuevo array fijo */}
+          {allVehicleTypes.map((type) => (
+            <option key={type} value={type}>
+              {type}
             </option>
-            {getCurrentVehicleTypes().map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
-          {errors.vehicleType && (
-            <p className={styles.errorMessage}>{errors.vehicleType}</p>
-          )}
-        </div>
-      )}
+          ))}
+        </select>
+        {errors.vehicleType && (
+          <p className={styles.errorMessage}>{errors.vehicleType}</p>
+        )}
+      </div>
 
       <div className={styles.formGroup}>
         <label htmlFor="capacity">
@@ -302,7 +279,6 @@ const DriverVehicleForm: React.FC<DriverVehicleFormProps> = ({
           <p className={styles.errorMessage}>{errors.capacity}</p>
         )}
       </div>
-
       <div className={styles.formGroup}>
         <label htmlFor="soatExpirationDate">
           Fecha Vencimiento SOAT (Opcional)
@@ -324,7 +300,6 @@ const DriverVehicleForm: React.FC<DriverVehicleFormProps> = ({
           <p className={styles.errorMessage}>{errors.soatExpirationDate}</p>
         )}
       </div>
-
       <div className={styles.formGroup}>
         <label htmlFor="tecnoExpirationDate">
           Fecha Vencimiento Tecnomecánica (Opcional)
@@ -346,7 +321,6 @@ const DriverVehicleForm: React.FC<DriverVehicleFormProps> = ({
           <p className={styles.errorMessage}>{errors.tecnoExpirationDate}</p>
         )}
       </div>
-
       <div className={styles.formActions}>
         {onCancel && (
           <Button

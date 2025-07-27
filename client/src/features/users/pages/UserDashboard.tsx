@@ -17,6 +17,8 @@ import {
 } from "lucide-react"
 import "../styles/UserDashboard.css"
 import axios from "axios"
+import RealTimeMap from "../components/RealTimeMap"
+import authService from "../../../services/authService"
 
 // Interfaces basadas en la estructura de la base de datos
 interface UserData {
@@ -482,9 +484,8 @@ const UserDashboard = () => {
   // Función para cerrar sesión
   const handleLogout = () => {
     if (window.confirm("¿Estás seguro de que deseas cerrar sesión?")) {
-      // Eliminar tokens y datos del usuario
-      localStorage.removeItem("userToken")
-      localStorage.removeItem("userData")
+      // Usar el servicio de auth para limpiar la sesión
+      authService.logout()
 
       // Redireccionar al inicio
       navigate("/")
@@ -511,7 +512,7 @@ const UserDashboard = () => {
       {/* Barra lateral */}
       <aside className="dashboard-sidebar">
         <div className="sidebar-header">
-          <h2>Uguee</h2>
+          <h2>Uway</h2>
         </div>
 
         <div className="user-profile">
@@ -757,17 +758,7 @@ const UserDashboard = () => {
           </div>
         ) : (
           <div className="map-container">
-            <div className="map-placeholder">
-              <MapIcon size={48} />
-              <h3>Mapa en Tiempo Real</h3>
-              <p>
-                Aquí se mostrará un mapa interactivo con la ubicación y disponibilidad de los vehículos en tiempo real.
-              </p>
-              <p className="map-note">
-                Esta funcionalidad estará disponible próximamente. Estamos trabajando para ofrecerte la mejor
-                experiencia de viaje.
-              </p>
-            </div>
+            <RealTimeMap />
           </div>
         )}
       </main>

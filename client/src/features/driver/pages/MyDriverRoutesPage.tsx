@@ -6,6 +6,7 @@ import {
   deleteDriverRoute,
 } from "../../../services/driverDataService";
 import DriverRouteCard from "../components/cards/DriverRouteCard";
+import { useJsApiLoader } from "@react-google-maps/api";
 import DriverRouteForm from "../components/forms/DriverRouteForm";
 import Button from "../components/common/Button";
 import Modal from "../components/common/Modal";
@@ -36,7 +37,14 @@ type RouteFormData = Omit<DriverRoute, "id"> & {
   routePathCoords?: LatLngTuple[]; // Opcional
 };
 
+const LIBRARIES: "geometry"[] = ["geometry"];
+
 const MyDriverRoutesPage: React.FC = () => {
+  // Loader de Google Maps SOLO UNA VEZ
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    libraries: LIBRARIES,
+  });
   const [routes, setRoutes] = useState<DriverRoute[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -303,8 +311,9 @@ const MyDriverRoutesPage: React.FC = () => {
               key={route.id}
               route={route}
               onDelete={handleDeleteRoute}
-              onShowMap={handleShowRouteOnMap} // <--- NUEVA PROP
-              // onEdit={() => handleOpenEditFormModal(route)}
+              onShowMap={handleShowRouteOnMap}
+              isLoaded={isLoaded}
+              loadError={loadError}
             />
           ))}
         </div>

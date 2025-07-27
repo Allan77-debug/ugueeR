@@ -1,8 +1,14 @@
-// client/src/features/driver/components/layout/DriverSidebar.tsx (VERSIÓN FINAL CORREGIDA)
+// client/src/features/driver/components/layout/DriverSidebar.tsx (VERSIÓN FINAL CON LOGOUT)
 
 import React, { useState, useEffect } from "react";
-import { NavLink, useLocation } from "react-router-dom"; // Asegúrate de que useLocation esté importado
-import { List, Car, Route as RouteIcon, Star as StarIcon } from "lucide-react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom"; // 1. Importar useNavigate
+import {
+  List,
+  Car,
+  Route as RouteIcon,
+  Star as StarIcon,
+  LogOut, // 2. Importar el ícono de LogOut
+} from "lucide-react";
 import { DriverProfile } from "../../../../types/driver.types";
 import { getDriverProfile } from "../../../../services/driverDataService";
 import styles from "./DriverSidebar.module.css";
@@ -11,8 +17,8 @@ const DriverSidebar: React.FC = () => {
   const [profile, setProfile] = useState<DriverProfile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
 
-  // El hook `useLocation` DEBE llamarse aquí, en el nivel superior del componente.
   const location = useLocation();
+  const navigate = useNavigate(); // 3. Obtener la función de navegación
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -29,8 +35,23 @@ const DriverSidebar: React.FC = () => {
     fetchProfile();
   }, []);
 
+  // 4. Crear la función para manejar el cierre de sesión
+  const handleLogout = () => {
+    // 1. Muestra la ventana de confirmación nativa del navegador
+    const isConfirmed = window.confirm(
+      "¿Estás seguro de que quieres cerrar sesión?"
+    );
+
+    // 2. Si el usuario hace clic en "Aceptar" (OK), procede con el cierre de sesión
+    if (isConfirmed) {
+      localStorage.clear();
+      navigate("/");
+    }
+    // Si el usuario hace clic en "Cancelar", no hace nada.
+  };
+
+  // ... (código de carga y error sin cambios)
   if (loadingProfile) {
-    // ... (código de carga sin cambios)
     return (
       <aside className={`${styles.sidebar} ${styles.sidebarLoading}`}>
         <div className={styles.loadingSpinner}></div>
@@ -40,7 +61,6 @@ const DriverSidebar: React.FC = () => {
   }
 
   if (!profile) {
-    // ... (código de error sin cambios)
     return (
       <aside className={`${styles.sidebar} ${styles.sidebarError}`}>
         <p>No se pudo cargar el perfil.</p>
@@ -50,7 +70,6 @@ const DriverSidebar: React.FC = () => {
 
   return (
     <aside className={styles.sidebar}>
-      {/* ... (código del header y perfil sin cambios) ... */}
       <div className={styles.sidebarHeader}>
         <h2>Uway</h2>
       </div>
@@ -73,19 +92,15 @@ const DriverSidebar: React.FC = () => {
       </div>
 
       <nav className={styles.sidebarNav}>
+        {/* ... (Tus NavLink no cambian) ... */}
         <NavLink
           to="my-routes"
           className={({ isActive }) => {
-            // --- TODA LA LÓGICA ESTÁ AHORA AQUÍ DENTRO ---
-            const baseDriverPath = "/driver"; // La ruta que tienes en App.tsx
-
-            // Usamos la variable `location` que obtuvimos arriba con el hook
+            const baseDriverPath = "/driver";
             const isAtBaseDriverPath =
               location.pathname === baseDriverPath ||
               location.pathname === `${baseDriverPath}/`;
-
             const isLinkActive = isActive || isAtBaseDriverPath;
-
             return `${styles.navButton} ${isLinkActive ? styles.active : ""}`;
           }}
         >
@@ -113,6 +128,14 @@ const DriverSidebar: React.FC = () => {
           <span>Mis Viajes</span>
         </NavLink>
       </nav>
+
+      {/* 5. AÑADIR EL BOTÓN DE CERRAR SESIÓN AL FINAL */}
+      <div className={styles.sidebarFooter}>
+        <button className={styles.logoutButton} onClick={handleLogout}>
+          <LogOut size={18} />
+          <span>Cerrar Sesión</span>
+        </button>
+      </div>
     </aside>
   );
 };

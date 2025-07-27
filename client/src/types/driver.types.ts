@@ -43,11 +43,12 @@ export interface DriverProfile {
 // src/types/driver.types.ts
 export interface DriverRoute {
   id: number;
+  driverUid: number;
   startLocation: string; // Nombre del lugar de inicio
   destination: string; // Nombre del lugar de destino
   startPointCoords?: LatLngTuple; // Coordenadas [lat, lng]
   endPointCoords?: LatLngTuple;
-  routePathCoords?: LatLngTuple[]; // Opcional: la polilínea de la ruta
+  //routePathCoords?: LatLngTuple[]; // Opcional: la polilínea de la ruta
   // staticMapImageUrl?: string; // Opcional: URL a una imagen estática del mapa
 }
 
@@ -64,6 +65,16 @@ export interface DriverVehicle {
   imageUrl?: string; // Opcional
 }
 
+// Coincide con la estructura JSON que espera el endpoint /travel/create/
+export interface AddTripPayload {
+  driver: number;
+  vehicle: number;
+  route: number;
+  time: string; // Formato ISO "YYYY-MM-DDTHH:MM:SS"
+  price: number;
+  travel_state: string;
+}
+
 export interface DriverTrip {
   id: number;
   startLocation: string;
@@ -72,4 +83,5 @@ export interface DriverTrip {
   price: number;
   departureDateTime: string;
   availableSeats: number;
+  travelState: string;
 }

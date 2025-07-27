@@ -5,6 +5,7 @@ import { useState } from "react"
 import Header from "../../../components/Header.tsx"
 import "../styles/LoginSignup.css"
 import axios from "axios"
+import authService from "../../../services/authService"
 
 const LoginPage: React.FC = () => {
   const [isToggle, setIsToggle] = useState(false)
@@ -29,11 +30,23 @@ const LoginPage: React.FC = () => {
 
     try {
       const response = await axios.post("http://127.0.0.1:8000/api/users/login/", loginData)
-      console.log("Login:", response.data)
+      console.log("Login response:", response.data)
+      
+      // Extraer el token JWT de la respuesta
+      const token = response.data.access || response.data.token || response.data.access_token
+      
+      if (token) {
+        // Usar el servicio de auth para guardar tokens
+        authService.setTokens(token)
+        console.log("Token JWT guardado:", token)
+      } else {
+        console.warn("No se encontró token en la respuesta del login")
+      }
+
+      // Guardar los datos del usuario usando el servicio de auth
+      authService.setUserData(response.data)
+
       alert("¡Inicio de sesión exitoso!")
-
-      localStorage.setItem("userData", JSON.stringify(response.data))
-
       window.location.href = "/dashboard"
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {

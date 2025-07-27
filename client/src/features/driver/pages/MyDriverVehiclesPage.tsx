@@ -38,8 +38,31 @@ const MyDriverVehiclesPage: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await getDriverVehicles();
-      setVehicles(data);
+      // 1. Obtienes los datos de la API (vienen en snake_case)
+      const dataFromApi = await getDriverVehicles();
+
+      // 2. Transformas el array de vehículos a camelCase
+      const transformedVehicles = dataFromApi.map((vehicle: any) => {
+        // La ': any' aquí es una forma rápida de evitar errores de tipado durante la transformación.
+        // Si tienes un tipo para la respuesta de la API, úsalo en su lugar.
+        return {
+          id: vehicle.id,
+          plate: vehicle.plate,
+          brand: vehicle.brand,
+          model: vehicle.model,
+          category: vehicle.category,
+          // --- ESTA ES LA TRANSFORMACIÓN MÁS IMPORTANTE ---
+          vehicleType: vehicle.vehicle_type,
+          capacity: vehicle.capacity,
+          soat: vehicle.soat, // Asumo que estos también vienen en snake_case
+          tecnomechanical: vehicle.tecnomechanical,
+          imageUrl: vehicle.image_url,
+          // Si hay más campos, añádelos aquí
+        };
+      });
+
+      // 3. Guardas los datos ya transformados en el estado
+      setVehicles(transformedVehicles);
     } catch (err) {
       console.error("Error fetching vehicles:", err);
       setError("No se pudieron cargar los vehículos. Inténtalo de nuevo.");
