@@ -1,11 +1,11 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import InstitutionUserList from "../components/InstitutionUserList"
 import UserDetailsModal from "../components/UserDetailsModal"
 import "../styles/InstitutionDashboard.css"
-import { Users, Car, LogOut, Search } from "lucide-react"
+import { Users, Car, LogOut, Search, Sun, Moon } from "lucide-react"
 import axios from "axios"
 
 export interface InstitutionUser {
@@ -40,6 +40,32 @@ const InstitutionDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("")
   const [institutionData, setInstitutionData] = useState<Institution | null>(null)
   const [activeTab, setActiveTab] = useState<"users" | "drivers">("users")
+
+  // Estado para el tema
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem("institutionDashboardTheme")
+    return savedTheme ? savedTheme === "dark" : true // Por defecto modo oscuro
+  })
+
+  // Efecto para aplicar el tema y guardarlo
+  useEffect(() => {
+    const dashboardElement = document.querySelector(".institution-dashboard")
+    if (dashboardElement) {
+      if (isDarkMode) {
+        dashboardElement.classList.add("dark-theme")
+        dashboardElement.classList.remove("light-theme")
+      } else {
+        dashboardElement.classList.add("light-theme")
+        dashboardElement.classList.remove("dark-theme")
+      }
+    }
+    localStorage.setItem("institutionDashboardTheme", isDarkMode ? "dark" : "light")
+  }, [isDarkMode])
+
+  // Función para alternar el tema
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode)
+  }
 
   // Verificar autenticación y obtener datos de la institución
   useEffect(() => {
@@ -233,7 +259,7 @@ const InstitutionDashboard = () => {
 
   if (loading) {
     return (
-      <div className="loading-container">
+      <div className={`loading-container ${isDarkMode ? "dark-theme" : "light-theme"}`}>
         <div className="loading-spinner"></div>
         <p>Cargando información...</p>
       </div>
@@ -241,13 +267,23 @@ const InstitutionDashboard = () => {
   }
 
   return (
-    <div className="institution-dashboard">
+    <div className={`institution-dashboard ${isDarkMode ? "dark-theme" : "light-theme"}`}>
       {/* Sidebar */}
       <aside className="dashboard-sidebar">
         <div className="sidebar-header">
-          <div className="institution-info">
-            <h2>{institutionData?.short_name || "Institución"}</h2>
-            <p>{institutionData?.official_name}</p>
+          <div className="header-top">
+            <div className="institution-info">
+              <h2>{institutionData?.short_name || "Institución"}</h2>
+              <p>{institutionData?.official_name}</p>
+            </div>
+            {/* Toggle de tema */}
+            <button
+              className="theme-toggle"
+              onClick={toggleTheme}
+              title={isDarkMode ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+            >
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
           </div>
         </div>
 

@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import {
   MapPin,
@@ -14,6 +14,8 @@ import {
   List,
   Star,
   LogOut,
+  Sun,
+  Moon,
 } from "lucide-react"
 import "../styles/UserDashboard.css"
 import axios from "axios"
@@ -28,7 +30,7 @@ interface UserData {
   institutionalMail: string
   studentCode: string
   institutionName?: string
-  hasAppliedDriver?: boolean 
+  hasAppliedDriver?: boolean
   driverState?: string
   // Nuevo campo
 }
@@ -99,12 +101,38 @@ const UserDashboard = () => {
   const [reservingTravel, setReservingTravel] = useState<number | null>(null)
   const [reservationStatus, setReservationStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
 
+  // Estado para el tema
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem("userDashboardTheme")
+    return savedTheme ? savedTheme === "dark" : true // Por defecto modo oscuro
+  })
+
+  // Efecto para aplicar el tema y guardarlo
+  useEffect(() => {
+    const dashboardElement = document.querySelector(".user-dashboard")
+    if (dashboardElement) {
+      if (isDarkMode) {
+        dashboardElement.classList.add("dark-theme")
+        dashboardElement.classList.remove("light-theme")
+      } else {
+        dashboardElement.classList.add("light-theme")
+        dashboardElement.classList.remove("dark-theme")
+      }
+    }
+    localStorage.setItem("userDashboardTheme", isDarkMode ? "dark" : "light")
+  }, [isDarkMode])
+
+  // Función para alternar el tema
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode)
+  }
+
   // Efecto para cargar los datos del usuario
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         setLoading(true)
-        // Obtener el UID desde localStorage 
+        // Obtener el UID desde localStorage
         const storedUser = localStorage.getItem("userData")
         let uid = null
         if (storedUser) {
@@ -114,7 +142,7 @@ const UserDashboard = () => {
         if (!uid) {
           throw new Error("No se encontró el UID del usuario en localStorage.")
         }
-        // Llama a la API 
+        // Llama a la API
         const response = await axios.get(`http://127.0.0.1:8000/api/users/profile/${uid}/`)
 
         // Ajusta los nombres de las propiedades según la respuesta real
@@ -128,9 +156,9 @@ const UserDashboard = () => {
           driverState: response.data.driver_state, // si quieres mostrarlo
           // Si tienes otros campos personalizados en tu estado, agrégalos aquí
         }
-                
+
         setUserData(updatedUserData)
-        
+
         // IMPORTANTE: Actualizar localStorage con los datos completos incluyendo driverState
         localStorage.setItem("userData", JSON.stringify(updatedUserData))
 
@@ -460,7 +488,7 @@ const UserDashboard = () => {
         // Actualizar el estado local del usuario para reflejar que ya aplicó
         const updatedUserData = { ...userData, hasAppliedDriver: true }
         setUserData(updatedUserData)
-        
+
         // IMPORTANTE: Actualizar localStorage con el estado actualizado
         localStorage.setItem("userData", JSON.stringify(updatedUserData))
       }
@@ -500,7 +528,7 @@ const UserDashboard = () => {
   // Renderizado condicional basado en el estado de carga
   if (loading) {
     return (
-      <div className="loading-container">
+      <div className={`loading-container ${isDarkMode ? "dark-theme" : "light-theme"}`}>
         <div className="loading-spinner"></div>
         <p>Cargando información...</p>
       </div>
@@ -508,11 +536,21 @@ const UserDashboard = () => {
   }
 
   return (
-    <div className="user-dashboard">
+    <div className={`user-dashboard ${isDarkMode ? "dark-theme" : "light-theme"}`}>
       {/* Barra lateral */}
       <aside className="dashboard-sidebar">
         <div className="sidebar-header">
-          <h2>Uway</h2>
+          <div className="header-top">
+            <h2>Uway</h2>
+            {/* Toggle de tema */}
+            <button
+              className="theme-toggle"
+              onClick={toggleTheme}
+              title={isDarkMode ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+            >
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+          </div>
         </div>
 
         <div className="user-profile">
