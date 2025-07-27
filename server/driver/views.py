@@ -194,3 +194,64 @@ class MarkTravelAsCompletedView(APIView):
             {"message": f"El viaje {travel.id} ha sido marcado como completado exitosamente."},
             status=status.HTTP_200_OK
         )
+    
+class StartTravelView(APIView):
+    """
+    Endpoint para que un conductor inicie un viaje que estaba programado.
+    Cambia el estado de 'scheduled' a 'in_progress'.
+    """
+    permission_classes = [IsAuthenticatedCustom]
+
+    def post(self, request, travel_id, *args, **kwargs):
+        user = request.user
+
+        # 1. Verificar si el usuario es un conductor válido y aprobado
+        try:
+            driver = user.driver
+            if driver.validate_state != 'approved':
+                return Response(
+                    {"error": "Solo los conductores aprobados pueden iniciar viajes."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        except Driver.DoesNotExist:
+            return Response(
+                {"error": "Acceso denegado. No tienes un perfil de conductor."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # 2. Obtener la instancia del viaje
+        try:
+            travel = Travel.objects.get(id=travel_id)
+        except Travel.DoesNotExist:
+            return Response(
+                {"error": "No se encontró un viaje con el ID proporcionado."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # 3. Verificar que el viaje le pertenece al conductor que hace la petición
+        if travel.driver != driver:
+            return Response(
+                {"error": "No tienes permiso para iniciar este viaje, no te pertenece."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # 4. Verificar que el viaje esté en el estado correcto para ser iniciado
+        if travel.travel_state != 'scheduled':
+            return Response(
+                {"error": f"Este viaje no se puede iniciar. Estado actual: {travel.travel_state}."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # 5. ¡LA ACCIÓN CLAVE! Actualizar el estado y guardar
+        travel.travel_state = 'in_progress'
+        # Usar 'update_fields' es una buena práctica para la eficiencia y para que
+        # nuestra señal de Django sepa exactamente qué campo se modificó.
+        travel.save(update_fields=['travel_state'])
+
+        # Al guardar, la señal 'post_save' que definimos en `travel.signals`
+        # se disparará automáticamente, notificando al sistema en tiempo real.
+
+        return Response(
+            {"success": f"El viaje {travel.id} ha comenzado exitosamente."},
+            status=status.HTTP_200_OK
+        )

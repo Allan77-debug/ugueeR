@@ -131,3 +131,66 @@ class LocationConsumer(AsyncWebsocketConsumer):
             return Travel.objects.select_related('driver__user', 'driver__user__institution').get(id=travel_id)
         except Travel.DoesNotExist:
             return None
+class InstitutionMapConsumer(AsyncWebsocketConsumer):
+    
+    async def connect(self):
+        self.user = self.scope.get("user")
+        self.institution_id = self.scope.get("user_institution_id")
+
+        if not self.user or not self.institution_id:
+            await self.close(code=4001)
+            return
+        
+        # Suscribirse al grupo de EVENTOS de la institución.
+        # Aquí recibirá notificaciones de nuevos viajes.
+        self.institution_events_group = f'institution_events_{self.institution_id}'
+        await self.channel_layer.group_add(
+            self.institution_events_group,
+            self.channel_name
+        )
+        
+        # Obtener los viajes que YA están 'in_progress' al momento de conectar
+        active_travels = await self._get_active_travels_for_institution(self.institution_id)
+        
+        self.subscribed_travel_groups = []
+        for travel in active_travels:
+            await self.subscribe_to_travel(travel.id)
+
+        await self.accept()
+        print(f"✅ MAP CONSUMER: Conectado y escuchando eventos en {self.institution_events_group}")
+
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(self.institution_events_group, self.channel_name)
+        for group_name in self.subscribed_travel_groups:
+            await self.channel_layer.group_discard(group_name, self.channel_name)
+        print(f"❌ MAP CONSUMER: Desconectado.")
+    
+    # Handler para la ubicación que viene de los viajes a los que nos hemos suscrito
+    async def location_update(self, event):
+        await self.send(text_data=json.dumps(event['location']))
+        
+    # Handler para la notificación de que un nuevo viaje ha comenzado
+    async def new_travel_started(self, event):
+        travel_id = event['travel_id']
+        print(f"MAP CONSUMER: Recibida notificación de nuevo viaje: {travel_id}. Suscribiendo...")
+        await self.subscribe_to_travel(travel_id)
+
+    # Función de ayuda para suscribirse a un grupo de viaje
+    async def subscribe_to_travel(self, travel_id):
+        group_name = f'travel_{travel_id}'
+        if group_name not in self.subscribed_travel_groups:
+            await self.channel_layer.group_add(group_name, self.channel_name)
+            self.subscribed_travel_groups.append(group_name)
+            print(f"MAP CONSUMER: Suscrito a {group_name}")
+
+    @database_sync_to_async
+    def _get_active_travels_for_institution(self, institution_id):
+        # La clave es buscar el estado 'in_progress'
+        return list(Travel.objects.filter(
+            driver__user__institution_id=institution_id,
+            travel_state='in_progress'
+        ).select_related('driver__user'))
+
+    async def receive(self, text_data):
+        # Este consumer solo escucha
+        pass

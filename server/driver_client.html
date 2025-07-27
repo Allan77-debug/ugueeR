@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Driver Test Client</title>
+    <style>
+        /* Estilos sin cambios */
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
+        h1 { color: #333; }
+        .container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        button { padding: 10px 15px; margin-right: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
+        .connect-btn { background-color: #4CAF50; color: white; }
+        .start-travel-btn { background-color: #f0ad4e; color: white; } /* Naranja */
+        .start-tracking-btn { background-color: #2196F3; color: white; } /* Azul */
+        .stop-tracking-btn { background-color: #d9534f; color: white; } /* Rojo */
+        input[type="number"], input[type="text"] { padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-right: 10px; width: 150px; }
+        #connection-status, #travel-status { font-weight: bold; }
+        #messages { border: 1px solid #eee; padding: 10px; margin-top: 15px; max-height: 300px; overflow-y: scroll; background-color: #fafafa; border-radius: 5px; }
+        .log-info { color: #333; }
+        .log-sent { color: #007bff; }
+        .log-received { color: #28a745; }
+        .log-error { color: #dc3545; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Flujo Completo del Conductor</h1>
+
+    <div class="container">
+        <h3>Paso 1: Configuración</h3>
+        <label for="travel-id-input">ID del Viaje:</label>
+        <input type="number" id="travel-id-input" value="1"><br><br>
+        <label for="conductor-token">Token JWT del Conductor:</label>
+        <input type="text" id="conductor-token" size="80" value="TU_TOKEN_AQUI"><br><br>
+        <button class="connect-btn" id="connect-ws-button">Conectar WebSocket</button>
+        <p>Estado WebSocket: <span id="connection-status" style="color:red;">Desconectado</span></p>
+    </div>
+
+    <div class="container">
+        <h3>Paso 2: Iniciar Viaje</h3>
+        <p>Esto cambiará el estado del viaje de 'scheduled' a 'in_progress' en el servidor.</p>
+        <button class="start-travel-btn" id="start-travel-button" disabled>Iniciar Viaje (Llamar a API)</button>
+        <p>Estado del Viaje: <span id="travel-status">No iniciado</span></p>
+    </div>
+
+    <div class="container">
+        <h3>Paso 3: Transmitir Ubicación</h3>
+        <button class="start-tracking-btn" id="start-tracking-button" disabled>Iniciar Transmisión</button>
+        <button class="stop-tracking-btn" id="stop-tracking-button" disabled>Detener Transmisión</button>
+    </div>
+
+    <div class="container">
+        <h3>Mensajes del WebSocket</h3>
+        <div id="messages"></div>
+    </div>
+
+    <script>
+        let socket;
+        let watchId = null;
+
+        // --- Selectores de Elementos ---
+        const travelIdInput = document.getElementById('travel-id-input');
+        const conductorTokenInput = document.getElementById('conductor-token');
+        const connectWsButton = document.getElementById('connect-ws-button');
+        const startTravelButton = document.getElementById('start-travel-button');
+        const startTrackingButton = document.getElementById('start-tracking-button');
+        const stopTrackingButton = document.getElementById('stop-tracking-button');
+        const connectionStatusSpan = document.getElementById('connection-status');
+        const travelStatusSpan = document.getElementById('travel-status');
+        const messagesDiv = document.getElementById('messages');
+
+        // --- Funciones de Logging y UI ---
+        function logMessage(message, type = 'log-info') {
+            const p = document.createElement('p');
+            p.className = type;
+            p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            messagesDiv.appendChild(p);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // --- Lógica del Flujo ---
+
+        // PASO 1: Conectar al WebSocket
+        function connectWebSocket() {
+            const travelId = travelIdInput.value;
+            const conductorToken = conductorTokenInput.value;
+            if (!travelId || !conductorToken || conductorToken === "TU_TOKEN_AQUI") {
+                logMessage("Por favor, ingresa un ID de Viaje y un Token válidos.", 'log-error');
+                return;
+            }
+
+            const websocketUrl = `ws://localhost:8000/ws/travel/${travelId}/?token=${conductorToken}`;
+            socket = new WebSocket(websocketUrl);
+            logMessage(`Intentando conectar WebSocket al viaje ${travelId}...`);
+
+            socket.onopen = () => {
+                connectionStatusSpan.textContent = 'Conectado';
+                connectionStatusSpan.style.color = 'green';
+                logMessage('✅ WebSocket conectado.', 'log-info');
+                connectWsButton.disabled = true;
+                startTravelButton.disabled = false; // Habilita el siguiente paso
+            };
+            socket.onclose = () => {
+                connectionStatusSpan.textContent = 'Desconectado';
+                connectionStatusSpan.style.color = 'red';
+                logMessage('❌ WebSocket desconectado.', 'log-error');
+                connectWsButton.disabled = false;
+                startTravelButton.disabled = true;
+                stopTracking(); // Si se cierra el socket, detenemos todo
+            };
+            socket.onerror = (error) => logMessage('🔥 Error de WebSocket.', 'log-error');
+            socket.onmessage = (event) => logMessage(`📍 Recibido (eco): ${event.data}`, 'log-received');
+        }
+
+        // PASO 2: Llamar a la API para iniciar el viaje
+        async function startTravel() {
+            const travelId = travelIdInput.value;
+            const authToken = conductorTokenInput.value;
+            const url = `http://localhost:8000/api/driver/travel/${travelId}/start/`;
+
+            logMessage(`Intentando iniciar viaje ${travelId} en el servidor...`, 'log-info');
+            travelStatusSpan.textContent = 'Iniciando...';
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                const result = await response.json();
+
+                if (response.ok) {
+                    logMessage(`✅ Viaje iniciado en el servidor: ${result.success}`, 'log-received');
+                    travelStatusSpan.textContent = 'En Progreso';
+                    travelStatusSpan.style.color = 'green';
+                    startTravelButton.disabled = true;
+                    startTrackingButton.disabled = false; // Habilita el siguiente paso
+                } else {
+                    logMessage(`Error al iniciar el viaje: ${result.error}`, 'log-error');
+                    travelStatusSpan.textContent = `Error: ${result.error}`;
+                    travelStatusSpan.style.color = 'red';
+                }
+            } catch (error) {
+                logMessage(`Error de red al llamar a la API: ${error}`, 'log-error');
+                travelStatusSpan.textContent = 'Error de Red';
+                travelStatusSpan.style.color = 'red';
+            }
+        }
+
+        // PASO 3: Iniciar la transmisión de ubicación
+        function startLocationTracking() {
+            if (watchId) return;
+            if (!navigator.geolocation) {
+                logMessage("Geolocalización no soportada.", 'log-error');
+                return;
+            }
+            
+            logMessage("Iniciando transmisión de ubicación...", 'log-info');
+            const options = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
+            watchId = navigator.geolocation.watchPosition(onLocationSuccess, onLocationError, options);
+
+            startTrackingButton.disabled = true;
+            stopTrackingButton.disabled = false;
+        }
+
+        function stopTracking() {
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+                logMessage("Transmisión de ubicación detenida.", 'log-info');
+            }
+            startTrackingButton.disabled = false;
+            stopTrackingButton.disabled = true;
+        }
+        
+        function onLocationSuccess(position) {
+            const { latitude, longitude, speed } = position.coords;
+            const message = { lat: latitude, lon: longitude, speed: speed || 0 };
+            
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify(message));
+                logMessage(`➡️ Ubicación enviada: Lat ${latitude.toFixed(5)}, Lon ${longitude.toFixed(5)}`, 'log-sent');
+            }
+        }
+
+        function onLocationError(error) {
+            logMessage(`Error de geolocalización: ${error.message}`, 'log-error');
+            stopTracking();
+        }
+
+        // --- Event Listeners ---
+        connectWsButton.addEventListener('click', connectWebSocket);
+        startTravelButton.addEventListener('click', startTravel);
+        startTrackingButton.addEventListener('click', startLocationTracking);
+        stopTrackingButton.addEventListener('click', stopTracking);
+    </script>
+</body>
+</html>
