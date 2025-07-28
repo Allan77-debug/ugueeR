@@ -70,12 +70,11 @@ class TravelDeleteView(generics.DestroyAPIView):
 class InstitutionTravelListView(generics.ListAPIView):
     """
     Endpoint para listar todos los viajes de la institución del usuario autenticado,
-    con información detallada de conductor, vehículo y campos calculados.
+    con información detallada de conductor, vehículo, RUTA y campos calculados.
     
     GET /api/travel/institution/
     """
     permission_classes = [IsAuthenticatedCustom]
-    # MODIFICADO: Usamos el nuevo serializador enriquecido
     serializer_class = TravelDetailSerializer
 
     def get_queryset(self):
@@ -84,14 +83,15 @@ class InstitutionTravelListView(generics.ListAPIView):
         if not user.institution:
             return Travel.objects.none()
 
-        # MODIFICADO: Optimizamos la consulta con prefetch_related y select_related
+    
         queryset = Travel.objects.filter(
             driver__user__institution=user.institution
         ).select_related(
-            'driver__user',  # Trae los datos del User anidado en Driver
-            'vehicle'        # Trae los datos del Vehicle
+            'driver__user',
+            'vehicle',
+            'route'  
         ).prefetch_related(
-            'driver__assessments' # Trae todas las calificaciones del conductor de una vez
+            'driver__assessments'
         ).order_by('-time')
 
         return queryset
