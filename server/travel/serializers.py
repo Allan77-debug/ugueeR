@@ -115,3 +115,21 @@ class TravelDetailSerializer(serializers.ModelSerializer):
             ret.pop('reservations', None)
             
         return ret
+class DriverTravelWithReservationsSerializer(serializers.ModelSerializer):
+    """
+    Serializador para listar los viajes de un conductor, incluyendo
+    una lista anidada de todas las reservaciones para cada viaje.
+    """
+    # Usamos el RealizeInfoSerializer que ya teníamos para mostrar cada reserva.
+    # `source='realize'` utiliza la relación inversa definida en el modelo Realize.
+    reservations = RealizeInfoSerializer(many=True, read_only=True, source='realize')
+    # También podemos incluir detalles del vehículo y la ruta si es necesario.
+    vehicle = VehicleSerializer(read_only=True)
+    route = RouteSerializer(read_only=True)
+
+    class Meta:
+        model = Travel
+        fields = [
+            'id', 'time', 'travel_state', 'price',
+            'vehicle', 'route', 'reservations'
+        ]

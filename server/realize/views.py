@@ -9,6 +9,7 @@ from .models import Realize
 from .serializers import RealizeSerializer, RealizeCreateSerializer
 from users.permissions import IsAuthenticatedCustom
 from users.models import Users
+from rest_framework.permissions import AllowAny
 
 class UserRealizeListView(generics.ListAPIView):
     """
@@ -74,37 +75,38 @@ class RealizeCancelView(generics.UpdateAPIView):
 
 class RealizeConfirmView(APIView):
     """
-    Vista para que un USUARIO confirme su propia reserva pendiente.
-    Esta acción sería activada, por ejemplo, al escanear un código QR del conductor.
+    Vista PÚBLICA para confirmar una reserva pendiente.
+    Esta acción sería activada al escanear un código QR que contiene la URL
+    de este endpoint. No requiere autenticación.
     """
-    permission_classes = [IsAuthenticatedCustom] # Requiere autenticación del usuario.
+    # CAMBIO 1: Se elimina la autenticación y se permite el acceso a cualquiera.
+    permission_classes = [AllowAny]
 
-    @swagger_auto_schema(operation_summary="Endpoint para confirmar una reserva")
-    def post(self, request, realize_id, *args, **kwargs):
+    @swagger_auto_schema(
+        operation_summary="Endpoint (Público) para confirmar una reserva por ID",
+        operation_description="Recibe el ID de una reserva y cambia su estado de 'pending' a 'confirmed'. No requiere token."
+    )
+    # CAMBIO 2: Se cambia el método de POST a GET.
+    def get(self, request, realize_id, *args, **kwargs):
         """
-        Maneja la petición POST para confirmar una reserva específica.
+        Maneja la petición GET para confirmar una reserva específica.
         - `realize_id`: Es el ID de la reserva a confirmar (viene de la URL).
         """
-        # El usuario que realiza la petición se obtiene del token.
-        confirming_user = request.user
-
+        # CAMBIO 3: Se elimina toda la lógica de verificación de usuario.
+        
         # 1. Obtener la reserva que se quiere confirmar.
         try:
             reservation = Realize.objects.select_related('travel').get(id=realize_id)
         except Realize.DoesNotExist:
             return Response({"error": "La reserva especificada no existe."}, status=status.HTTP_404_NOT_FOUND)
         
-        # 2. Verifica que el usuario autenticado sea el verdadero dueño de la reserva.
-        if reservation.user != confirming_user:
-            return Response({"error": "No tienes permiso para confirmar una reserva que no te pertenece."}, status=status.HTTP_403_FORBIDDEN)
-        
-        # 3. Validar que la reserva esté en estado 'pending'.
+        # 2. Validar que la reserva esté en estado 'pending'.
         if reservation.status != Realize.STATUS_PENDING:
             return Response({"error": f"No se puede confirmar esta reserva. Estado actual: {reservation.status}."}, status=status.HTTP_400_BAD_REQUEST)
             
-        # 4. Cambiar el estado y guardar.
+        # 3. Cambiar el estado y guardar.
         reservation.status = Realize.STATUS_CONFIRMED
         reservation.save(update_fields=['status'])
         
-        # 5. Devolver una respuesta de éxito.
-        return Response({"success": f"Tu reserva para el viaje {reservation.travel.id} ha sido confirmada."}, status=status.HTTP_200_OK)
+        # 4. Devolver una respuesta de éxito.
+        return Response({"success": f"La reserva para el viaje {reservation.travel.id} ha sido confirmada."}, status=status.HTTP_200_OK)

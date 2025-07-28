@@ -4,7 +4,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Driver, Travel
-from .serializers import TravelSerializer,TravelInfoSerializer, TravelDetailSerializer
+from .serializers import TravelSerializer,TravelInfoSerializer, TravelDetailSerializer, DriverTravelWithReservationsSerializer
 from users.permissions import IsAuthenticatedCustom
 
 
@@ -33,22 +33,28 @@ class TravelCreateView(generics.CreateAPIView):
 
 class DriverTravelListView(generics.ListAPIView):
     """
-    Endpoint para listar todos los viajes de un conductor.
-
-    GET /api/travel/driver/<driver_id>/
-
-    Parámetros:
-    - driver_id (int): ID del conductor
-
-    Retorna:
-    - Lista de viajes asociados al conductor
+    Endpoint para listar todos los viajes de un conductor, incluyendo,
+    para cada viaje, la lista de sus reservaciones.
     """
     permission_classes = [IsAuthenticatedCustom]
-    serializer_class = TravelInfoSerializer
+    # ¡CAMBIO CLAVE! Usamos el nuevo serializador.
+    serializer_class = DriverTravelWithReservationsSerializer
 
     def get_queryset(self):
+        """
+
+        Filtra los viajes para devolver solo los del conductor especificado en la URL.
+        Además, optimiza la consulta para traer los datos relacionados de
+        reservaciones, usuarios, vehículos y rutas, evitando múltiples llamadas a la BD.
+        """
         driver_id = self.kwargs.get('driver_id')
-        return Travel.objects.filter(driver_id=driver_id)
+        return Travel.objects.filter(
+            driver_id=driver_id
+        ).select_related(
+            'vehicle', 'route'
+        ).prefetch_related(
+            'realize__user' 
+        )
 
 
 class TravelDeleteView(generics.DestroyAPIView):
