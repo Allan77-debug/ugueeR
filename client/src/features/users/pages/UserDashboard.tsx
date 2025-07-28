@@ -190,18 +190,42 @@ const UserDashboard = () => {
           headers: authService.getAuthHeaders(),
         })
 
-        // Procesar los datos de la API para que sean compatibles con la UI existente
-        const processedTravels: Travel[] = response.data.map((travel: Omit<Travel, 'route' | 'availableSeats'>) => ({
-          ...travel,
-          // Convertir available_seats de string a número
-          availableSeats: parseInt(travel.available_seats) || 0,
-          // Crear un objeto route simulado para compatibilidad con la UI
-          route: {
-            origin: "Campus", // Valores por defecto, podrías obtenerlos de otra API
-            destination: "Destino",
-            departure_time: new Date(travel.time).toISOString().split('T')[0],
-          },
-        }))
+        // Procesar los datos de la API y obtener rutas reales
+        const processedTravels: Travel[] = await Promise.all(
+          response.data.map(async (travel: Omit<Travel, 'route' | 'availableSeats'>) => {
+            let routeInfo = {
+              origin: "Campus", // Valor por defecto
+              destination: "Destino", // Valor por defecto
+              departure_time: new Date(travel.time).toISOString().split('T')[0],
+            };
+
+            // Intentar obtener la ruta real del backend
+            try {
+              const routeResponse = await axios.get(`http://127.0.0.1:8000/api/travel/route/${travel.id}/`, {
+                headers: authService.getAuthHeaders(),
+              });
+              
+              const routeData = routeResponse.data;
+              routeInfo = {
+                origin: routeData.origin_address || "Campus",
+                destination: routeData.destination_address || "Destino", 
+                departure_time: new Date(travel.time).toISOString().split('T')[0],
+              };
+              
+              console.log(`Ruta real obtenida para viaje ${travel.id}:`, routeInfo);
+            } catch (routeError) {
+              console.warn(`No se pudo obtener la ruta para el viaje ${travel.id}, usando valores por defecto:`, routeError);
+            }
+
+            return {
+              ...travel,
+              // Convertir available_seats de string a número
+              availableSeats: parseInt(travel.available_seats) || 0,
+              // Usar la ruta real obtenida del backend
+              route: routeInfo,
+            };
+          })
+        );
 
         setTravels(processedTravels)
         setFilteredTravels(processedTravels)
