@@ -1,3 +1,5 @@
+import { Route } from "expo-router"
+
 interface UserData {
   uid: number
   full_name: string
@@ -11,8 +13,8 @@ interface UserData {
 }
 
 interface RouteInfo {
-  id_route: number
-  origin: string
+  id: number
+  startLocation: string
   destination: string
   departure_time: string
 }
@@ -80,7 +82,7 @@ interface ProfileHeaderProps {
 
 interface QuickActionsProps {
   driverState?: string
-  onNavigate: (path: string) => void
+  onNavigate: (path: Route) => void
   onApply: () => void
 }
 
@@ -88,7 +90,7 @@ interface TravelFeedProps {
   travels: Travel[]
   onReserve: (travelId: number) => void
   reservingTravel: number | null
-  isDriverView?: boolean
+  isDriverView?: boolean,
 }
 
 export type {

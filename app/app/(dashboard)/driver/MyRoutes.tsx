@@ -1,231 +1,173 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
   FlatList,
   Alert,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
-import MapView, { Marker, Polyline } from "react-native-maps";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSession } from "@/hooks/ctx";
 import axios from "axios";
 import { UserData } from "../interfaces/interfaces";
+import RouteCard from "../organism/RouteCard";
 
 type Route = {
   id: string;
   name: string;
-  origin: { latitude: number; longitude: number };
-  destination: { latitude: number; longitude: number };
+  startPointCoords: number[];
+  endPointCoords: number[];
   stops: { latitude: number; longitude: number }[];
 };
 
-const initialRoutes: Route[] = [
-  {
-    id: "1",
-    name: "Casa a Universidad",
-    origin: { latitude: 6.2009, longitude: -75.5785 }, // Envigado
-    destination: { latitude: 6.2013, longitude: -75.5773 }, // EAFIT
-    stops: [
-      { latitude: 6.2009, longitude: -75.5785 },
-      { latitude: 6.201, longitude: -75.578 },
-      { latitude: 6.2013, longitude: -75.5773 },
-    ],
-  },
-  // Agrega más rutas aquí si es necesario
-];
-
-const MyRoutesScreen = () => {
+const MyRoutesScreen = ({ userData }: { userData?: UserData | null }) => {
   const router = useRouter();
-  const [routes, setRoutes] = React.useState<Route[]>(initialRoutes);
-  const { session, signOut } = useSession();
-  const [loading, setLoading] = React.useState(false);
-  const [userData, setUserData] = React.useState<UserData | null>(null);
+  const [routes, setRoutes] = useState<Route[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const { session } = useSession();
 
-  useEffect(() => {
-    // Lógica para obtener datos del usuario y viajes (similar a tu código web)
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Simulación de llamadas a la API
-        const { data: userRes } = await axios.get<UserData>(
-          `http://localhost:8000/api/users/profile/${session?.uid}`,
-          {
-            headers: {
-              Authorization: `Bearer ${session?.token}`,
-            },
-          }
-        );
-        setUserData(userRes);
-      } catch (error) {
-        Alert.alert("Error", "No se pudieron cargar los datos.");
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (session) {
-      fetchData();
+  const fetchRoutes = useCallback(async () => {
+    try {
+      const response = await axios.get<Route[]>(
+        "http://192.168.56.1:8000/api/route/my-routes",
+        {
+          headers: {
+            Authorization: `Bearer ${session?.token}`,
+          },
+        }
+      );
+      setRoutes(response.data);
+    } catch (error) {
+      console.error("Error fetching routes:", error);
+      Alert.alert("Error", "No se pudieron cargar las rutas.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
   }, [session]);
 
+  useEffect(() => {
+    if (userData) {
+      fetchRoutes();
+    }
+  }, [userData, fetchRoutes]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchRoutes();
+  };
+
+  const handleRoutePress = (route: Route) => {
+    // Navegar a detalles de la ruta
+    router.push(`/driver/RouteDetails?id=${route.id}`);
+  };
+
+  const handleEditRoute = (route: Route) => {
+    // Navegar a editar ruta
+    router.push(`/driver/EditRoute?id=${route.id}`);
+  };
+
+  const handleDeleteRoute = (route: Route) => {
+    Alert.alert(
+      "Eliminar Ruta",
+      `¿Estás seguro de que quieres eliminar la ruta "${route.name}"?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await axios.delete(`http://192.168.56.1:8000/api/route/${route.id}`, {
+                headers: {
+                  Authorization: `Bearer ${session?.token}`,
+                },
+              });
+              setRoutes(routes.filter((r) => r.id !== route.id));
+              Alert.alert("Éxito", "Ruta eliminada correctamente");
+            } catch (error) {
+              console.error("Error deleting route:", error);
+              Alert.alert("Error", "No se pudo eliminar la ruta");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderRoute = ({ item }: { item: Route }) => (
-    <View style={styles.routeItem}>
-      <Text style={styles.routeName}>{item.name}</Text>
-      <TouchableOpacity style={styles.detailsButton}>
-        <Text style={styles.detailsButtonText}>Ver Detalles</Text>
-      </TouchableOpacity>
-    </View>
+    <RouteCard
+      route={item}
+      onPress={handleRoutePress}
+      onEdit={handleEditRoute}
+      onDelete={handleDeleteRoute}
+    />
   );
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView className="flex-1 justify-center items-center bg-gray-50">
         <ActivityIndicator size="large" color="#4f46e5" />
-        <Text>Cargando rutas...</Text>
+        <Text className="mt-2 text-gray-600">Cargando tus rutas...</Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <MapView
-        style={styles.map} // MapView might not support className, so style is kept
-        initialRegion={{
-          latitude: 6.2011,
-          longitude: -75.5779,
-          latitudeDelta: 0.02,
-          longitudeDelta: 0.02,
-        }}
-        showsUserLocation={true}
-      >
-        {routes.map((route) => (
-          <React.Fragment key={route.id}>
-            <Marker coordinate={route.origin} title="Origen" pinColor="green" />
-            <Marker
-              coordinate={route.destination}
-              title="Destino"
-              pinColor="blue"
-            />
-            <Polyline
-              coordinates={route.stops}
-              strokeColor="#FF0000"
-              strokeWidth={3}
-            />
-          </React.Fragment>
-        ))}
-      </MapView>
-
-      <View style={styles.listContainer}>
-        <FlatList
-          data={routes}
-          renderItem={renderRoute}
-          keyExtractor={(item) => item.id}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>No tienes rutas guardadas.</Text>
-          }
-        />
-      </View>
-
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => router.push("/driver/AddRoute")}
-      >
-        <Ionicons name="add-outline" size={24} color="white" />
-        <Text style={styles.addButtonText}>Agregar Nueva Ruta</Text>
-      </TouchableOpacity>
+    <SafeAreaView className="flex-1 bg-gray-50">
+      <FlatList
+        data={routes}
+        renderItem={renderRoute}
+        keyExtractor={(item) => item.id}
+        className="px-2 pt-4"
+        ListHeaderComponent={
+          <View className="flex-row justify-between items-center mb-4 px-2">
+            <Text className="text-2xl font-bold text-gray-800">Mis Rutas</Text>
+            <TouchableOpacity
+              className="bg-indigo-600 rounded-full p-3 shadow-lg"
+              onPress={() => router.push("/driver/AddRoute")}
+            >
+              <Ionicons name="add" size={24} color="white" />
+            </TouchableOpacity>
+          </View>
+        }
+        ListEmptyComponent={
+          <View className="flex-1 justify-center items-center mt-20 px-4">
+            <Ionicons name="map-outline" size={64} color="#9ca3af" />
+            <Text className="text-gray-500 text-center mt-4 mb-2">
+              No tienes rutas guardadas
+            </Text>
+            <Text className="text-gray-400 text-center text-sm mb-6">
+              Crea tu primera ruta para comenzar a ofrecer viajes
+            </Text>
+            <TouchableOpacity
+              className="bg-indigo-600 py-3 px-6 rounded-lg flex-row items-center"
+              onPress={() => router.push("/driver/AddRoute")}
+            >
+              <Ionicons name="add-outline" size={20} color="white" />
+              <Text className="text-white font-bold ml-2">
+                Crear mi primera ruta
+              </Text>
+            </TouchableOpacity>
+          </View>
+        }
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#4f46e5"]}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 20 }}
+      />
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f4f4f8",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "white",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e2e8f0",
-  },
-  backButton: {
-    padding: 4,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  map: {
-    height: "45%",
-    width: "100%",
-  },
-  listContainer: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  routeItem: {
-    backgroundColor: "white",
-    padding: 16,
-    borderRadius: 8,
-    marginVertical: 8,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-    elevation: 2,
-  },
-  routeName: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  detailsButton: {
-    backgroundColor: "#eef2ff",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-  },
-  detailsButtonText: {
-    color: "#4f46e5",
-    fontWeight: "bold",
-  },
-  emptyText: {
-    textAlign: "center",
-    marginTop: 20,
-    color: "#6b7280",
-  },
-  addButton: {
-    backgroundColor: "#4f46e5",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    margin: 16,
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  addButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-    marginLeft: 8,
-  },
-});
 
 export default MyRoutesScreen;

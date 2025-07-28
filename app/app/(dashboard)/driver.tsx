@@ -1,21 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import {
-  Text,
-  ScrollView,
-  SafeAreaView,
-  ActivityIndicator,
+    ScrollView,
 } from "react-native";
-import { UserData, Travel } from "./interfaces/interfaces";
-import ProfileHeader from "./organism/ProfileHeader";
-import QuickActions from "./molecules/QuickActions";
+import { Travel } from "./interfaces/interfaces";
 import TravelFeed from "./molecules/TravelFeed";
 import * as Burnt from "burnt";
 
 const DriverDashboard = () => {
   const router = useRouter();
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [travels, setTravels] = useState<Travel[]>([]);
 
  
@@ -48,16 +41,6 @@ const DriverDashboard = () => {
     router.push("/login");
   };
 
-  if (loading) {
-    return (
-      <SafeAreaView className="flex-1 justify-center items-center bg-gray-100">
-        <ActivityIndicator size="large" color="#4f46e5" />
-        <Text className="mt-4 text-gray-600">
-          Cargando tu perfil de conductor...
-        </Text>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <ScrollView>

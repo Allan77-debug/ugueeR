@@ -10,7 +10,7 @@ const TripCard: React.FC<TripCardProps> = ({ travel, onReserve, isReserving }) =
       <View className="flex-1 flex-row items-center mr-2">
         <Icon icon={MapPin} color="#4f46e5" />
         <Text className="font-bold text-lg ml-2 flex-1" ellipsizeMode="tail" numberOfLines={2}>
-          {travel.route?.origin} → {travel.route?.destination}
+          {travel.route?.startLocation} → {travel.route?.destination}
         </Text>
       </View>
      

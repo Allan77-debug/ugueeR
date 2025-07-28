@@ -170,7 +170,7 @@ const UserRegisterPage = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:8000/api/users/register/",
+        "http://192.168.56.1:8000/api/users/register/",
         form,
         {
           headers: {

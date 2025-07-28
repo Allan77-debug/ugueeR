@@ -13,16 +13,17 @@ const QuickActions: React.FC<QuickActionsProps> = ({
     <View className="bg-white p-4 rounded-xl shadow-lg flex-row justify-around">
       <ButtonTouchable
         className="items-center"
-        onPress={() => onNavigate( driverState === "aprobado" ? "/driver": "/user")}
+        onPress={() => onNavigate("/user")}
       >
-        <Icon icon={
-          driverState === "aprobado" ? Route:List
-        } color="#4f46e5" />
+        <Icon
+          icon={List}
+          color="#4f46e5"
+        />
         <Text className="mt-1 text-xs font-semibold text-gray-700">
-          {driverState === "aprobado" ? 'Mis Viajes' : 'Mis rutas'}
+          Viajes Disponibles
         </Text>
       </ButtonTouchable>
-      {driverState === "aprobado" && (
+      {driverState === "aprobado" ? (
         <ButtonTouchable
           className="items-center"
           onPress={() => onNavigate("/driver/MyVehicles")}
@@ -32,10 +33,17 @@ const QuickActions: React.FC<QuickActionsProps> = ({
             Mis Vehículos
           </Text>
         </ButtonTouchable>
+      ) : (
+        <ButtonTouchable className="items-center" onPress={onApply}>
+          <Icon icon={Car} color="#4f46e5" />
+          <Text className="mt-1 text-xs font-semibold text-gray-700">
+            Solicitar Conductor
+          </Text>
+        </ButtonTouchable>
       )}
       <ButtonTouchable
         className="items-center"
-        onPress={() => onNavigate(`/${driverState === "aprobado" ? "driver" : "user"}/map`)}
+        onPress={() => onNavigate(`/user/map`)}
       >
         <Icon icon={Map} color="#4f46e5" />
         <Text className="mt-1 text-xs font-semibold text-gray-700">

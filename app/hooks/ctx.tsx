@@ -44,10 +44,12 @@ export function SessionProvider({ children }: PropsWithChildren) {
             const response = await axios.post<{
               token: string;
               uid: number;
-            }>("http://localhost:8000/api/users/login/", {
+            }>("http://192.168.56.1:8000/api/users/login/", {
               institutional_mail: email,
               upassword: password,
             });
+
+            console.log("Sign-in response:", response.data);
 
             const { token, uid } = response.data;
             if (token) {

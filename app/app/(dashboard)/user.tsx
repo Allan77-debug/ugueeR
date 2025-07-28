@@ -28,7 +28,7 @@ const UserDashboard = () => {
       setLoading(true);
       try {
         const { data: travelsRes } = await axios.get<Travel[]>(
-          "http://localhost:8000/api/travel/institution/",
+          "http://192.168.56.1:8000/api/travel/institution/",
           {
             headers: {
               Authorization: `Bearer ${session?.token}`,
