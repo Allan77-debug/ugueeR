@@ -1,40 +1,54 @@
+# server/travel/tests/test_models.py
 from django.test import TestCase
 from django.utils import timezone
 from datetime import datetime, timedelta
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 from travel.models import Travel
 from driver.models import Driver
 from vehicle.models import Vehicle
 from users.models import Users
 from institutions.models import Institution
+from route.models import Route # Importado para pruebas completas
 from django.contrib.auth.hashers import make_password
 
-
 class TravelModelTest(TestCase):
-    """Test cases for the Travel model."""
+    """
+    Casos de prueba para el modelo Travel.
+
+    Esta clase de prueba verifica la estructura, relaciones, restricciones
+    y comportamiento general del modelo `Travel`.
+    """
     
     def setUp(self):
-        """Set up test data."""
-        # Create institution
+        """
+        Configura los datos iniciales necesarios para cada una de las pruebas.
+
+        Este método se ejecuta antes de cada `test_*` y crea un conjunto consistente
+        de objetos en la base de datos de prueba (institución, usuario, conductor, vehículo y ruta).
+        Esto asegura que cada prueba parta de un estado conocido y limpio.
+        """
+        # Crear una institución de prueba.
         self.institution = Institution.objects.create(
             id_institution=1,
-            official_name="Test University",
-            email="test@university.edu",
+            official_name="Universidad de Prueba",
+            email="test@universidad.edu",
             phone="+1234567890",
-            address="123 Test Street",
-            city="Test City",
-            istate="Test State",
+            address="Calle Falsa 123",
+            city="Ciudad Prueba",
+            istate="Estado Prueba",
             postal_code="12345",
             ipassword=make_password("testpass123")
         )
         
-        # Create user
+        # Crear un usuario de prueba con rol de conductor.
         self.user = Users.objects.create(
-            full_name="Test Driver",
+            full_name="Conductor de Prueba",
             user_type=Users.TYPE_DRIVER,
-            institutional_mail="driver@university.edu",
+            institutional_mail="conductor@universidad.edu",
             student_code="2023001",
             udocument="12345678",
-            direction="123 Driver Street",
+            direction="Avenida Siempre Viva 742",
             uphone="+1234567890",
             upassword=make_password("driverpass123"),
             institution=self.institution,
@@ -42,13 +56,13 @@ class TravelModelTest(TestCase):
             driver_state=Users.DRIVER_STATE_APPROVED
         )
         
-        # Create driver
+        # Crear un perfil de conductor asociado al usuario.
         self.driver = Driver.objects.create(
             user=self.user,
             validate_state='approved'
         )
         
-        # Create vehicle
+        # Crear un vehículo de prueba asociado al conductor.
         self.vehicle = Vehicle.objects.create(
             driver=self.driver,
             plate="ABC123",
@@ -56,140 +70,161 @@ class TravelModelTest(TestCase):
             model="Corolla",
             vehicle_type="Sedan",
             category="metropolitano",
-            soat=datetime.now().date() + timedelta(days=365),
-            tecnomechanical=datetime.now().date() + timedelta(days=365),
+            soat=(datetime.now().date() + timedelta(days=365)),
+            tecnomechanical=(datetime.now().date() + timedelta(days=365)),
             capacity=4
         )
         
-        # Create a mock route (we'll skip the actual Route model for now)
-        # For testing purposes, we'll create a travel without route
-        # This tests the core Travel model functionality
-        
-    def test_travel_creation_without_route(self):
-        """Test that a travel can be created successfully (without route for testing)."""
-        # Note: This test is for demonstration purposes
-        # In a real scenario, you would need a valid route
-        self.assertIsNotNone(self.driver)
-        self.assertIsNotNone(self.vehicle)
-        self.assertEqual(self.driver.user.full_name, "Test Driver")
-        self.assertEqual(self.vehicle.plate, "ABC123")
-    
-    def test_travel_choices(self):
-        """Test that travel states are correctly defined."""
-        travel_states = [choice[0] for choice in Travel.TRAVEL_STATES]
-        self.assertIn('scheduled', travel_states)
-        self.assertIn('in_progress', travel_states)
-        self.assertIn('completed', travel_states)
-        self.assertIn('cancelled', travel_states)
-    
-    def test_travel_constraints(self):
-        """Test that travel constraints are working."""
-        # Test valid travel state
-        valid_states = ['scheduled', 'in_progress', 'completed', 'cancelled']
-        for state in valid_states:
-            # We can't create a travel without route, but we can test the choices
-            self.assertIn(state, [choice[0] for choice in Travel.TRAVEL_STATES])
-    
-    def test_travel_price_validation(self):
-        """Test that travel price validation works."""
-        # Test that price must be >= 0 (constraint)
-        # We can't create a travel without route, but we can test the constraint logic
-        self.assertTrue(True)  # Placeholder - constraint would be tested in real scenario
-    
-    def test_travel_time_validation(self):
-        """Test that travel time is properly handled."""
-        # Test future time
-        future_time = timezone.now() + timedelta(hours=2)
-        self.assertIsNotNone(future_time)
-        
-        # Test past time
-        past_time = timezone.now() - timedelta(hours=1)
-        self.assertIsNotNone(past_time)
-    
-    def test_travel_state_transitions(self):
-        """Test travel state transitions."""
-        # Test that all state transitions are valid
-        valid_states = ['scheduled', 'in_progress', 'completed', 'cancelled']
-        
-        # Test transitions
-        for i, state1 in enumerate(valid_states):
-            for j, state2 in enumerate(valid_states):
-                # All transitions should be valid
-                self.assertIn(state1, valid_states)
-                self.assertIn(state2, valid_states)
-    
-    def test_travel_price_range(self):
-        """Test travel price range validation."""
-        # Test minimum price (0)
-        self.assertTrue(0 >= 0)  # Constraint check
-        
-        # Test high price
-        self.assertTrue(100000 >= 0)  # Constraint check
-    
-    def test_travel_time_flexibility(self):
-        """Test travel time flexibility."""
-        # Test past time
-        past_time = timezone.now() - timedelta(hours=1)
-        self.assertIsNotNone(past_time)
-        
-        # Test future time
-        future_time = timezone.now() + timedelta(days=7)
-        self.assertIsNotNone(future_time)
-    
-    def test_travel_relationships(self):
-        """Test the relationships between travel and related models."""
-        # Test that driver and vehicle are properly set up
-        self.assertEqual(self.driver.user, self.user)
-        self.assertEqual(self.vehicle.driver, self.driver)
-        
-        # Test reverse relationships
-        self.assertIn(self.vehicle, self.driver.vehicles.all())
-    
-    def test_travel_with_different_vehicles(self):
-        """Test travel with different vehicles."""
-        # Create another vehicle
-        vehicle2 = Vehicle.objects.create(
+        # Crear una instancia de Ruta, que es un requisito para crear un Viaje.
+        self.route = Route.objects.create(
             driver=self.driver,
-            plate="XYZ789",
-            brand="Honda",
-            model="Civic",
-            vehicle_type="Sedan",
-            category="intermunicipal",
-            soat=datetime.now().date() + timedelta(days=365),
-            tecnomechanical=datetime.now().date() + timedelta(days=365),
-            capacity=5
+            startLocation="Punto A",
+            destination="Punto B",
+            startPointCoords=["4.60971", "-74.08175"], # Lat, Lng
+            endPointCoords=["4.62889", "-74.06528"], # Lat, Lng
+            state=True
         )
         
-        self.assertNotEqual(self.vehicle.plate, vehicle2.plate)
-        self.assertEqual(self.vehicle.driver, vehicle2.driver)
-    
-    def test_travel_meta_options(self):
-        """Test travel meta options."""
-        # Test table name
+    def test_travel_creation(self):
+        """Prueba que un objeto Travel puede ser creado exitosamente en la BD."""
+        travel_time = timezone.now() + timedelta(hours=2)
+        travel = Travel.objects.create(
+            driver=self.driver,
+            vehicle=self.vehicle,
+            route=self.route,
+            time=travel_time,
+            travel_state='scheduled',
+            price=20000
+        )
+        # Verifica que el objeto creado no es nulo y que se le asignó un ID.
+        self.assertIsNotNone(travel)
+        self.assertIsNotNone(travel.id)
+        # Verifica que los datos se guardaron correctamente.
+        self.assertEqual(travel.driver.user.full_name, "Conductor de Prueba")
+        self.assertEqual(travel.vehicle.plate, "ABC123")
+        self.assertEqual(travel.travel_state, "scheduled")
+        # Verifica que solo hay un viaje en la base de datos después de la creación.
+        self.assertEqual(Travel.objects.count(), 1)
+
+    def test_travel_state_options(self):
+        """Prueba que los estados de viaje permitidos están definidos correctamente en el modelo."""
+        # Extrae los identificadores de los estados (ej: 'scheduled', 'in_progress').
+        defined_states = [option[0] for option in Travel.TRAVEL_STATES]
+        self.assertIn('scheduled', defined_states)
+        self.assertIn('in_progress', defined_states)
+        self.assertIn('completed', defined_states)
+        self.assertIn('cancelled', defined_states)
+
+    def test_positive_price_constraint(self):
+        """
+        Prueba que la restricción de la base de datos `chk_price_positive`
+        impide guardar un viaje con un precio negativo.
+        """
+        # El bloque `with self.assertRaises(IntegrityError)` espera que el código
+        # dentro de él lance una `IntegrityError` de la base de datos.
+        with self.assertRaises(IntegrityError):
+            Travel.objects.create(
+                driver=self.driver,
+                vehicle=self.vehicle,
+                route=self.route,
+                time=timezone.now(),
+                travel_state='scheduled',
+                price=-100 # Precio inválido
+            )
+
+    def test_invalid_state_constraint(self):
+        """
+        Prueba que la restricción de la base de datos `travel_travel_state_check`
+        impide guardar un viaje con un estado que no está en la lista de opciones.
+        """
+        with self.assertRaises(IntegrityError):
+            Travel.objects.create(
+                driver=self.driver,
+                vehicle=self.vehicle,
+                route=self.route,
+                time=timezone.now(),
+                travel_state='estado_inventado', # Estado inválido
+                price=5000
+            )
+
+    def test_date_handling(self):
+        """Prueba que el campo de fecha y hora se maneja correctamente."""
+        future_time = timezone.now() + timedelta(days=5)
+        travel = Travel.objects.create(
+            driver=self.driver,
+            vehicle=self.vehicle,
+            route=self.route,
+            time=future_time,
+            travel_state='scheduled',
+            price=10000
+        )
+        # Compara que la fecha guardada sea la misma que se especificó.
+        self.assertEqual(travel.time, future_time)
+
+    def test_model_relationships(self):
+        """Prueba que las relaciones (ForeignKey) con Driver, Vehicle y Route funcionan."""
+        travel = Travel.objects.create(
+            driver=self.driver,
+            vehicle=self.vehicle,
+            route=self.route,
+            time=timezone.now(),
+            travel_state='scheduled',
+            price=10000
+        )
+        # Verifica que se puede acceder a los objetos relacionados desde la instancia de viaje.
+        self.assertEqual(travel.driver, self.driver)
+        self.assertEqual(travel.vehicle, self.vehicle)
+        self.assertEqual(travel.route, self.route)
+        
+        # Prueba la relación inversa: desde un conductor se debe poder acceder a sus viajes.
+        self.assertIn(travel, self.driver.travel_set.all())
+
+    def test_model_meta_options(self):
+        """Prueba las meta opciones del modelo, como el nombre de la tabla."""
+        # Verifica que el nombre de la tabla en la BD sea el esperado.
         self.assertEqual(Travel._meta.db_table, 'travel')
         
-        # Test verbose name
+        # Verifica los nombres que Django usa internamente.
         self.assertEqual(Travel._meta.verbose_name, 'travel')
         self.assertEqual(Travel._meta.verbose_name_plural, 'travels')
-    
-    def test_travel_constraint_names(self):
-        """Test that the constraint names are correct."""
-        # Check if the constraints exist
+
+    def test_constraint_names(self):
+        """Prueba que las restricciones del modelo tienen los nombres correctos."""
+        # Obtiene la lista de restricciones definidas en el modelo.
         constraints = Travel._meta.constraints
         constraint_names = [constraint.name for constraint in constraints]
+        
+        # Verifica que los nombres esperados estén en la lista.
         self.assertIn('chk_price_positive', constraint_names)
         self.assertIn('travel_travel_state_check', constraint_names)
-    
-    def test_travel_string_representation(self):
-        """Test the string representation of the travel."""
-        # Since there's no __str__ method, test the object creation
-        self.assertIsNotNone(self.driver)
-        self.assertIsNotNone(self.vehicle)
-    
-    def test_travel_driver_vehicle_consistency(self):
-        """Test that driver and vehicle are consistent."""
-        # Test that vehicle belongs to the driver
+
+    def test_string_representation(self):
+        """
+        Prueba la representación en cadena (__str__) del modelo.
+        Si no hay un método __str__ definido, Django usa una representación por defecto.
+        """
+        travel = Travel.objects.create(
+            driver=self.driver,
+            vehicle=self.vehicle,
+            route=self.route,
+            time=timezone.now(),
+            travel_state='scheduled',
+            price=10000
+        )
+        # Si se definiera un __str__, aquí se comprobaría su formato.
+        # Por ejemplo: self.assertEqual(str(viaje), f"Viaje {viaje.id} - {viaje.travel_state}")
+        # Como no está definido, solo verificamos que la creación del objeto funciona.
+        self.assertTrue(isinstance(str(travel), str))
+        self.assertIn('Travel object', str(travel)) # La representación por defecto de Django
+
+    def test_driver_vehicle_consistency(self):
+        """
+        Prueba que el vehículo pertenece al conductor. 
+        Esta lógica se valida en el serializador, pero la prueba del modelo puede
+        verificar la consistencia de los datos de prueba.
+        """
+        # Verifica que los datos creados en setUp() son consistentes.
         self.assertEqual(self.vehicle.driver, self.driver)
         
-        # Test that driver can access their vehicles
-        self.assertIn(self.vehicle, self.driver.vehicles.all()) 
+        # Verifica que desde el conductor se puede acceder a sus vehículos.
+        self.assertIn(self.vehicle, self.driver.vehicle_set.all())

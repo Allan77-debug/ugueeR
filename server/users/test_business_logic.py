@@ -1,59 +1,68 @@
+# server/users/tests/test_business_logic.py
 from django.test import TestCase
 from django.contrib.auth.hashers import make_password, check_password
 from users.models import Users
 from institutions.models import Institution
 
-
 class UsersBusinessLogicTest(TestCase):
-    """Test cases for business logic and user workflows."""
+    """
+    Casos de prueba para la lógica de negocio y los flujos de trabajo de los usuarios.
+
+    Esta clase de prueba se enfoca en verificar que las reglas de negocio,
+    como los flujos de aprobación y las transiciones de estado, funcionen
+    como se espera. No prueba endpoints (vistas), sino las interacciones
+
+    directas con el modelo que simulan procesos del sistema.
+    """
     
     def setUp(self):
-        """Set up test data."""
+        """Configura los datos de prueba iniciales para cada test."""
+        # Crear una institución de prueba.
         self.institution = Institution.objects.create(
             id_institution=1,
-            official_name="Test University",
-            email="university.edu"
+            official_name="Universidad de Prueba",
+            email="universidad.edu" # El dominio es lo importante para la validación.
         )
         
-        # Create different types of users for testing
+        # Crear diferentes tipos de usuarios para probar distintos escenarios.
         self.student = Users.objects.create(
-            full_name="Student User",
+            full_name="Usuario Estudiante",
             user_type=Users.TYPE_STUDENT,
-            institutional_mail="student@university.edu",
+            institutional_mail="estudiante@universidad.edu",
             student_code="2023008",
             udocument="88888888",
-            direction="888 Student Street",
+            direction="Calle Estudiante 888",
             uphone="+8888888888",
             upassword=make_password("studentpass123"),
             institution=self.institution,
-            user_state=Users.STATE_APPROVED,
+            user_state=Users.STATE_APPROVED, # Este usuario ya está aprobado.
             driver_state=Users.DRIVER_STATE_NONE
         )
         
         self.driver = Users.objects.create(
-            full_name="Driver User",
+            full_name="Usuario Conductor",
             user_type=Users.TYPE_DRIVER,
-            institutional_mail="driver@university.edu",
+            institutional_mail="conductor@universidad.edu",
             student_code="2023009",
             udocument="99999999",
-            direction="999 Driver Street",
+            direction="Calle Conductor 999",
             uphone="+9999999999",
             upassword=make_password("driverpass123"),
             institution=self.institution,
             user_state=Users.STATE_APPROVED,
-            driver_state=Users.DRIVER_STATE_APPROVED
+            driver_state=Users.DRIVER_STATE_APPROVED # Este usuario ya es un conductor aprobado.
         )
     
     def test_user_approval_workflow(self):
-        """Test the user approval workflow."""
-        # Create a pending user
+        """Prueba el flujo de trabajo completo de aprobación de un usuario."""
+        # 1. Crear un usuario nuevo, que por defecto debería estar pendiente.
         pending_user = Users.objects.create(
-            full_name="Pending User",
+            full_name="Usuario Pendiente",
             user_type=Users.TYPE_STUDENT,
-            institutional_mail="pending@university.edu",
+            institutional_mail="pendiente@universidad.edu",
             student_code="2023010",
             udocument="10101010",
-            direction="101 Pending Street",
+            direction="Calle Pendiente 101",
             uphone="+1010101010",
             upassword=make_password("pendingpass123"),
             institution=self.institution,
@@ -61,44 +70,45 @@ class UsersBusinessLogicTest(TestCase):
             driver_state=Users.DRIVER_STATE_NONE
         )
         
-        # Test initial state
+        # 2. Verificar el estado inicial.
         self.assertEqual(pending_user.user_state, Users.STATE_PENDING)
         self.assertEqual(pending_user.driver_state, Users.DRIVER_STATE_NONE)
         
-        # Approve the user
+        # 3. Simular la aprobación del usuario por un administrador.
         pending_user.user_state = Users.STATE_APPROVED
         pending_user.save()
         
-        # Test approved state
-        pending_user.refresh_from_db()
+        # 4. Verificar el estado de aprobado.
+        pending_user.refresh_from_db() # Recargar el objeto desde la BD.
         self.assertEqual(pending_user.user_state, Users.STATE_APPROVED)
         
-        # Apply for driver status
+        # 5. Simular la solicitud del usuario para ser conductor.
         pending_user.driver_state = Users.DRIVER_STATE_PENDING
         pending_user.save()
         
-        # Test driver application state
+        # 6. Verificar el estado de la solicitud de conductor.
         pending_user.refresh_from_db()
         self.assertEqual(pending_user.driver_state, Users.DRIVER_STATE_PENDING)
     
     def test_driver_application_requirements(self):
-        """Test that only approved users can apply to be drivers."""
-        # Test that approved user can apply
+        """Prueba la regla de negocio: solo usuarios aprobados pueden solicitar ser conductores."""
+        # 1. Verificar que el estudiante de prueba está aprobado y no es conductor.
         self.assertEqual(self.student.user_state, Users.STATE_APPROVED)
         self.assertEqual(self.student.driver_state, Users.DRIVER_STATE_NONE)
         
-        # Apply for driver status
+        # 2. Simular la solicitud para ser conductor.
         self.student.driver_state = Users.DRIVER_STATE_PENDING
         self.student.save()
         
+        # 3. Verificar que el estado cambió a pendiente, confirmando que el flujo es posible para un usuario aprobado.
         self.student.refresh_from_db()
         self.assertEqual(self.student.driver_state, Users.DRIVER_STATE_PENDING)
     
     def test_user_type_validation(self):
-        """Test that user types are properly validated."""
+        """Prueba que las opciones de tipo de usuario están correctamente definidas."""
         valid_types = [choice[0] for choice in Users.USER_TYPE_CHOICES]
         
-        # Test that all user types are valid
+        # Verifica que todos los tipos definidos en el modelo están en la lista de opciones.
         self.assertIn(Users.TYPE_STUDENT, valid_types)
         self.assertIn(Users.TYPE_DRIVER, valid_types)
         self.assertIn(Users.TYPE_EMPLOYEE, valid_types)
@@ -106,101 +116,92 @@ class UsersBusinessLogicTest(TestCase):
         self.assertIn(Users.TYPE_ADMIN, valid_types)
     
     def test_institution_relationship(self):
-        """Test the relationship between users and institutions."""
-        # Test that users belong to institutions
+        """Prueba la relación bidireccional entre usuarios e instituciones."""
+        # 1. Probar la relación desde el usuario hacia la institución.
         self.assertEqual(self.student.institution, self.institution)
         self.assertEqual(self.driver.institution, self.institution)
         
-        # Test institution can access its users
+        # 2. Probar la relación inversa: desde la institución hacia los usuarios, usando `related_name='members'`.
         institution_users = self.institution.members.all()
         self.assertIn(self.student, institution_users)
         self.assertIn(self.driver, institution_users)
     
     def test_password_security(self):
-        """Test password security features."""
-        # Test that passwords are hashed
+        """Prueba las características de seguridad de las contraseñas."""
+        # 1. Prueba que las contraseñas están hasheadas y se pueden verificar.
         self.assertTrue(check_password("studentpass123", self.student.upassword))
         self.assertFalse(check_password("wrongpassword", self.student.upassword))
         
-        # Test that raw passwords are not stored
+        # 2. Prueba que las contraseñas en texto plano no se almacenan en la base de datos.
         self.assertNotEqual("studentpass123", self.student.upassword)
     
     def test_user_state_transitions(self):
-        """Test all possible user state transitions."""
-        # Test pending -> approved -> rejected
+        """Prueba todas las transiciones posibles del estado de un usuario."""
+        # Crear un usuario para la prueba de transiciones.
         user = Users.objects.create(
-            full_name="State Test User",
+            full_name="Usuario de Prueba de Estado",
             user_type=Users.TYPE_STUDENT,
-            institutional_mail="state@university.edu",
-            student_code="2023012",
-            udocument="12121212",
-            direction="121 State Street",
-            uphone="+1212121212",
+            institutional_mail="estado@universidad.edu",
             upassword=make_password("statepass123"),
-            institution=self.institution,
-            user_state=Users.STATE_PENDING,
-            driver_state=Users.DRIVER_STATE_NONE
+            institution=self.institution
         )
+        self.assertEqual(user.user_state, Users.STATE_PENDING) # Estado inicial
         
-        # Pending -> Approved
+        # Transición: Pendiente -> Aprobado
         user.user_state = Users.STATE_APPROVED
         user.save()
         self.assertEqual(user.user_state, Users.STATE_APPROVED)
         
-        # Approved -> Rejected
+        # Transición: Aprobado -> Rechazado
         user.user_state = Users.STATE_REJECTED
         user.save()
         self.assertEqual(user.user_state, Users.STATE_REJECTED)
         
-        # Rejected -> Approved
+        # Transición: Rechazado -> Aprobado
         user.user_state = Users.STATE_APPROVED
         user.save()
         self.assertEqual(user.user_state, Users.STATE_APPROVED)
     
     def test_driver_state_transitions(self):
-        """Test all possible driver state transitions."""
-        # Test none -> pending -> approved -> rejected
+        """Prueba todas las transiciones posibles del estado de conductor de un usuario."""
+        # Crear un usuario aprobado para este flujo.
         user = Users.objects.create(
-            full_name="Driver State Test User",
+            full_name="Prueba de Estado de Conductor",
             user_type=Users.TYPE_STUDENT,
-            institutional_mail="driverstate@university.edu",
-            student_code="2023013",
-            udocument="13131313",
-            direction="131 Driver State Street",
-            uphone="+1313131313",
+            institutional_mail="estadoconductor@universidad.edu",
             upassword=make_password("driverstatepass123"),
             institution=self.institution,
-            user_state=Users.STATE_APPROVED,
-            driver_state=Users.DRIVER_STATE_NONE
+            user_state=Users.STATE_APPROVED
         )
-        
-        # None -> Pending
+        self.assertEqual(user.driver_state, Users.DRIVER_STATE_NONE) # Estado inicial
+
+        # Transición: Ninguno -> Pendiente
         user.driver_state = Users.DRIVER_STATE_PENDING
         user.save()
         self.assertEqual(user.driver_state, Users.DRIVER_STATE_PENDING)
         
-        # Pending -> Approved
+        # Transición: Pendiente -> Aprobado
         user.driver_state = Users.DRIVER_STATE_APPROVED
         user.save()
         self.assertEqual(user.driver_state, Users.DRIVER_STATE_APPROVED)
         
-        # Approved -> Rejected
+        # Transición: Aprobado -> Rechazado
         user.driver_state = Users.DRIVER_STATE_REJECTED
         user.save()
         self.assertEqual(user.driver_state, Users.DRIVER_STATE_REJECTED)
         
-        # Rejected -> Pending
+        # Transición: Rechazado -> Pendiente (ej: el usuario apela la decisión)
         user.driver_state = Users.DRIVER_STATE_PENDING
         user.save()
         self.assertEqual(user.driver_state, Users.DRIVER_STATE_PENDING)
     
     def test_user_type_consistency(self):
-        """Test that user types are consistent across the system."""
-        # Test that user types match their roles
+        """Prueba que los tipos de usuario son consistentes en el sistema."""
+        # Verifica que los tipos asignados en la creación son correctos.
         self.assertEqual(self.student.user_type, Users.TYPE_STUDENT)
         self.assertEqual(self.driver.user_type, Users.TYPE_DRIVER)
         
-        # Test that user types are properly stored and retrieved
+        # Verifica que los tipos se guardan y recuperan correctamente de la BD.
         student_from_db = Users.objects.get(uid=self.student.uid)
         driver_from_db = Users.objects.get(uid=self.driver.uid)
         
@@ -208,36 +209,25 @@ class UsersBusinessLogicTest(TestCase):
         self.assertEqual(driver_from_db.user_type, Users.TYPE_DRIVER)
     
     def test_institution_user_count(self):
-        """Test that institution user counts are accurate."""
-        # Create additional users for the same institution
+        """Prueba que el conteo de usuarios por institución es preciso."""
+        # El setUp ya creó 2 usuarios para `self.institution`.
+        
+        # Crear usuarios adicionales para la misma institución.
         Users.objects.create(
-            full_name="Extra User 1",
+            full_name="Usuario Extra 1",
             user_type=Users.TYPE_STUDENT,
-            institutional_mail="extra1@university.edu",
-            student_code="2023014",
-            udocument="14141414",
-            direction="141 Extra Street",
-            uphone="+1414141414",
+            institutional_mail="extra1@universidad.edu",
             upassword=make_password("extrapass123"),
-            institution=self.institution,
-            user_state=Users.STATE_APPROVED,
-            driver_state=Users.DRIVER_STATE_NONE
+            institution=self.institution
         )
-        
         Users.objects.create(
-            full_name="Extra User 2",
+            full_name="Usuario Extra 2",
             user_type=Users.TYPE_EMPLOYEE,
-            institutional_mail="extra2@university.edu",
-            student_code="2023015",
-            udocument="15151515",
-            direction="151 Extra Street",
-            uphone="+1515151515",
+            institutional_mail="extra2@universidad.edu",
             upassword=make_password("extrapass456"),
-            institution=self.institution,
-            user_state=Users.STATE_APPROVED,
-            driver_state=Users.DRIVER_STATE_NONE
+            institution=self.institution
         )
         
-        # Test that institution has the correct number of users
-        institution_users = self.institution.members.all()
-        self.assertEqual(institution_users.count(), 4)  # student, driver, extra1, extra2 
+        # Verificar que la institución tiene el número correcto de usuarios asociados.
+        # Originales: student, driver. Adicionales: extra1, extra2.
+        self.assertEqual(self.institution.members.count(), 4)
