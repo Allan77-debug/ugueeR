@@ -4,20 +4,24 @@ import {
   DriverTrip,
   DriverRoute,
   DriverVehicle,
+  AddTripPayload, // <-- Importa la interfaz del payload
 } from "../../../types/driver.types";
 import {
   getDriverTrips,
   addDriverTrip,
   deleteDriverTrip,
   getDriverRoutes,
-  getDriverVehicles, // Necesitamos estos para el formulario
+  getDriverVehicles,
 } from "../../../services/driverDataService";
 import DriverTripCard from "../components/cards/DriverTripCard";
-import DriverTripForm from "../components/forms/DriverTripForm";
+// Importamos el formulario y su tipo de datos de salida
+import DriverTripForm, {
+  TripFormData,
+} from "../components/forms/DriverTripForm";
 import Button from "../components/common/Button";
 import Modal from "../components/common/Modal";
 import { PlusCircle } from "lucide-react";
-import styles from "./MyDriverRoutesPage.module.css"; // O './MyDriverTripsPage.module.css'
+import styles from "./MyDriverRoutesPage.module.css";
 
 const MyDriverTripsPage: React.FC = () => {
   const [trips, setTrips] = useState<DriverTrip[]>([]);
@@ -27,7 +31,7 @@ const MyDriverTripsPage: React.FC = () => {
   );
 
   const [isLoading, setIsLoading] = useState(true);
-  const [loadingFormData, setLoadingFormData] = useState(true); // Para cargar rutas y vehículos para el form
+  const [loadingFormData, setLoadingFormData] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,13 +41,50 @@ const MyDriverTripsPage: React.FC = () => {
     setLoadingFormData(true);
     setError(null);
     try {
-      // Cargar todo en paralelo
-      const [tripsData, routesData, vehiclesData] = await Promise.all([
+      // 1. Obtener todos los datos necesarios en paralelo. Ahora estamos seguros
+      // de que getDriverTrips() devuelve los datos crudos con IDs.
+      const [tripsDataFromApi, routesData, vehiclesData] = await Promise.all([
         getDriverTrips(),
         getDriverRoutes(),
         getDriverVehicles(),
       ]);
-      setTrips(tripsData);
+
+      // 2. Crear mapas para búsqueda rápida, como antes.
+      const routesMap = new Map(routesData.map((route) => [route.id, route]));
+      const vehiclesMap = new Map(
+        vehiclesData.map((vehicle) => [vehicle.id, vehicle])
+      );
+
+      // 3. Ensamblar los datos para la UI. Esta lógica ahora funcionará.
+      const assembledTrips: DriverTrip[] = tripsDataFromApi.map((trip: any) => {
+        // Busca los detalles completos usando los IDs del viaje
+        const routeDetails = routesMap.get(trip.route);
+        const vehicleDetails = vehiclesMap.get(trip.vehicle);
+
+        // Construye el objeto `DriverTrip` que la UI espera
+        return {
+          id: trip.id,
+
+          startLocation: routeDetails?.startLocation || "Origen no disponible",
+          destination: routeDetails?.destination || "Destino no disponible",
+
+          vehicleType: vehicleDetails
+            ? `${vehicleDetails.category} - ${vehicleDetails.brand}`.trim()
+            : "Vehículo no disponible",
+
+          price: trip.price,
+          departureDateTime: trip.time, // <- Esto ahora recibirá el string de fecha correcto
+
+          // Parche temporal: usa la capacidad total del vehículo.
+          // Lo ideal es que el backend envíe el número real de sillas disponibles.
+          availableSeats: vehicleDetails?.capacity ?? 0,
+
+          travelState: trip.travel_state,
+        };
+      });
+
+      // 4. Actualizar el estado con los datos ya completos
+      setTrips(assembledTrips);
       setAvailableRoutes(routesData);
       setAvailableVehicles(vehiclesData);
     } catch (err) {
@@ -61,27 +102,56 @@ const MyDriverTripsPage: React.FC = () => {
     fetchPageData();
   }, [fetchPageData]);
 
-  const handleAddTrip = async (formData: Omit<DriverTrip, "id">) => {
+  // --- FUNCIÓN MODIFICADA ---
+  // Ahora espera `TripFormData` del formulario
+  const handleAddTrip = async (formData: TripFormData) => {
     setIsSubmitting(true);
     setError(null);
+
+    // 1. Obtener el ID del conductor del localStorage
+    const storedUser = localStorage.getItem("userData");
+    const user = storedUser ? JSON.parse(storedUser) : null;
+    const driverId = user?.uid;
+
+    if (!driverId) {
+      setError(
+        "No se pudo identificar al conductor. Por favor, inicia sesión de nuevo."
+      );
+      setIsSubmitting(false);
+      return;
+    }
+
+    // 2. Construir el payload que la API espera (AddTripPayload)
+    const tripPayload: AddTripPayload = {
+      driver: driverId,
+      route: formData.selectedRouteId,
+      vehicle: formData.selectedVehicleId,
+      price: formData.price,
+      time: new Date(formData.departureDateTime).toISOString(),
+      travel_state: "scheduled", // Estado por defecto al crear un viaje
+      // NOTA: 'availableSeats' no está en `AddTripPayload`, por lo que no se envía.
+      // El backend debería calcularlo basado en la capacidad del vehículo.
+    };
+    // --- AÑADE ESTA LÍNEA PARA DEPURAR ---
+    console.log("Enviando este payload a la API:", tripPayload);
+
     try {
-      await addDriverTrip(formData);
+      // 3. Llamar a la API con el payload correcto
+      await addDriverTrip(tripPayload);
       setShowAddModal(false);
-      await fetchPageData(); // Re-fetch todo para consistencia, o solo trips
-    } catch (error) {
+      await fetchPageData(); // Refrescar los datos de la página
+    } catch (error: any) {
       console.error("Error adding trip:", error);
-      setError("No se pudo publicar el viaje. Inténtalo de nuevo.");
+      setError(
+        error.message || "No se pudo publicar el viaje. Inténtalo de nuevo."
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDeleteTrip = async (tripId: number) => {
-    if (
-      !window.confirm(
-        "¿Estás seguro de que quieres eliminar este viaje publicado?"
-      )
-    )
+    if (!window.confirm("¿Estás seguro de que quieres eliminar este viaje?"))
       return;
     setError(null);
     try {
@@ -108,10 +178,10 @@ const MyDriverTripsPage: React.FC = () => {
             onClick={() => setShowAddModal(true)}
             variant="primary"
             leftIcon={<PlusCircle size={18} />}
-            disabled={loadingFormData || !canAddTrip} // Deshabilita si no hay rutas/vehículos o están cargando
+            disabled={loadingFormData || !canAddTrip}
             title={
               !canAddTrip && !loadingFormData
-                ? "Debes tener rutas y vehículos registrados para publicar un viaje"
+                ? "Debes tener rutas y vehículos para publicar un viaje"
                 : ""
             }
           >
@@ -124,8 +194,6 @@ const MyDriverTripsPage: React.FC = () => {
 
       {!loadingFormData && !canAddTrip && !error && (
         <div className={`${styles.emptyState} ${styles.warningState}`}>
-          {" "}
-          {/* Podrías darle un estilo diferente */}
           <p>Para publicar un viaje, primero necesitas:</p>
           <ul>
             {availableRoutes.length === 0 && (
@@ -141,9 +209,6 @@ const MyDriverTripsPage: React.FC = () => {
       {trips.length === 0 && !isLoading && !error && canAddTrip && (
         <div className={styles.emptyState}>
           <p>Aún no has publicado ningún viaje.</p>
-          <p>
-            Crea un viaje para que los pasajeros puedan encontrarlo y reservar.
-          </p>
           <Button
             onClick={() => setShowAddModal(true)}
             variant="primary"
@@ -181,6 +246,7 @@ const MyDriverTripsPage: React.FC = () => {
           </p>
         ) : (
           <DriverTripForm
+            // La prop `onSubmit` ahora está conectada a la nueva función `handleAddTrip`
             onSubmit={handleAddTrip}
             isSubmitting={isSubmitting}
             onCancel={() => setShowAddModal(false)}

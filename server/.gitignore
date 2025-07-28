@@ -1,7 +1,8 @@
 # .gitignore
-__pycache__/
-*.pyc
 .env
 env/
 media/
 __pycache__/
+*.py[cod]
+*$py.class
+server/venv/

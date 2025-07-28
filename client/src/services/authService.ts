@@ -49,15 +49,15 @@ export const authService = {
   },
 
   // Obtener headers de autenticación
-  getAuthHeaders: (): HeadersInit => {
+  getAuthHeaders: (): { [key: string]: string } => {
     const token = authService.getToken();
     if (!token) return { "Content-Type": "application/json" };
-    
+
     return {
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     };
-  }
+  },
 };
 
 export default authService;

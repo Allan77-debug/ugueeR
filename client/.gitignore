@@ -25,5 +25,7 @@ dist-ssr
 *.sw?
 *.pyc
 __pycache__/
+*.py[cod]
+*$py.class
 
 bun.lockb
