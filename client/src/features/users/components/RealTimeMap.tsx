@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF, Polyline } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF, Polyline, DirectionsRenderer } from '@react-google-maps/api';
 import authService from '../../../services/authService';
+import axios from 'axios';
 import styles from './RealTimeMap.module.css';
 
 const containerStyle = {
@@ -21,6 +22,21 @@ interface WebSocketLocationData {
   lat: number;
   lon: number;
   speed?: number;
+  error?: string; // Para manejar errores del servidor
+}
+
+// Interface para los datos de ruta del backend
+interface RouteData {
+  id: number;
+  travel_id: number;
+  origin: { lat: number; lng: number };
+  destination: { lat: number; lng: number };
+  origin_address: string;
+  destination_address: string;
+  distance: string;
+  duration: string;
+  waypoints: google.maps.LatLng[] | { lat: number; lng: number }[];
+  encoded_polyline?: string;
 }
 
 // Interface actualizada para vehículos en tiempo real
@@ -41,15 +57,59 @@ interface Vehicle {
 const RealTimeMap: React.FC = () => {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    libraries: ['geometry'] // Necesario para decodificar polilíneas
   });
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [showRoute, setShowRoute] = useState<boolean>(false);
   const [routePath, setRoutePath] = useState<google.maps.LatLng[]>([]);
+  const [directionsResult, setDirectionsResult] = useState<google.maps.DirectionsResult | null>(null);
+  const [isLoadingRoute, setIsLoadingRoute] = useState(false);
+  const [useBackendRoute, setUseBackendRoute] = useState(true);
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
+  const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [routeMarkers, setRouteMarkers] = useState<{ origin: { lat: number; lng: number } | null; destination: { lat: number; lng: number } | null }>({
+    origin: null,
+    destination: null
+  });
+
+  // Función para obtener la ubicación del usuario
+  const getUserLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const location = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          setUserLocation(location);
+          console.log("📍 Ubicación del usuario obtenida:", location);
+        },
+        (error) => {
+          console.warn("Error obteniendo ubicación del usuario:", error);
+          // Usar ubicación predeterminada de Cali si falla
+          setUserLocation(defaultCenter);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutos
+        }
+      );
+    } else {
+      console.warn("Geolocalización no disponible");
+      setUserLocation(defaultCenter);
+    }
+  };
+
+  // Obtener ubicación del usuario al cargar el componente
+  useEffect(() => {
+    getUserLocation();
+  }, []);
 
   // Función para conectar al WebSocket
   const connectToWebSocket = () => {
@@ -82,8 +142,8 @@ const RealTimeMap: React.FC = () => {
         const data: WebSocketLocationData = JSON.parse(event.data);
         
         // Manejo de errores del servidor
-        if ((data as any).error) {
-          console.error('Error desde el servidor:', (data as any).error);
+        if (data.error) {
+          console.error('Error desde el servidor:', data.error);
           return;
         }
 
@@ -159,6 +219,7 @@ const RealTimeMap: React.FC = () => {
         socket.close();
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Datos de fallback por si no hay conexión WebSocket (COMENTADO)
@@ -211,15 +272,57 @@ const RealTimeMap: React.FC = () => {
   }, [connectionStatus]);
   */
 
-  const getMarkerIcon = (vehicle: Vehicle) => {
+  const getCarMarkerIcon = (vehicle: Vehicle) => {
+    // SVG de un carro similar a Uber
     const color = vehicle.available ? '#22c55e' : '#ef4444'; // Verde si disponible, rojo si no
+    const carSvg = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="${color}">
+        <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5H6.5C5.84 5 5.28 5.42 5.08 6.01L3 12V20C3 20.55 3.45 21 4 21H5C5.55 21 6 20.55 6 20V19H18V20C18 20.55 18.45 21 19 21H20C20.55 21 21 20.55 21 20V12L18.92 6.01ZM6.5 16C5.67 16 5 15.33 5 14.5S5.67 13 6.5 13 8 13.67 8 14.5 7.33 16 6.5 16ZM17.5 16C16.67 16 16 15.33 16 14.5S16.67 13 17.5 13 19 13.67 19 14.5 18.33 16 17.5 16ZM5 11L6.5 6.5H17.5L19 11H5Z"/>
+        <circle cx="12" cy="12" r="2" fill="white"/>
+      </svg>
+    `;
+    
     return {
-      path: google.maps.SymbolPath.CIRCLE,
-      fillColor: color,
-      fillOpacity: 0.8,
-      strokeColor: '#ffffff',
-      strokeWeight: 2,
-      scale: 8
+      url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(carSvg)}`,
+      scaledSize: new google.maps.Size(32, 32),
+      anchor: new google.maps.Point(16, 16),
+      origin: new google.maps.Point(0, 0)
+    };
+  };
+
+  // Función para crear marcador de inicio (verde con "A")
+  const getOriginMarkerIcon = () => {
+    const originSvg = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
+        <path d="M16 0C7.16 0 0 7.16 0 16C0 24.84 16 40 16 40S32 24.84 32 16C32 7.16 24.84 0 16 0Z" fill="#22c55e"/>
+        <circle cx="16" cy="16" r="12" fill="white"/>
+        <text x="16" y="22" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#22c55e">A</text>
+      </svg>
+    `;
+    
+    return {
+      url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(originSvg)}`,
+      scaledSize: new google.maps.Size(32, 40),
+      anchor: new google.maps.Point(16, 40),
+      origin: new google.maps.Point(0, 0)
+    };
+  };
+
+  // Función para crear marcador de destino (rojo con "B")
+  const getDestinationMarkerIcon = () => {
+    const destinationSvg = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
+        <path d="M16 0C7.16 0 0 7.16 0 16C0 24.84 16 40 16 40S32 24.84 32 16C32 7.16 24.84 0 16 0Z" fill="#ef4444"/>
+        <circle cx="16" cy="16" r="12" fill="white"/>
+        <text x="16" y="22" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#ef4444">B</text>
+      </svg>
+    `;
+    
+    return {
+      url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(destinationSvg)}`,
+      scaledSize: new google.maps.Size(32, 40),
+      anchor: new google.maps.Point(16, 40),
+      origin: new google.maps.Point(0, 0)
     };
   };
 
@@ -231,33 +334,133 @@ const RealTimeMap: React.FC = () => {
     setSelectedVehicle(null);
     setShowRoute(false);
     setRoutePath([]);
+    setDirectionsResult(null);
+    setIsLoadingRoute(false);
+    setRouteMarkers({ origin: null, destination: null });
   };
 
   const handleViewRoute = async (vehicle: Vehicle) => {
+    setIsLoadingRoute(true);
     setShowRoute(true);
     
-    // Simular una ruta desde la posición del vehículo hasta su destino
-    // En una implementación real, esto vendría de una API
-    const mockDestination = {
-      lat: vehicle.position.lat + (Math.random() - 0.5) * 0.01,
-      lng: vehicle.position.lng + (Math.random() - 0.5) * 0.01
-    };
+    try {
+      // Intentar obtener la ruta real del backend primero
+      const response = await axios.get(`http://127.0.0.1:8000/api/travel/route/${vehicle.travel_id}/`, {
+        headers: authService.getAuthHeaders(),
+      });
+      
+      const routeData: RouteData = response.data;
+      console.log("Ruta obtenida del backend:", routeData);
+      
+      // Establecer marcadores de origen y destino
+      setRouteMarkers({
+        origin: routeData.origin,
+        destination: routeData.destination
+      });
+      
+      // Si tenemos polilínea codificada, usarla
+      if (routeData.encoded_polyline && window.google) {
+        console.log("Usando polilínea codificada del backend");
+        const decodedPath = window.google.maps.geometry.encoding.decodePath(routeData.encoded_polyline);
+        setRoutePath(decodedPath);
+        setUseBackendRoute(true);
+        setDirectionsResult(null);
+        
+        // Ajustar zoom a la ruta
+        fitMapToRoute(routeData.origin, routeData.destination);
+      } else {
+        // Si no hay polilínea, usar Google Directions API con las coordenadas de origen y destino
+        console.log("No hay polilínea codificada, usando Google Directions API");
+        await loadRouteWithGoogleDirections(routeData.origin, routeData.destination);
+        
+        // Ajustar zoom a la ruta
+        fitMapToRoute(routeData.origin, routeData.destination);
+      }
+      
+      setIsLoadingRoute(false);
+      
+    } catch (error) {
+      console.warn("Error obteniendo ruta del backend, usando posición actual del vehículo:", error);
+      
+      // Fallback: crear ruta simulada desde la posición actual del vehículo
+      const mockDestination = {
+        lat: vehicle.position.lat + (Math.random() - 0.5) * 0.01,
+        lng: vehicle.position.lng + (Math.random() - 0.5) * 0.01
+      };
+      
+      // Establecer marcadores para el fallback
+      setRouteMarkers({
+        origin: vehicle.position,
+        destination: mockDestination
+      });
+      
+      await loadRouteWithGoogleDirections(vehicle.position, mockDestination);
+      fitMapToRoute(vehicle.position, mockDestination);
+      setIsLoadingRoute(false);
+    }
+  };
 
-    // Crear una ruta simulada con algunos puntos intermedios
-    const simulatedRoute = [
-      new google.maps.LatLng(vehicle.position.lat, vehicle.position.lng),
-      new google.maps.LatLng(
-        vehicle.position.lat + (mockDestination.lat - vehicle.position.lat) * 0.3,
-        vehicle.position.lng + (mockDestination.lng - vehicle.position.lng) * 0.3
-      ),
-      new google.maps.LatLng(
-        vehicle.position.lat + (mockDestination.lat - vehicle.position.lat) * 0.7,
-        vehicle.position.lng + (mockDestination.lng - vehicle.position.lng) * 0.7
-      ),
-      new google.maps.LatLng(mockDestination.lat, mockDestination.lng)
-    ];
+  // Función auxiliar para ajustar el zoom de la ruta
+  const fitMapToRoute = (origin: { lat: number; lng: number }, destination: { lat: number; lng: number }) => {
+    if (!mapInstance) return;
+    
+    const bounds = new google.maps.LatLngBounds();
+    bounds.extend(new google.maps.LatLng(origin.lat, origin.lng));
+    bounds.extend(new google.maps.LatLng(destination.lat, destination.lng));
+    
+    // Ajustar el mapa a los límites con padding
+    mapInstance.fitBounds(bounds, {
+      top: 100,
+      bottom: 100,
+      left: 100,
+      right: 100
+    });
+    
+    // Asegurar un zoom mínimo y máximo
+    setTimeout(() => {
+      const currentZoom = mapInstance.getZoom();
+      if (currentZoom && currentZoom > 15) {
+        mapInstance.setZoom(15); // Zoom máximo
+      } else if (currentZoom && currentZoom < 10) {
+        mapInstance.setZoom(10); // Zoom mínimo
+      }
+    }, 100);
+  };
 
-    setRoutePath(simulatedRoute);
+  // Función auxiliar para cargar ruta con Google Directions API
+  const loadRouteWithGoogleDirections = async (origin: { lat: number; lng: number }, destination: { lat: number; lng: number }) => {
+    if (!window.google) {
+      console.error("Google Maps no está disponible");
+      return;
+    }
+
+    const directionsService = new window.google.maps.DirectionsService();
+    
+    directionsService.route(
+      {
+        origin: origin,
+        destination: destination,
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        if (status === "OK" && result) {
+          console.log("Ruta obtenida de Google Directions API");
+          setDirectionsResult(result);
+          setUseBackendRoute(false);
+          setRoutePath([]);
+        } else {
+          console.warn("No se pudo obtener la ruta de Google Maps:", status);
+          // Crear una ruta simple punto a punto como último recurso
+          const simplePath = [
+            new window.google.maps.LatLng(origin.lat, origin.lng),
+            new window.google.maps.LatLng(destination.lat, destination.lng)
+          ];
+          setRoutePath(simplePath);
+          setUseBackendRoute(true);
+          setDirectionsResult(null);
+        }
+      }
+    );
   };
 
   if (!isLoaded) {
@@ -279,8 +482,9 @@ const RealTimeMap: React.FC = () => {
     <div className={styles.mapWrapper}>
       <GoogleMap
         mapContainerStyle={containerStyle}
-        center={defaultCenter}
+        center={userLocation || defaultCenter}
         zoom={13}
+        onLoad={(map) => setMapInstance(map)}
         options={{
           disableDefaultUI: false,
           zoomControl: true,
@@ -295,7 +499,7 @@ const RealTimeMap: React.FC = () => {
           <MarkerF
             key={vehicle.id}
             position={vehicle.position}
-            icon={getMarkerIcon(vehicle)}
+            icon={getCarMarkerIcon(vehicle)}
             title={`${vehicle.driver} - ${vehicle.plate}`}
             onClick={() => handleVehicleClick(vehicle)}
           >
@@ -331,9 +535,9 @@ const RealTimeMap: React.FC = () => {
                     <button 
                       className={styles.routeButton}
                       onClick={() => handleViewRoute(selectedVehicle)}
-                      disabled={showRoute}
+                      disabled={showRoute || isLoadingRoute}
                     >
-                      {showRoute ? 'Ruta mostrada' : 'Ver Ruta'}
+                      {isLoadingRoute ? 'Cargando ruta...' : showRoute ? 'Ruta mostrada' : 'Ver Ruta'}
                     </button>
                   </div>
                 </div>
@@ -341,16 +545,50 @@ const RealTimeMap: React.FC = () => {
             )}
           </MarkerF>
         ))}
+
+        {/* Marcadores de origen y destino de la ruta */}
+        {showRoute && routeMarkers.origin && (
+          <MarkerF
+            position={routeMarkers.origin}
+            icon={getOriginMarkerIcon()}
+            title="Origen de la ruta"
+            zIndex={1000} // Mayor z-index para que aparezca sobre otros marcadores
+          />
+        )}
         
-        {/* Mostrar la ruta si está activa */}
-        {showRoute && routePath.length > 0 && (
+        {showRoute && routeMarkers.destination && (
+          <MarkerF
+            position={routeMarkers.destination}
+            icon={getDestinationMarkerIcon()}
+            title="Destino de la ruta"
+            zIndex={1000} // Mayor z-index para que aparezca sobre otros marcadores
+          />
+        )}
+        
+        {/* Mostrar la ruta del backend si está disponible */}
+        {showRoute && useBackendRoute && routePath.length > 0 && (
           <Polyline
             path={routePath}
             options={{
-              strokeColor: '#3b82f6',
+              strokeColor: '#6a5acd',
               strokeOpacity: 0.8,
-              strokeWeight: 4,
+              strokeWeight: 5,
               geodesic: true,
+            }}
+          />
+        )}
+        
+        {/* Mostrar la ruta de Google Maps si el backend falló */}
+        {showRoute && !useBackendRoute && directionsResult && (
+          <DirectionsRenderer
+            directions={directionsResult}
+            options={{
+              suppressMarkers: true, // Usamos nuestros propios marcadores
+              polylineOptions: {
+                strokeColor: '#6a5acd',
+                strokeWeight: 5,
+                strokeOpacity: 0.8,
+              },
             }}
           />
         )}

@@ -94,3 +94,71 @@ class InstitutionTravelListView(generics.ListAPIView):
         ).order_by('-time')
 
         return queryset
+
+class TravelRouteView(generics.RetrieveAPIView):
+    """
+    Endpoint para obtener la ruta específica de un viaje.
+    
+    GET /api/travel/route/<travel_id>/
+    
+    Retorna:
+    - Información de la ruta asociada al viaje
+    - Coordenadas de origen y destino
+    - Puntos intermedios si existen
+    - Datos necesarios para renderizar en Google Maps
+    """
+    permission_classes = [IsAuthenticatedCustom]
+    
+    def retrieve(self, request, travel_id=None):
+        user = request.user
+        
+        try:
+            # Buscar el viaje y verificar que pertenezca a la institución del usuario
+            travel = Travel.objects.select_related(
+                'route', 
+                'driver__user'
+            ).get(
+                id=travel_id,
+                driver__user__institution=user.institution
+            )
+            
+            if not travel.route:
+                return Response(
+                    {"error": "Este viaje no tiene una ruta asociada."}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            route = travel.route
+            
+            # Preparar los datos de la ruta usando la estructura correcta del modelo Route
+            route_data = {
+                "id": route.id,
+                "travel_id": travel.id,
+                "origin": {
+                    "lat": float(route.startPointCoords[0]),  # Primer elemento es latitud
+                    "lng": float(route.startPointCoords[1])   # Segundo elemento es longitud
+                },
+                "destination": {
+                    "lat": float(route.endPointCoords[0]),    # Primer elemento es latitud
+                    "lng": float(route.endPointCoords[1])     # Segundo elemento es longitud
+                },
+                "origin_address": route.startLocation,       # Campo de dirección de origen
+                "destination_address": route.destination,    # Campo de dirección de destino
+                "distance": None,  # Este modelo no tiene campo distance
+                "duration": None,  # Este modelo no tiene campo duration
+                "waypoints": [],   # Este modelo no tiene waypoints
+                "encoded_polyline": None  # Este modelo no tiene polilínea codificada
+            }
+            
+            # El modelo Route actual no tiene waypoints ni polilínea codificada
+            # Estos campos están preparados para futuras extensiones del modelo
+            route_data["waypoints"] = []
+            route_data["encoded_polyline"] = None
+            
+            return Response(route_data, status=status.HTTP_200_OK)
+            
+        except Travel.DoesNotExist:
+            return Response(
+                {"error": "No se encontró el viaje o no tienes permisos para acceder a él."}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
