@@ -5,18 +5,18 @@ import MyRoutesScreen from "../driver/MyRoutes";
 import { useEffect, useState } from "react";
 import { useSession } from "@/hooks/ctx";
 import axios from "axios";
-
 const TravelFeed: React.FC<TravelFeedProps> = ({
   travels,
   onReserve,
   reservingTravel,
+  reservedTravels = [],
   isDriverView,
 }) => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const { session } = useSession();
 
- useEffect(() => {
+  useEffect(() => {
     // Lógica para obtener datos del usuario y viajes (similar a tu código web)
     const fetchData = async () => {
       setLoading(true);
@@ -31,7 +31,6 @@ const TravelFeed: React.FC<TravelFeedProps> = ({
           }
         );
         setUserData(userRes);
-
       } catch (error) {
         Alert.alert("Error", "No se pudieron cargar los datos.");
         console.error(error);
@@ -46,11 +45,36 @@ const TravelFeed: React.FC<TravelFeedProps> = ({
 
   console.log("TravelFeed isDriverView:", isDriverView);
 
-  if(isDriverView) return(
-    <MyRoutesScreen userData={userData} />
-  )
+  if (isDriverView) return <MyRoutesScreen userData={userData} />;
   return (
     <View className="p-6">
+      <Text className="text-xl font-bold text-gray-800 mb-4">
+        Viajes Reservados
+      </Text>
+      
+      {reservedTravels.length > 0 ? (
+        travels
+          .filter((travel) =>
+            reservedTravels.includes({
+              id: travel.id,
+              uid: session?.uid || 0,
+              status: "reserved",
+            })
+          )
+          .map((travel) => (
+            <TripCard
+              key={`reserved-${travel.id}`}
+              travel={travel}
+              onReserve={() => {}}
+              isReserving={false}
+            />
+          ))
+      ) : (
+        <Text className="text-center text-gray-500 my-4">
+          No tienes viajes reservados.
+        </Text>
+      )}
+
       <Text className="text-xl font-bold text-gray-800 mb-4">
         Viajes Disponibles
       </Text>

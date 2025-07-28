@@ -161,7 +161,8 @@ const RealTimeMap: React.FC = () => {
     };
   }, []);
 
-  // Datos de fallback por si no hay conexión WebSocket
+  // Datos de fallback por si no hay conexión WebSocket (COMENTADO)
+  /*
   useEffect(() => {
     // Solo cargar datos simulados si no hay conexión WebSocket activa
     if (connectionStatus === 'error' || connectionStatus === 'disconnected') {
@@ -208,6 +209,7 @@ const RealTimeMap: React.FC = () => {
       setVehicles(fallbackVehicles);
     }
   }, [connectionStatus]);
+  */
 
   const getMarkerIcon = (vehicle: Vehicle) => {
     const color = vehicle.available ? '#22c55e' : '#ef4444'; // Verde si disponible, rojo si no

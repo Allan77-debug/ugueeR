@@ -19,6 +19,9 @@ const UserDashboard = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [travels, setTravels] = useState<Travel[]>([]);
+  const [reservedTravels, setReservedTravels] = useState<
+    { id: number; uid: number; status: string }[]
+  >([]);
   const [reservingTravel, setReservingTravel] = useState<number | null>(null);
   const { session, signOut } = useSession();
 
@@ -34,9 +37,22 @@ const UserDashboard = () => {
               Authorization: `Bearer ${session?.token}`,
             },
           }
-        )
+        );
         console.log("Viajes obtenidos:", travelsRes);
         setTravels(travelsRes);
+
+        const { data: travelsReserved } = await axios.get<
+          {
+            id: number;
+            uid: number;
+            status: string;
+          }[]
+        >("http://192.168.56.1:8000/api/realize/my-reservations/", {
+          headers: {
+            Authorization: `Bearer ${session?.token}`,
+          },
+        });
+        setReservedTravels(travelsReserved);
       } catch (error) {
         signOut();
         router.replace("/");
@@ -51,7 +67,17 @@ const UserDashboard = () => {
     setReservingTravel(travelId);
     try {
       // Simulación de reserva
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await axios.post(
+        `http://192.168.56.1:8000/api/realize/create/`,
+        {
+          id_travel: travelId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${session?.token}`,
+          },
+        }
+      );
       Burnt.alert({
         title: "¡Éxito!",
         preset: "done",
@@ -108,13 +134,12 @@ const UserDashboard = () => {
   }
 
   return (
-    <ScrollView>
-      <TravelFeed
-        travels={travels}
-        onReserve={handleReserveTravel}
-        reservingTravel={reservingTravel}
-      />
-    </ScrollView>
+    <TravelFeed
+      reservedTravels={reservedTravels}
+      travels={travels}
+      onReserve={handleReserveTravel}
+      reservingTravel={reservingTravel}
+    />
   );
 };
 

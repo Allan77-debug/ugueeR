@@ -104,7 +104,7 @@ const MyVehiclesScreen = () => {
         try {
             setError(null);
             const { data: vehicles } = await axios.get<Vehicle[]>(
-                "http://localhost:8000/api/vehicle/my-vehicles/",
+                "http://192.168.56.1:8000/api/vehicle/my-vehicles/",
                 {
                 headers: {
                     Authorization: `Bearer ${session?.token}`,
@@ -139,7 +139,7 @@ const MyVehiclesScreen = () => {
             };
 
             await axios.post(
-                "http://localhost:8000/api/vehicle/register/",
+                "http://192.168.56.1:8000/api/vehicle/register/",
                 newVehicle,
                 {
                     headers: {
