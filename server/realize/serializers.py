@@ -8,13 +8,14 @@ class RealizeSerializer(serializers.ModelSerializer):
     Permite la visualización del 'status' y su modificación en operaciones de actualización.
     """
     id = serializers.IntegerField(read_only=True)
-    id_travel = serializers.PrimaryKeyRelatedField(queryset=Travel.objects.all(), source='travel', write_only=True)
+    id_travel = serializers.PrimaryKeyRelatedField(queryset=Travel.objects.all(), source='travel')
     uid = serializers.IntegerField(source='user.uid', read_only=True)
+    travelid = serializers.IntegerField(source='travel.id', read_only=True)  # <-- Nuevo campo
 
     class Meta:
         model = Realize
-        fields = ['id', 'uid', 'id_travel', 'status']
-        read_only_fields = ['id', 'uid']
+        fields = ['id', 'uid', 'id_travel', 'travelid', 'status']
+        read_only_fields = ['id', 'uid', 'travelid']
 
     def validate(self, data):
         """
