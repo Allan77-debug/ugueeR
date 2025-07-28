@@ -79,7 +79,6 @@ class RealizeConfirmView(APIView):
     Esta acción sería activada al escanear un código QR que contiene la URL
     de este endpoint. No requiere autenticación.
     """
-    # CAMBIO 1: Se elimina la autenticación y se permite el acceso a cualquiera.
     permission_classes = [AllowAny]
 
     @swagger_auto_schema(
