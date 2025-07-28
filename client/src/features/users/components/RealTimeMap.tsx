@@ -71,6 +71,45 @@ const RealTimeMap: React.FC = () => {
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
   const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [routeMarkers, setRouteMarkers] = useState<{ origin: { lat: number; lng: number } | null; destination: { lat: number; lng: number } | null }>({
+    origin: null,
+    destination: null
+  });
+
+  // Función para obtener la ubicación del usuario
+  const getUserLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const location = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          setUserLocation(location);
+          console.log("📍 Ubicación del usuario obtenida:", location);
+        },
+        (error) => {
+          console.warn("Error obteniendo ubicación del usuario:", error);
+          // Usar ubicación predeterminada de Cali si falla
+          setUserLocation(defaultCenter);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutos
+        }
+      );
+    } else {
+      console.warn("Geolocalización no disponible");
+      setUserLocation(defaultCenter);
+    }
+  };
+
+  // Obtener ubicación del usuario al cargar el componente
+  useEffect(() => {
+    getUserLocation();
+  }, []);
 
   // Función para conectar al WebSocket
   const connectToWebSocket = () => {
@@ -251,6 +290,42 @@ const RealTimeMap: React.FC = () => {
     };
   };
 
+  // Función para crear marcador de inicio (verde con "A")
+  const getOriginMarkerIcon = () => {
+    const originSvg = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
+        <path d="M16 0C7.16 0 0 7.16 0 16C0 24.84 16 40 16 40S32 24.84 32 16C32 7.16 24.84 0 16 0Z" fill="#22c55e"/>
+        <circle cx="16" cy="16" r="12" fill="white"/>
+        <text x="16" y="22" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#22c55e">A</text>
+      </svg>
+    `;
+    
+    return {
+      url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(originSvg)}`,
+      scaledSize: new google.maps.Size(32, 40),
+      anchor: new google.maps.Point(16, 40),
+      origin: new google.maps.Point(0, 0)
+    };
+  };
+
+  // Función para crear marcador de destino (rojo con "B")
+  const getDestinationMarkerIcon = () => {
+    const destinationSvg = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
+        <path d="M16 0C7.16 0 0 7.16 0 16C0 24.84 16 40 16 40S32 24.84 32 16C32 7.16 24.84 0 16 0Z" fill="#ef4444"/>
+        <circle cx="16" cy="16" r="12" fill="white"/>
+        <text x="16" y="22" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#ef4444">B</text>
+      </svg>
+    `;
+    
+    return {
+      url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(destinationSvg)}`,
+      scaledSize: new google.maps.Size(32, 40),
+      anchor: new google.maps.Point(16, 40),
+      origin: new google.maps.Point(0, 0)
+    };
+  };
+
   const handleVehicleClick = (vehicle: Vehicle) => {
     setSelectedVehicle(vehicle);
   };
@@ -261,6 +336,7 @@ const RealTimeMap: React.FC = () => {
     setRoutePath([]);
     setDirectionsResult(null);
     setIsLoadingRoute(false);
+    setRouteMarkers({ origin: null, destination: null });
   };
 
   const handleViewRoute = async (vehicle: Vehicle) => {
@@ -275,6 +351,12 @@ const RealTimeMap: React.FC = () => {
       
       const routeData: RouteData = response.data;
       console.log("Ruta obtenida del backend:", routeData);
+      
+      // Establecer marcadores de origen y destino
+      setRouteMarkers({
+        origin: routeData.origin,
+        destination: routeData.destination
+      });
       
       // Si tenemos polilínea codificada, usarla
       if (routeData.encoded_polyline && window.google) {
@@ -305,6 +387,12 @@ const RealTimeMap: React.FC = () => {
         lat: vehicle.position.lat + (Math.random() - 0.5) * 0.01,
         lng: vehicle.position.lng + (Math.random() - 0.5) * 0.01
       };
+      
+      // Establecer marcadores para el fallback
+      setRouteMarkers({
+        origin: vehicle.position,
+        destination: mockDestination
+      });
       
       await loadRouteWithGoogleDirections(vehicle.position, mockDestination);
       fitMapToRoute(vehicle.position, mockDestination);
@@ -394,7 +482,7 @@ const RealTimeMap: React.FC = () => {
     <div className={styles.mapWrapper}>
       <GoogleMap
         mapContainerStyle={containerStyle}
-        center={defaultCenter}
+        center={userLocation || defaultCenter}
         zoom={13}
         onLoad={(map) => setMapInstance(map)}
         options={{
@@ -457,6 +545,25 @@ const RealTimeMap: React.FC = () => {
             )}
           </MarkerF>
         ))}
+
+        {/* Marcadores de origen y destino de la ruta */}
+        {showRoute && routeMarkers.origin && (
+          <MarkerF
+            position={routeMarkers.origin}
+            icon={getOriginMarkerIcon()}
+            title="Origen de la ruta"
+            zIndex={1000} // Mayor z-index para que aparezca sobre otros marcadores
+          />
+        )}
+        
+        {showRoute && routeMarkers.destination && (
+          <MarkerF
+            position={routeMarkers.destination}
+            icon={getDestinationMarkerIcon()}
+            title="Destino de la ruta"
+            zIndex={1000} // Mayor z-index para que aparezca sobre otros marcadores
+          />
+        )}
         
         {/* Mostrar la ruta del backend si está disponible */}
         {showRoute && useBackendRoute && routePath.length > 0 && (
