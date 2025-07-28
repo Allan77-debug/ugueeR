@@ -4,28 +4,45 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import NotFound, ValidationError
+from drf_yasg.utils import swagger_auto_schema
 from .models import Realize
 from .serializers import RealizeSerializer, RealizeCreateSerializer
 from users.permissions import IsAuthenticatedCustom
 from users.models import Users
 
 class UserRealizeListView(generics.ListAPIView):
-    """Vista para listar las reservas de un usuario."""
+    """
+    Vista para listar TODAS y ÚNICAMENTE las reservas del usuario autenticado.
+    """
     serializer_class = RealizeSerializer
     permission_classes = [IsAuthenticatedCustom]
 
+    @swagger_auto_schema(operation_summary="Endpoint para listar mis reservas")
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
     def get_queryset(self):
-        """Filtra las reservas para mostrar solo las del usuario autenticado (a menos que sea admin)."""
+        """
+        Sobrescribe el método para devolver únicamente las reservas
+        asociadas al usuario que realiza la petición (request.user).
+        """
+        # Se obtiene el usuario autenticado directamente del objeto request.
         user = self.request.user
-        base_queryset = Realize.objects.all().select_related('user', 'travel')
-        if user.user_type == Users.TYPE_ADMIN:
-            return base_queryset
-        return base_queryset.filter(user=user)
+        
+        # Se filtra el queryset de Realize para que solo incluya las reservas
+        # donde el campo 'user' sea igual al usuario autenticado.
+        # select_related optimiza la consulta para traer los datos del viaje relacionado.
+        return Realize.objects.filter(user=user).select_related('user', 'travel')
+
 
 class RealizeCreateView(generics.CreateAPIView):
     """Vista para crear una nueva reserva."""
     serializer_class = RealizeCreateSerializer
     permission_classes = [IsAuthenticatedCustom]
+
+    @swagger_auto_schema(operation_summary="Endpoint para crear una nueva reserva")
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         """Asigna el usuario autenticado y valida la disponibilidad de asientos."""
@@ -44,6 +61,7 @@ class RealizeCancelView(generics.UpdateAPIView):
     permission_classes = [IsAuthenticatedCustom]
     http_method_names = ['patch']
 
+    @swagger_auto_schema(operation_summary="Endpoint para cancelar una reserva")
     def patch(self, request, *args, **kwargs):
         """Maneja la solicitud PATCH para la cancelación."""
         instance = self.get_object()
@@ -54,7 +72,6 @@ class RealizeCancelView(generics.UpdateAPIView):
         serializer.save()
         return Response(serializer.data)
 
-
 class RealizeConfirmView(APIView):
     """
     Vista para que un USUARIO confirme su propia reserva pendiente.
@@ -62,6 +79,7 @@ class RealizeConfirmView(APIView):
     """
     permission_classes = [IsAuthenticatedCustom] # Requiere autenticación del usuario.
 
+    @swagger_auto_schema(operation_summary="Endpoint para confirmar una reserva")
     def post(self, request, realize_id, *args, **kwargs):
         """
         Maneja la petición POST para confirmar una reserva específica.
@@ -75,8 +93,8 @@ class RealizeConfirmView(APIView):
             reservation = Realize.objects.select_related('travel').get(id=realize_id)
         except Realize.DoesNotExist:
             return Response({"error": "La reserva especificada no existe."}, status=status.HTTP_404_NOT_FOUND)
-
-        #    Verifica que el usuario autenticado sea el verdadero dueño de la reserva.
+        
+        # 2. Verifica que el usuario autenticado sea el verdadero dueño de la reserva.
         if reservation.user != confirming_user:
             return Response({"error": "No tienes permiso para confirmar una reserva que no te pertenece."}, status=status.HTTP_403_FORBIDDEN)
         

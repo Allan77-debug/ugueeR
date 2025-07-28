@@ -97,61 +97,51 @@ class RealizeSerializer(serializers.ModelSerializer):
 class RealizeCreateSerializer(serializers.ModelSerializer):
     """
     Serializador específico para la creación de nuevas reservas.
-    Asegura que el cliente no envíe el campo 'status' y que el modelo
-    use su valor por defecto ('pending'). También controla el formato de la respuesta.
     """
-    # Campo de solo escritura para recibir el ID del viaje.
     id_travel = serializers.PrimaryKeyRelatedField(queryset=Travel.objects.all(), source='travel', write_only=True)
-
-    # Campos de solo lectura que se incluirán en la respuesta JSON.
     uid = serializers.IntegerField(source='user.uid', read_only=True)
-    id = serializers.IntegerField(read_only=True)
-    # --- CAMBIOS DE TU PETICIÓN ANTERIOR (CORREGIDOS) ---
+    id = serializers.IntegerField(read_only=True) 
     travel_id = serializers.IntegerField(source='travel.id', read_only=True)
     status = serializers.CharField(read_only=True)
 
     class Meta:
         model = Realize
-        # Define los campos que el serializador manejará.
         fields = ['id', 'uid', 'id_travel', 'travel_id', 'status']
-        # Define los campos que son solo para la respuesta.
         read_only_fields = ['id', 'uid', 'travel_id', 'status'] 
 
     def create(self, validated_data):
-        """
-        Crea la nueva instancia de reserva.
-        El 'status' se establecerá en 'pending' por defecto en el modelo.
-        """
         return Realize.objects.create(**validated_data)
 
     def validate(self, data):
         """
-        Realiza validaciones específicas para la creación de reservas.
+        Realiza validaciones específicas para la creación de una nueva reserva.
         """
         request = self.context.get('request')
-
         if not request or not hasattr(request, 'user') or not request.user:
             raise serializers.ValidationError("No se pudo obtener el usuario autenticado.")
 
         reserving_user = request.user
         travel = data.get('travel') 
 
-        # --- Todas las validaciones de creación que ya tenías ---
-        if 'status' in data:
-            raise serializers.ValidationError({"status": "El estado de la reserva no puede ser especificado en la creación."})
         if not travel:
             raise serializers.ValidationError({"id_travel": "El ID del viaje es requerido."})
+
+        # --- ¡CAMBIO CLAVE EN LA LÓGICA DE RESERVA! ---
+        # Ahora, una reserva solo es válida si el estado del viaje es 'scheduled'.
+        if travel.travel_state != 'scheduled':
+            raise serializers.ValidationError({
+                "id_travel": f"No se puede reservar este viaje. Solo se admiten viajes en estado 'Programado'."
+            })
+        
+        # El resto de las validaciones se mantienen.
         if Realize.objects.filter(user=reserving_user, travel=travel).exists():
             raise serializers.ValidationError("Ya tienes una reserva para este viaje.")
-        if travel.travel_state not in ['scheduled', 'in_progress']:
-            # (Lógica para obtener el display name del estado)
-            raise serializers.ValidationError({"id_travel": "No se puede reservar este viaje."})
+        
         driver_of_travel_user = travel.driver.user
         if not driver_of_travel_user.institution or not reserving_user.institution:
-            raise serializers.ValidationError({"institution_error": "Falta información de institución."})
+            raise serializers.ValidationError({"institution_error": "Información de institución faltante."})
         if reserving_user.institution.id_institution != driver_of_travel_user.institution.id_institution:
-            raise serializers.ValidationError({"institution_mismatch": "No puedes reservar viajes fuera de tu institución."})
+            raise serializers.ValidationError({"institution_mismatch": "Solo puedes reservar viajes de tu misma institución."})
 
-        # Asigna el usuario autenticado a los datos validados.
         data['user'] = reserving_user
         return data

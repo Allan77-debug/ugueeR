@@ -79,10 +79,8 @@ class InstitutionTravelListView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-
         if not user.institution:
             return Travel.objects.none()
-
     
         queryset = Travel.objects.filter(
             driver__user__institution=user.institution
@@ -91,6 +89,7 @@ class InstitutionTravelListView(generics.ListAPIView):
             'vehicle',
             'route'  
         ).prefetch_related(
+            'realize__user', # Añadimos prefetch para las reservaciones y sus usuarios
             'driver__assessments'
         ).order_by('-time')
 
