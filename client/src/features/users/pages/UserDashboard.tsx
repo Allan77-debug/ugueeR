@@ -88,8 +88,8 @@ interface Realize {
   id: number
   uid: number
   id_travel: number
-  status: string // Enum con los estados disponibles de la API
-  reservation_status?: string // Campo opcional que podría estar presente en la respuesta
+  travel_id?: number // Campo de solo lectura que devuelve la API
+  status: string
 }
 
 const UserDashboard = () => {
@@ -379,45 +379,33 @@ const UserDashboard = () => {
 
     try {
       // Llamada a la API real para crear la reserva
-      const response = await axios.post<Realize>('http://127.0.0.1:8000/api/realize/create/', {
+      const response = await axios.post('http://127.0.0.1:8000/api/realize/create/', {
         id_travel: travelId
       }, {
         headers: authService.getAuthHeaders(),
       })
 
       console.log("Reserva creada exitosamente:", response.data)
-      console.log("Estructura completa de la respuesta:", JSON.stringify(response.data, null, 2))
+      console.log("Estructura de campos recibidos:", {
+        id: response.data.id,
+        uid: response.data.uid,
+        id_travel: response.data.id_travel,
+        travel_id: response.data.travel_id,
+        status: response.data.status
+      })
 
-      // Ser más flexible con la estructura de respuesta
-      const responseData = response.data
-      let reservation: Realize
-
-      // Verificar si la respuesta tiene la estructura esperada directamente
-      if (responseData.id && responseData.id_travel) {
-        reservation = responseData
-      }
-      // O si está anidada en algún campo
-      else if (responseData.data && responseData.data.id && responseData.data.id_travel) {
-        reservation = responseData.data
-      }
-      // O si tiene una estructura diferente pero contiene los campos necesarios
-      else if (responseData.reservation && responseData.reservation.id) {
-        reservation = responseData.reservation
-      }
-      else {
-        console.error("Estructura de respuesta inesperada:", responseData)
-        // Intentar extraer los campos manualmente si existen
-        reservation = {
-          id: responseData.id || responseData.reservation_id || 0,
-          uid: responseData.uid || responseData.user_id || userData.uid,
-          id_travel: responseData.id_travel || (responseData as any).travel_id || travelId,
-          status: responseData.status || responseData.reservation_status || 'pending'
-        }
+      // La API ahora devuelve una estructura clara
+      const reservation: Realize = {
+        id: response.data.id,
+        uid: response.data.uid,
+        id_travel: response.data.id_travel || response.data.travel_id, // Usar travel_id como fallback
+        status: response.data.status
       }
 
-      console.log("Datos de reserva procesados:", reservation)
+      console.log("Reservation processed:", reservation)
 
-      if (reservation.id && reservation.id_travel === travelId) {
+      // Actualizar los asientos disponibles y agregar la reserva
+      if (reservation.id && (reservation.id_travel === travelId || response.data.travel_id === travelId)) {
         // Actualizar los asientos disponibles en el viaje reservado
         const updatedTravels = travels.map((travel) => {
           if (travel.id === travelId && travel.availableSeats && travel.availableSeats > 0) {
@@ -449,10 +437,10 @@ const UserDashboard = () => {
         // Agregar la nueva reserva al estado local
         setUserReservations(prevReservations => [...prevReservations, reservation])
 
-        // Mostrar mensaje de éxito con información de la reserva
+        // Mostrar mensaje de éxito
         alert(`¡Viaje reservado con éxito!\nID de reserva: ${reservation.id}\nEstado: ${reservation.status}\nPara confirmar la reserva, escanea el código QR en la aplicación móvil.`)
       } else {
-        throw new Error("La respuesta de la API no contiene los datos esperados")
+        throw new Error("Error en la respuesta de la API")
       }
 
       // Resetear el estado después de 2 segundos
