@@ -1,0 +1,103 @@
+import React, { useState, useEffect } from "react";
+import { Slot, useRouter } from "expo-router";
+import {
+  Text,
+  ScrollView,
+  SafeAreaView,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
+import axios from "axios";
+import { UserData, Travel } from "./interfaces/interfaces";
+import TravelFeed from "./molecules/TravelFeed";
+import ProfileHeader from "./organism/ProfileHeader";
+import QuickActions from "./molecules/QuickActions";
+import * as Burnt from "burnt";
+import { useSession } from "@/hooks/ctx";
+
+const UserDashboard = () => {
+  const router = useRouter();
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { session, signOut } = useSession();
+
+  useEffect(() => {
+    // Lógica para obtener datos del usuario y viajes (similar a tu código web)
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Simulación de llamadas a la API
+        const { data: userRes } = await axios.get<UserData>(
+          `http://localhost:8000/api/users/profile/${session?.uid}`,
+          {
+            headers: {
+              Authorization: `Bearer ${session?.token}`,
+            },
+          }
+        );
+        setUserData(userRes);
+
+      } catch (error) {
+        Alert.alert("Error", "No se pudieron cargar los datos.");
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (session) {
+      fetchData();
+    }
+  }, [session]);
+
+
+
+  const handleDriverApplication = () => {
+    Alert.alert(
+      "¿Quieres ser conductor?",
+      "Se te redirigirá a la pantalla de solicitud.",
+      [
+        { text: "Cancelar" },
+        // { text: "Aceptar", onPress: () => router.push("/solicitud-conductor") }
+      ]
+    );
+  };
+
+  const handleLogout = () => {
+    signOut();
+    router.replace("/");
+    Alert.alert("Cerrar Sesión", "¿Estás seguro de que quieres salir?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Salir",
+        style: "destructive",
+        onPress: () => {
+          signOut();
+          router.replace("/");
+        },
+      },
+    ]);
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView className="flex-1 justify-center items-center bg-gray-100">
+        <ActivityIndicator size="large" color="#4f46e5" />
+        <Text className="mt-4 text-gray-600">Cargando tu información...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView className="flex-1 bg-gray-100">
+      <ProfileHeader userData={userData} onLogout={handleLogout} />
+      <QuickActions
+        driverState={userData?.driver_state}
+        onNavigate={(path) => router.push(path)}
+        onApply={handleDriverApplication}
+      />
+      <Slot />
+    </SafeAreaView>
+  );
+};
+
+export default UserDashboard;

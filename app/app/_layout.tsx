@@ -14,6 +14,8 @@ import "react-native-reanimated";
 import React from "react";
 import { Platform } from "react-native";
 import { Toaster } from "burnt/web";
+import { SessionProvider, useSession } from "@/hooks/ctx";
+import { SplashScreenController } from "@/hooks/splash";
 
 const LIGHT_THEME: Theme = {
   ...DefaultTheme,
@@ -53,9 +55,30 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
+      <SessionProvider>
+        <SplashScreenController />
+        <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
+        <RootNavigation />
+        <Toaster position="top-center" />
+      </SessionProvider>
+    </ThemeProvider>
+  );
+}
+
+function RootNavigation() {
+  const { session } = useSession();
+
+  console.log("Current session:", session);
+  
+  return (
+    <Stack>
+      {/* <Stack.Screen name="(tabs)" options={{ headerShown: false }} /> */}
+      <Stack.Protected guard={!!session}>
+        <Stack.Screen name="(dashboard)" options={{
+          headerShown: false,
+        }} />
+      </Stack.Protected>
+      <Stack.Protected guard={!session}>
         <Stack.Screen
           name="index"
           options={{
@@ -74,12 +97,12 @@ export default function RootLayout() {
             headerShown: false,
           }}
         />
-      </Stack>
-      <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
-      <Toaster position="top-center" />
-    </ThemeProvider>
+        <Stack.Screen name="+not-found" />
+      </Stack.Protected>
+    </Stack>
   );
 }
+
 const useIsomorphicLayoutEffect =
   Platform.OS === "web" && typeof window === "undefined"
     ? React.useEffect

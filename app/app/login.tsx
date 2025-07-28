@@ -15,10 +15,12 @@ import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { cn } from "@/lib/utils";
+import { useSession } from "@/hooks/ctx";
 
 const PURPLE_COLOR = "#6a5acd"; // slateblue
 
 const LoginScreen: React.FC = () => {
+  const { signIn } = useSession();
   const validationSchema = useMemo(() => {
     return yup.object({
       email: yup
@@ -49,8 +51,10 @@ const LoginScreen: React.FC = () => {
   });
   const [isPasswordVisible, setIsPasswordVisible] = useState<boolean>(false);
 
-  const onSubmit = (data: { email: string; password: string }) =>
-    console.log(data);
+  const onSubmit = (data: { email: string; password: string }) => {
+    signIn(data);
+    router.replace("/(dashboard)/user");
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-primary ">
@@ -151,14 +155,15 @@ const LoginScreen: React.FC = () => {
 
           <Button
             variant={"default"}
-            className={cn(isLoading && "opacity-50", "rounded-full w-full py-7 mb-4 bg-primary")}
+            className={cn(
+              isLoading && "opacity-50",
+              "rounded-full w-full py-7 mb-4 bg-primary"
+            )}
             disabled={isLoading}
             onPress={handleSubmit(onSubmit)}
           >
             <Text className="text-lg font-semibold text-white">
-              {
-                isLoading ? "Cargando..." : "Iniciar Sesión"
-              }
+              {isLoading ? "Cargando..." : "Iniciar Sesión"}
             </Text>
           </Button>
         </View>
@@ -171,6 +176,17 @@ const LoginScreen: React.FC = () => {
             </Text>
           </TouchableOpacity>
         </View>
+
+        <TouchableOpacity onPress={() => router.push("/(dashboard)/user")}>
+          <Text className="text-sm text-primary font-bold ml-1">
+            dashboard user
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push("/(dashboard)/driver")}>
+          <Text className="text-sm text-primary font-bold ml-1">
+            dashboard driver
+          </Text>
+        </TouchableOpacity>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
