@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF, Polyline } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF, Polyline, DirectionsRenderer } from '@react-google-maps/api';
 import authService from '../../../services/authService';
+import axios from 'axios';
 import styles from './RealTimeMap.module.css';
 
 const containerStyle = {
@@ -21,6 +22,21 @@ interface WebSocketLocationData {
   lat: number;
   lon: number;
   speed?: number;
+  error?: string; // Para manejar errores del servidor
+}
+
+// Interface para los datos de ruta del backend
+interface RouteData {
+  id: number;
+  travel_id: number;
+  origin: { lat: number; lng: number };
+  destination: { lat: number; lng: number };
+  origin_address: string;
+  destination_address: string;
+  distance: string;
+  duration: string;
+  waypoints: google.maps.LatLng[] | { lat: number; lng: number }[];
+  encoded_polyline?: string;
 }
 
 // Interface actualizada para vehículos en tiempo real
@@ -41,13 +57,17 @@ interface Vehicle {
 const RealTimeMap: React.FC = () => {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    libraries: ['geometry'] // Necesario para decodificar polilíneas
   });
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [showRoute, setShowRoute] = useState<boolean>(false);
   const [routePath, setRoutePath] = useState<google.maps.LatLng[]>([]);
+  const [directionsResult, setDirectionsResult] = useState<google.maps.DirectionsResult | null>(null);
+  const [isLoadingRoute, setIsLoadingRoute] = useState(false);
+  const [useBackendRoute, setUseBackendRoute] = useState(true);
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
 
@@ -82,8 +102,8 @@ const RealTimeMap: React.FC = () => {
         const data: WebSocketLocationData = JSON.parse(event.data);
         
         // Manejo de errores del servidor
-        if ((data as any).error) {
-          console.error('Error desde el servidor:', (data as any).error);
+        if (data.error) {
+          console.error('Error desde el servidor:', data.error);
           return;
         }
 
@@ -159,6 +179,7 @@ const RealTimeMap: React.FC = () => {
         socket.close();
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Datos de fallback por si no hay conexión WebSocket (COMENTADO)
@@ -231,33 +252,86 @@ const RealTimeMap: React.FC = () => {
     setSelectedVehicle(null);
     setShowRoute(false);
     setRoutePath([]);
+    setDirectionsResult(null);
+    setIsLoadingRoute(false);
   };
 
   const handleViewRoute = async (vehicle: Vehicle) => {
+    setIsLoadingRoute(true);
     setShowRoute(true);
     
-    // Simular una ruta desde la posición del vehículo hasta su destino
-    // En una implementación real, esto vendría de una API
-    const mockDestination = {
-      lat: vehicle.position.lat + (Math.random() - 0.5) * 0.01,
-      lng: vehicle.position.lng + (Math.random() - 0.5) * 0.01
-    };
+    try {
+      // Intentar obtener la ruta real del backend primero
+      const response = await axios.get(`http://127.0.0.1:8000/api/travel/route/${vehicle.travel_id}/`, {
+        headers: authService.getAuthHeaders(),
+      });
+      
+      const routeData: RouteData = response.data;
+      console.log("Ruta obtenida del backend:", routeData);
+      
+      // Si tenemos polilínea codificada, usarla
+      if (routeData.encoded_polyline && window.google) {
+        console.log("Usando polilínea codificada del backend");
+        const decodedPath = window.google.maps.geometry.encoding.decodePath(routeData.encoded_polyline);
+        setRoutePath(decodedPath);
+        setUseBackendRoute(true);
+        setDirectionsResult(null);
+      } else {
+        // Si no hay polilínea, usar Google Directions API con las coordenadas de origen y destino
+        console.log("No hay polilínea codificada, usando Google Directions API");
+        await loadRouteWithGoogleDirections(routeData.origin, routeData.destination);
+      }
+      
+      setIsLoadingRoute(false);
+      
+    } catch (error) {
+      console.warn("Error obteniendo ruta del backend, usando posición actual del vehículo:", error);
+      
+      // Fallback: crear ruta simulada desde la posición actual del vehículo
+      const mockDestination = {
+        lat: vehicle.position.lat + (Math.random() - 0.5) * 0.01,
+        lng: vehicle.position.lng + (Math.random() - 0.5) * 0.01
+      };
+      
+      await loadRouteWithGoogleDirections(vehicle.position, mockDestination);
+      setIsLoadingRoute(false);
+    }
+  };
 
-    // Crear una ruta simulada con algunos puntos intermedios
-    const simulatedRoute = [
-      new google.maps.LatLng(vehicle.position.lat, vehicle.position.lng),
-      new google.maps.LatLng(
-        vehicle.position.lat + (mockDestination.lat - vehicle.position.lat) * 0.3,
-        vehicle.position.lng + (mockDestination.lng - vehicle.position.lng) * 0.3
-      ),
-      new google.maps.LatLng(
-        vehicle.position.lat + (mockDestination.lat - vehicle.position.lat) * 0.7,
-        vehicle.position.lng + (mockDestination.lng - vehicle.position.lng) * 0.7
-      ),
-      new google.maps.LatLng(mockDestination.lat, mockDestination.lng)
-    ];
+  // Función auxiliar para cargar ruta con Google Directions API
+  const loadRouteWithGoogleDirections = async (origin: { lat: number; lng: number }, destination: { lat: number; lng: number }) => {
+    if (!window.google) {
+      console.error("Google Maps no está disponible");
+      return;
+    }
 
-    setRoutePath(simulatedRoute);
+    const directionsService = new window.google.maps.DirectionsService();
+    
+    directionsService.route(
+      {
+        origin: origin,
+        destination: destination,
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        if (status === "OK" && result) {
+          console.log("Ruta obtenida de Google Directions API");
+          setDirectionsResult(result);
+          setUseBackendRoute(false);
+          setRoutePath([]);
+        } else {
+          console.warn("No se pudo obtener la ruta de Google Maps:", status);
+          // Crear una ruta simple punto a punto como último recurso
+          const simplePath = [
+            new window.google.maps.LatLng(origin.lat, origin.lng),
+            new window.google.maps.LatLng(destination.lat, destination.lng)
+          ];
+          setRoutePath(simplePath);
+          setUseBackendRoute(true);
+          setDirectionsResult(null);
+        }
+      }
+    );
   };
 
   if (!isLoaded) {
@@ -331,9 +405,9 @@ const RealTimeMap: React.FC = () => {
                     <button 
                       className={styles.routeButton}
                       onClick={() => handleViewRoute(selectedVehicle)}
-                      disabled={showRoute}
+                      disabled={showRoute || isLoadingRoute}
                     >
-                      {showRoute ? 'Ruta mostrada' : 'Ver Ruta'}
+                      {isLoadingRoute ? 'Cargando ruta...' : showRoute ? 'Ruta mostrada' : 'Ver Ruta'}
                     </button>
                   </div>
                 </div>
@@ -342,15 +416,30 @@ const RealTimeMap: React.FC = () => {
           </MarkerF>
         ))}
         
-        {/* Mostrar la ruta si está activa */}
-        {showRoute && routePath.length > 0 && (
+        {/* Mostrar la ruta del backend si está disponible */}
+        {showRoute && useBackendRoute && routePath.length > 0 && (
           <Polyline
             path={routePath}
             options={{
-              strokeColor: '#3b82f6',
+              strokeColor: '#6a5acd',
               strokeOpacity: 0.8,
-              strokeWeight: 4,
+              strokeWeight: 5,
               geodesic: true,
+            }}
+          />
+        )}
+        
+        {/* Mostrar la ruta de Google Maps si el backend falló */}
+        {showRoute && !useBackendRoute && directionsResult && (
+          <DirectionsRenderer
+            directions={directionsResult}
+            options={{
+              suppressMarkers: true, // Usamos nuestros propios marcadores
+              polylineOptions: {
+                strokeColor: '#6a5acd',
+                strokeWeight: 5,
+                strokeOpacity: 0.8,
+              },
             }}
           />
         )}

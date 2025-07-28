@@ -94,3 +94,79 @@ class InstitutionTravelListView(generics.ListAPIView):
         ).order_by('-time')
 
         return queryset
+
+class TravelRouteView(generics.RetrieveAPIView):
+    """
+    Endpoint para obtener la ruta específica de un viaje.
+    
+    GET /api/travel/route/<travel_id>/
+    
+    Retorna:
+    - Información de la ruta asociada al viaje
+    - Coordenadas de origen y destino
+    - Puntos intermedios si existen
+    - Datos necesarios para renderizar en Google Maps
+    """
+    permission_classes = [IsAuthenticatedCustom]
+    
+    def retrieve(self, request, travel_id=None):
+        user = request.user
+        
+        try:
+            # Buscar el viaje y verificar que pertenezca a la institución del usuario
+            travel = Travel.objects.select_related(
+                'route', 
+                'driver__user'
+            ).get(
+                id=travel_id,
+                driver__user__institution=user.institution
+            )
+            
+            if not travel.route:
+                return Response(
+                    {"error": "Este viaje no tiene una ruta asociada."}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            route = travel.route
+            
+            # Preparar los datos de la ruta
+            route_data = {
+                "id": route.id,
+                "travel_id": travel.id,
+                "origin": {
+                    "lat": float(route.origin_lat),
+                    "lng": float(route.origin_lng)
+                },
+                "destination": {
+                    "lat": float(route.destination_lat),
+                    "lng": float(route.destination_lng)
+                },
+                "origin_address": route.origin_address,
+                "destination_address": route.destination_address,
+                "distance": route.distance,
+                "duration": route.duration,
+                "waypoints": [],
+                "encoded_polyline": None  # Para la polilínea de Google Maps
+            }
+            
+            # Si hay waypoints guardados (puntos intermedios)
+            if hasattr(route, 'waypoints') and route.waypoints:
+                try:
+                    import json
+                    waypoints = json.loads(route.waypoints) if isinstance(route.waypoints, str) else route.waypoints
+                    route_data["waypoints"] = waypoints
+                except (json.JSONDecodeError, AttributeError):
+                    route_data["waypoints"] = []
+            
+            # Si hay polilínea codificada guardada
+            if hasattr(route, 'encoded_polyline') and route.encoded_polyline:
+                route_data["encoded_polyline"] = route.encoded_polyline
+            
+            return Response(route_data, status=status.HTTP_200_OK)
+            
+        except Travel.DoesNotExist:
+            return Response(
+                {"error": "No se encontró el viaje o no tienes permisos para acceder a él."}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
