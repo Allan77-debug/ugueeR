@@ -10,13 +10,19 @@ from django.conf import settings
 
 
 class RouteViewsTest(APITestCase):
-    """Test cases for the Route views."""
+    """
+    Casos de prueba para las vistas (endpoints) de la app 'route'.
+    """
     
     def setUp(self):
-        """Set up test data."""
+        """
+        Prepara los datos necesarios antes de ejecutar cada test.
+        Este método crea un entorno de prueba con instituciones, usuarios y conductores
+        en diferentes estados para cubrir todos los casos de uso.
+        """
         self.client = APIClient()
         
-        # Create test institution
+        # Crear institución de prueba.
         self.institution = Institution.objects.create(
             id_institution=1,
             official_name="Test University",
@@ -32,7 +38,7 @@ class RouteViewsTest(APITestCase):
             validate_state=True
         )
         
-        # Create approved driver user
+        # Crear usuario conductor aprobado.
         self.approved_driver_user = Users.objects.create(
             full_name="Approved Driver",
             user_type=Users.TYPE_DRIVER,
@@ -47,13 +53,13 @@ class RouteViewsTest(APITestCase):
             driver_state=Users.DRIVER_STATE_APPROVED
         )
         
-        # Create approved driver
+        # Crear el perfil de conductor aprobado.
         self.approved_driver = Driver.objects.create(
             user=self.approved_driver_user,
             validate_state='approved'
         )
         
-        # Create pending driver user
+        # Crear usuario conductor pendiente.
         self.pending_driver_user = Users.objects.create(
             full_name="Pending Driver",
             user_type=Users.TYPE_DRIVER,
@@ -68,13 +74,13 @@ class RouteViewsTest(APITestCase):
             driver_state=Users.DRIVER_STATE_PENDING
         )
         
-        # Create pending driver
+        # Crear el perfil de conductor pendiente.
         self.pending_driver = Driver.objects.create(
             user=self.pending_driver_user,
             validate_state='pending'
         )
         
-        # Create regular user (not a driver)
+        # Crear un usuario regular (no conductor).
         self.regular_user = Users.objects.create(
             full_name="Regular User",
             user_type=Users.TYPE_STUDENT,
@@ -89,7 +95,7 @@ class RouteViewsTest(APITestCase):
             driver_state=Users.DRIVER_STATE_NONE
         )
         
-        # Create user without institution
+        # Crear un usuario sin institución.
         self.user_without_institution = Users.objects.create(
             full_name="User Without Institution",
             user_type=Users.TYPE_STUDENT,
@@ -104,7 +110,7 @@ class RouteViewsTest(APITestCase):
             driver_state=Users.DRIVER_STATE_NONE
         )
         
-        # Create JWT tokens
+        # Crear tokens JWT para simular sesiones de usuario.
         self.approved_driver_token = jwt.encode(
             {'user_id': self.approved_driver_user.uid},
             settings.SECRET_KEY,
@@ -130,109 +136,88 @@ class RouteViewsTest(APITestCase):
         )
     
     def test_route_create_view_structure(self):
-        """Test route creation endpoint structure (without actual creation due to ArrayField)."""
-        # This test validates that the endpoint exists and responds appropriately
-        # We can't test actual creation due to ArrayField not being supported in SQLite
-        # Instead, we'll test with minimal data to avoid the ArrayField issue
+        """Prueba la estructura del endpoint de creación de rutas."""
+        # Se omite la creación real debido a que ArrayField no es compatible con SQLite.
+        # Se prueba enviando datos mínimos para verificar que el endpoint responde.
         route_data = {
             'driver': self.approved_driver.user.uid,
             'startLocation': 'Cali Centro',
             'destination': 'Universidad del Valle'
-            # Omitting coordinates to avoid ArrayField issues
+            # Se omiten las coordenadas.
         }
-        
         response = self.client.post('/api/route/create/', route_data, format='json')
-        
-        # Should return 400 due to missing required fields (coordinates)
+        # Se espera un error 400 por falta de campos requeridos (coordenadas).
         self.assertEqual(response.status_code, 400)
     
     def test_route_list_view_success(self):
-        """Test successful route listing by user with institution."""
+        """Verifica el listado exitoso de rutas para un usuario con institución."""
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.regular_user_token}')
-        
         response = self.client.get('/api/route/list/')
-        
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.data, list)
     
     def test_route_list_view_user_without_institution(self):
-        """Test route listing by user without institution."""
+        """Verifica que el listado de rutas devuelve una lista vacía para un usuario sin institución."""
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.user_without_institution_token}')
-        
         response = self.client.get('/api/route/list/')
-        
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.data, list)
-        self.assertEqual(len(response.data), 0)  # Should return empty list
+        self.assertEqual(len(response.data), 0)  # Debería devolver una lista vacía.
     
     def test_route_list_view_unauthorized(self):
-        """Test route listing without authentication."""
+        """Verifica que el listado de rutas falla sin autenticación."""
         response = self.client.get('/api/route/list/')
-        
+        # Tu permiso IsAuthenticatedCustom devuelve 403 en lugar de 401.
         self.assertEqual(response.status_code, 403)
     
     def test_route_detail_view_success(self):
-        """Test successful route detail retrieval by approved driver."""
+        """Verifica la obtención de rutas para un conductor aprobado."""
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.approved_driver_token}')
-        
         response = self.client.get('/api/route/my-routes/')
-        
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.data, list)
     
     def test_route_detail_view_pending_driver(self):
-        """Test route detail retrieval by pending driver (should fail)."""
+        """Verifica que un conductor pendiente no puede ver sus rutas (debería fallar)."""
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.pending_driver_token}')
-        
         response = self.client.get('/api/route/my-routes/')
-        
         self.assertEqual(response.status_code, 403)
         self.assertIn('Acceso denegado', str(response.data))
     
     def test_route_detail_view_regular_user(self):
-        """Test route detail retrieval by regular user (should fail)."""
+        """Verifica que un usuario regular no puede ver "mis rutas" (debería fallar)."""
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.regular_user_token}')
-        
         response = self.client.get('/api/route/my-routes/')
-        
         self.assertEqual(response.status_code, 403)
         self.assertIn('Acceso denegado', str(response.data))
     
     def test_route_detail_view_unauthorized(self):
-        """Test route detail retrieval without authentication."""
+        """Verifica la obtención de "mis rutas" sin autenticación."""
         response = self.client.get('/api/route/my-routes/')
-        
         self.assertEqual(response.status_code, 403)
     
     def test_route_delete_view_success(self):
-        """Test successful route deletion."""
-        # Since ArrayField is not supported in SQLite, we'll test the deletion endpoint
-        # with a non-existent route to validate the view structure
+        """Verifica la estructura del endpoint de eliminación de rutas."""
+        # Se prueba con una ruta inexistente para validar que la vista responde (404).
         response = self.client.delete('/api/route/99999/delete/')
-        
-        # Should return 404 for non-existent route
+        # Se espera 404 para una ruta inexistente.
         self.assertEqual(response.status_code, 404)
     
     def test_route_delete_view_nonexistent_route(self):
-        """Test route deletion of non-existent route."""
+        """Verifica la eliminación de una ruta que no existe."""
         response = self.client.delete('/api/route/99999/delete/')
-        
         self.assertEqual(response.status_code, 404)
     
-
-    
     def test_route_list_view_with_approved_drivers(self):
-        """Test route listing when there are approved drivers in the institution."""
+        """Verifica el listado de rutas cuando hay conductores aprobados en la institución."""
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.regular_user_token}')
-        
         response = self.client.get('/api/route/list/')
-        
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.data, list)
     
     def test_route_list_view_no_approved_drivers(self):
-        """Test route listing when there are no approved drivers in the institution."""
-        # Create a new institution with no approved drivers
+        """Verifica el listado de rutas cuando no hay conductores aprobados."""
+        # Crea una nueva institución sin conductores aprobados.
         new_institution = Institution.objects.create(
             id_institution=2,
             official_name="New University",
@@ -247,7 +232,6 @@ class RouteViewsTest(APITestCase):
             status='aprobada',
             validate_state=True
         )
-        
         new_user = Users.objects.create(
             full_name="New User",
             user_type=Users.TYPE_STUDENT,
@@ -261,24 +245,20 @@ class RouteViewsTest(APITestCase):
             user_state=Users.STATE_APPROVED,
             driver_state=Users.DRIVER_STATE_NONE
         )
-        
         new_user_token = jwt.encode(
             {'user_id': new_user.uid},
             settings.SECRET_KEY,
             algorithm='HS256'
         )
-        
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {new_user_token}')
-        
         response = self.client.get('/api/route/list/')
-        
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.data, list)
-        self.assertEqual(len(response.data), 0)  # Should return empty list
+        self.assertEqual(len(response.data), 0)  # Debería devolver una lista vacía.
     
     def test_route_detail_view_driver_not_approved(self):
-        """Test route detail retrieval by driver who is not approved."""
-        # Create a driver with rejected state
+        """Verifica el acceso a "mis rutas" por un conductor rechazado."""
+        # Crea un conductor con estado rechazado.
         rejected_driver_user = Users.objects.create(
             full_name="Rejected Driver",
             user_type=Users.TYPE_DRIVER,
@@ -292,40 +272,30 @@ class RouteViewsTest(APITestCase):
             user_state=Users.STATE_APPROVED,
             driver_state=Users.DRIVER_STATE_REJECTED
         )
-        
         rejected_driver = Driver.objects.create(
             user=rejected_driver_user,
             validate_state='rejected'
         )
-        
         rejected_driver_token = jwt.encode(
             {'user_id': rejected_driver_user.uid},
             settings.SECRET_KEY,
             algorithm='HS256'
         )
-        
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {rejected_driver_token}')
-        
         response = self.client.get('/api/route/my-routes/')
-        
         self.assertEqual(response.status_code, 403)
         self.assertIn('Acceso denegado', str(response.data))
     
     def test_route_detail_view_user_without_driver_profile(self):
-        """Test route detail retrieval by user without driver profile."""
+        """Verifica el acceso a "mis rutas" por un usuario sin perfil de conductor."""
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.regular_user_token}')
-        
         response = self.client.get('/api/route/my-routes/')
-        
         self.assertEqual(response.status_code, 403)
         self.assertIn('Acceso denegado', str(response.data))
     
-
-    
     def test_route_list_view_different_user_types(self):
-        """Test route listing with different user types."""
+        """Verifica el listado de rutas con diferentes tipos de usuario."""
         user_types = [Users.TYPE_STUDENT, Users.TYPE_DRIVER, Users.TYPE_ADMIN]
-        
         for user_type in user_types:
             test_user = Users.objects.create(
                 full_name=f"Test {user_type}",
@@ -340,32 +310,26 @@ class RouteViewsTest(APITestCase):
                 user_state=Users.STATE_APPROVED,
                 driver_state=Users.DRIVER_STATE_NONE
             )
-            
             test_user_token = jwt.encode(
                 {'user_id': test_user.uid},
                 settings.SECRET_KEY,
                 algorithm='HS256'
             )
-            
             self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {test_user_token}')
-            
             response = self.client.get('/api/route/list/')
-            
             self.assertEqual(response.status_code, 200)
             self.assertIsInstance(response.data, list)
     
     def test_route_detail_view_approved_driver_with_routes(self):
-        """Test route detail retrieval by approved driver who has routes."""
+        """Verifica el acceso a "mis rutas" por un conductor aprobado que tiene rutas."""
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.approved_driver_token}')
-        
         response = self.client.get('/api/route/my-routes/')
-        
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.data, list)
     
     def test_route_detail_view_approved_driver_without_routes(self):
-        """Test route detail retrieval by approved driver who has no routes."""
-        # Create a new approved driver with no routes
+        """Verifica el acceso a "mis rutas" por un conductor aprobado que no tiene rutas."""
+        # Crea un nuevo conductor aprobado sin rutas.
         new_approved_driver_user = Users.objects.create(
             full_name="New Approved Driver",
             user_type=Users.TYPE_DRIVER,
@@ -379,31 +343,24 @@ class RouteViewsTest(APITestCase):
             user_state=Users.STATE_APPROVED,
             driver_state=Users.DRIVER_STATE_APPROVED
         )
-        
         new_approved_driver = Driver.objects.create(
             user=new_approved_driver_user,
             validate_state='approved'
         )
-        
         new_approved_driver_token = jwt.encode(
             {'user_id': new_approved_driver_user.uid},
             settings.SECRET_KEY,
             algorithm='HS256'
         )
-        
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {new_approved_driver_token}')
-        
         response = self.client.get('/api/route/my-routes/')
-        
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response.data, list)
-        self.assertEqual(len(response.data), 0)  # Should return empty list
+        self.assertEqual(len(response.data), 0)  # Debería devolver una lista vacía.
     
     def test_route_delete_view_unauthorized(self):
-        """Test route deletion without authentication."""
+        """Verifica la eliminación de rutas sin autenticación."""
         response = self.client.delete('/api/route/1/delete/')
-        
-        # The view doesn't have authentication requirements, so it should work
+        # La vista no tiene requisitos de autenticación, por lo que debería funcionar.
+        # El resultado esperado es 204 si la ruta existe, o 404 si no existe.
         self.assertIn(response.status_code, [204, 404])
-    
- 
