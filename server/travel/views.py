@@ -130,38 +130,30 @@ class TravelRouteView(generics.RetrieveAPIView):
             
             route = travel.route
             
-            # Preparar los datos de la ruta
+            # Preparar los datos de la ruta usando la estructura correcta del modelo Route
             route_data = {
                 "id": route.id,
                 "travel_id": travel.id,
                 "origin": {
-                    "lat": float(route.origin_lat),
-                    "lng": float(route.origin_lng)
+                    "lat": float(route.startPointCoords[0]),  # Primer elemento es latitud
+                    "lng": float(route.startPointCoords[1])   # Segundo elemento es longitud
                 },
                 "destination": {
-                    "lat": float(route.destination_lat),
-                    "lng": float(route.destination_lng)
+                    "lat": float(route.endPointCoords[0]),    # Primer elemento es latitud
+                    "lng": float(route.endPointCoords[1])     # Segundo elemento es longitud
                 },
-                "origin_address": route.origin_address,
-                "destination_address": route.destination_address,
-                "distance": route.distance,
-                "duration": route.duration,
-                "waypoints": [],
-                "encoded_polyline": None  # Para la polilínea de Google Maps
+                "origin_address": route.startLocation,       # Campo de dirección de origen
+                "destination_address": route.destination,    # Campo de dirección de destino
+                "distance": None,  # Este modelo no tiene campo distance
+                "duration": None,  # Este modelo no tiene campo duration
+                "waypoints": [],   # Este modelo no tiene waypoints
+                "encoded_polyline": None  # Este modelo no tiene polilínea codificada
             }
             
-            # Si hay waypoints guardados (puntos intermedios)
-            if hasattr(route, 'waypoints') and route.waypoints:
-                try:
-                    import json
-                    waypoints = json.loads(route.waypoints) if isinstance(route.waypoints, str) else route.waypoints
-                    route_data["waypoints"] = waypoints
-                except (json.JSONDecodeError, AttributeError):
-                    route_data["waypoints"] = []
-            
-            # Si hay polilínea codificada guardada
-            if hasattr(route, 'encoded_polyline') and route.encoded_polyline:
-                route_data["encoded_polyline"] = route.encoded_polyline
+            # El modelo Route actual no tiene waypoints ni polilínea codificada
+            # Estos campos están preparados para futuras extensiones del modelo
+            route_data["waypoints"] = []
+            route_data["encoded_polyline"] = None
             
             return Response(route_data, status=status.HTTP_200_OK)
             

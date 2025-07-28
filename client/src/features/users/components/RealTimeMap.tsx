@@ -70,6 +70,7 @@ const RealTimeMap: React.FC = () => {
   const [useBackendRoute, setUseBackendRoute] = useState(true);
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
+  const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
 
   // Función para conectar al WebSocket
   const connectToWebSocket = () => {
@@ -232,15 +233,21 @@ const RealTimeMap: React.FC = () => {
   }, [connectionStatus]);
   */
 
-  const getMarkerIcon = (vehicle: Vehicle) => {
+  const getCarMarkerIcon = (vehicle: Vehicle) => {
+    // SVG de un carro similar a Uber
     const color = vehicle.available ? '#22c55e' : '#ef4444'; // Verde si disponible, rojo si no
+    const carSvg = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="${color}">
+        <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5H6.5C5.84 5 5.28 5.42 5.08 6.01L3 12V20C3 20.55 3.45 21 4 21H5C5.55 21 6 20.55 6 20V19H18V20C18 20.55 18.45 21 19 21H20C20.55 21 21 20.55 21 20V12L18.92 6.01ZM6.5 16C5.67 16 5 15.33 5 14.5S5.67 13 6.5 13 8 13.67 8 14.5 7.33 16 6.5 16ZM17.5 16C16.67 16 16 15.33 16 14.5S16.67 13 17.5 13 19 13.67 19 14.5 18.33 16 17.5 16ZM5 11L6.5 6.5H17.5L19 11H5Z"/>
+        <circle cx="12" cy="12" r="2" fill="white"/>
+      </svg>
+    `;
+    
     return {
-      path: google.maps.SymbolPath.CIRCLE,
-      fillColor: color,
-      fillOpacity: 0.8,
-      strokeColor: '#ffffff',
-      strokeWeight: 2,
-      scale: 8
+      url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(carSvg)}`,
+      scaledSize: new google.maps.Size(32, 32),
+      anchor: new google.maps.Point(16, 16),
+      origin: new google.maps.Point(0, 0)
     };
   };
 
@@ -276,10 +283,16 @@ const RealTimeMap: React.FC = () => {
         setRoutePath(decodedPath);
         setUseBackendRoute(true);
         setDirectionsResult(null);
+        
+        // Ajustar zoom a la ruta
+        fitMapToRoute(routeData.origin, routeData.destination);
       } else {
         // Si no hay polilínea, usar Google Directions API con las coordenadas de origen y destino
         console.log("No hay polilínea codificada, usando Google Directions API");
         await loadRouteWithGoogleDirections(routeData.origin, routeData.destination);
+        
+        // Ajustar zoom a la ruta
+        fitMapToRoute(routeData.origin, routeData.destination);
       }
       
       setIsLoadingRoute(false);
@@ -294,8 +307,36 @@ const RealTimeMap: React.FC = () => {
       };
       
       await loadRouteWithGoogleDirections(vehicle.position, mockDestination);
+      fitMapToRoute(vehicle.position, mockDestination);
       setIsLoadingRoute(false);
     }
+  };
+
+  // Función auxiliar para ajustar el zoom de la ruta
+  const fitMapToRoute = (origin: { lat: number; lng: number }, destination: { lat: number; lng: number }) => {
+    if (!mapInstance) return;
+    
+    const bounds = new google.maps.LatLngBounds();
+    bounds.extend(new google.maps.LatLng(origin.lat, origin.lng));
+    bounds.extend(new google.maps.LatLng(destination.lat, destination.lng));
+    
+    // Ajustar el mapa a los límites con padding
+    mapInstance.fitBounds(bounds, {
+      top: 100,
+      bottom: 100,
+      left: 100,
+      right: 100
+    });
+    
+    // Asegurar un zoom mínimo y máximo
+    setTimeout(() => {
+      const currentZoom = mapInstance.getZoom();
+      if (currentZoom && currentZoom > 15) {
+        mapInstance.setZoom(15); // Zoom máximo
+      } else if (currentZoom && currentZoom < 10) {
+        mapInstance.setZoom(10); // Zoom mínimo
+      }
+    }, 100);
   };
 
   // Función auxiliar para cargar ruta con Google Directions API
@@ -355,6 +396,7 @@ const RealTimeMap: React.FC = () => {
         mapContainerStyle={containerStyle}
         center={defaultCenter}
         zoom={13}
+        onLoad={(map) => setMapInstance(map)}
         options={{
           disableDefaultUI: false,
           zoomControl: true,
@@ -369,7 +411,7 @@ const RealTimeMap: React.FC = () => {
           <MarkerF
             key={vehicle.id}
             position={vehicle.position}
-            icon={getMarkerIcon(vehicle)}
+            icon={getCarMarkerIcon(vehicle)}
             title={`${vehicle.driver} - ${vehicle.plate}`}
             onClick={() => handleVehicleClick(vehicle)}
           >
