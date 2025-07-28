@@ -22,7 +22,7 @@ import axios from "axios"
 import RealTimeMap from "../components/RealTimeMap"
 import authService from "../../../services/authService"
 
-// Interfaces basadas en la estructura de la base de datos
+// Interfaces basadas en la estructura de la API
 interface UserData {
   uid: number
   fullName: string
@@ -32,48 +32,49 @@ interface UserData {
   institutionName?: string
   hasAppliedDriver?: boolean
   driverState?: string
-  // Nuevo campo
 }
 
-interface Route {
-  id_route: number
-  origin: string
-  destination: string
-  departure_time: string
+interface UserForDriver {
+  id: number
+  full_name: string
+  institutional_mail: string
+  student_code: string
+  user_type: string
 }
 
-interface Vehicle {
-  id_vehicle: number
-  id_driver: number
-  soat: string
+interface Driver {
+  user: UserForDriver
+  validate_state: string
+}
+
+interface TravelVehicleInfo {
+  id: number
   plate: string
   brand: string
   model: string
   vehicle_type: string
   category: string
-  technical_mechanical: string
-  capacity: number // Campo añadido para la capacidad
-}
-
-interface Driver {
-  id_driver: number
-  full_name: string
-  rating: number // Promedio de calificaciones
+  soat: string
+  tecnomechanical: string
+  capacity: number
+  driver: number
 }
 
 interface Travel {
-  id_travel: number
-  id_route: number
-  id_vehicle: number
-  id_driver: number
-  id_user: number // Usuario que creó el viaje (conductor)
-  time: string // Hora específica del viaje
+  id: number
+  time: string // Hora específica del viaje en formato ISO
   travel_state: string // Estado del viaje (activo, cancelado, completado)
   price: number // Campo para el precio
-  // Campos relacionados
-  route?: Route
-  vehicle?: Vehicle
-  driver?: Driver
+  driver: Driver
+  vehicle: TravelVehicleInfo
+  driver_score: string
+  available_seats: string
+  // Campos computados para compatibilidad con la UI existente
+  route?: {
+    origin: string
+    destination: string
+    departure_time: string
+  }
   availableSeats?: number
 }
 
@@ -176,189 +177,106 @@ const UserDashboard = () => {
   useEffect(() => {
     const fetchTravels = async () => {
       try {
-        // En una implementación real, esto sería una llamada a la API
-        // const response = await axios.get('/api/travels/available');
-        // setTravels(response.data);
+        const response = await axios.get('http://127.0.0.1:8000/api/travel/institution/', {
+          headers: authService.getAuthHeaders(),
+        })
 
-        // Simulación de carga de datos basados en la estructura de la BD
-        setTimeout(() => {
-          const mockTravels: Travel[] = [
-            {
-              id_travel: 1,
-              id_route: 1,
-              id_vehicle: 1,
-              id_driver: 1,
-              id_user: 5,
-              time: "14:30",
-              travel_state: "active",
-              price: 5000,
-              route: {
-                id_route: 1,
-                origin: "Campus Principal",
-                destination: "Terminal de Transporte",
-                departure_time: "2025-05-20",
-              },
-              vehicle: {
-                id_vehicle: 1,
-                id_driver: 1,
-                soat: "SOAT12345",
-                plate: "ABC123",
-                brand: "Toyota",
-                model: "Corolla",
-                vehicle_type: "Sedan",
-                category: "Particular",
-                technical_mechanical: "TM12345",
-                capacity: 4,
-              },
-              driver: {
-                id_driver: 1,
-                full_name: "Carlos Rodríguez",
-                rating: 4.8,
-              },
-              availableSeats: 3, // Calculado: capacidad - reservas
-            },
-            {
-              id_travel: 2,
-              id_route: 2,
-              id_vehicle: 2,
-              id_driver: 2,
-              id_user: 6,
-              time: "16:00",
-              travel_state: "active",
-              price: 4500,
-              route: {
-                id_route: 2,
-                origin: "Biblioteca Central",
-                destination: "Centro Comercial",
-                departure_time: "2025-05-20",
-              },
-              vehicle: {
-                id_vehicle: 2,
-                id_driver: 2,
-                soat: "SOAT67890",
-                plate: "XYZ789",
-                brand: "Honda",
-                model: "CR-V",
-                vehicle_type: "SUV",
-                category: "Particular",
-                technical_mechanical: "TM67890",
-                capacity: 5,
-              },
-              driver: {
-                id_driver: 2,
-                full_name: "Ana Martínez",
-                rating: 4.5,
-              },
-              availableSeats: 2,
-            },
-            {
-              id_travel: 3,
-              id_route: 3,
-              id_vehicle: 3,
-              id_driver: 3,
-              id_user: 7,
-              time: "17:30",
-              travel_state: "active",
-              price: 3500,
-              route: {
-                id_route: 3,
-                origin: "Facultad de Ingeniería",
-                destination: "Estación de Metro",
-                departure_time: "2025-05-21",
-              },
-              vehicle: {
-                id_vehicle: 3,
-                id_driver: 3,
-                soat: "SOAT24680",
-                plate: "DEF456",
-                brand: "Mazda",
-                model: "3",
-                vehicle_type: "Hatchback",
-                category: "Particular",
-                technical_mechanical: "TM24680",
-                capacity: 4,
-              },
-              driver: {
-                id_driver: 3,
-                full_name: "Luis Gómez",
-                rating: 4.9,
-              },
-              availableSeats: 4,
-            },
-            {
-              id_travel: 4,
-              id_route: 4,
-              id_vehicle: 4,
-              id_driver: 4,
-              id_user: 8,
-              time: "18:15",
-              travel_state: "active",
-              price: 4000,
-              route: {
-                id_route: 4,
-                origin: "Cafetería Central",
-                destination: "Parque Principal",
-                departure_time: "2025-05-21",
-              },
-              vehicle: {
-                id_vehicle: 4,
-                id_driver: 4,
-                soat: "SOAT13579",
-                plate: "GHI789",
-                brand: "Chevrolet",
-                model: "Spark",
-                vehicle_type: "Sedan",
-                category: "Particular",
-                technical_mechanical: "TM13579",
-                capacity: 4,
-              },
-              driver: {
-                id_driver: 4,
-                full_name: "María López",
-                rating: 4.7,
-              },
-              availableSeats: 1,
-            },
-            {
-              id_travel: 5,
-              id_route: 5,
-              id_vehicle: 5,
-              id_driver: 5,
-              id_user: 9,
-              time: "19:00",
-              travel_state: "active",
-              price: 6000,
-              route: {
-                id_route: 5,
-                origin: "Gimnasio Universitario",
-                destination: "Zona Residencial Norte",
-                departure_time: "2025-05-22",
-              },
-              vehicle: {
-                id_vehicle: 5,
-                id_driver: 5,
-                soat: "SOAT97531",
-                plate: "JKL012",
-                brand: "Kia",
-                model: "Sportage",
-                vehicle_type: "SUV",
-                category: "Particular",
-                technical_mechanical: "TM97531",
-                capacity: 5,
-              },
-              driver: {
-                id_driver: 5,
-                full_name: "Pedro Sánchez",
-                rating: 4.6,
-              },
-              availableSeats: 3,
-            },
-          ]
-          setTravels(mockTravels)
-          setFilteredTravels(mockTravels)
-        }, 1500)
+        // Procesar los datos de la API para que sean compatibles con la UI existente
+        const processedTravels: Travel[] = response.data.map((travel: Omit<Travel, 'route' | 'availableSeats'>) => ({
+          ...travel,
+          // Convertir available_seats de string a número
+          availableSeats: parseInt(travel.available_seats) || 0,
+          // Crear un objeto route simulado para compatibilidad con la UI
+          route: {
+            origin: "Campus", // Valores por defecto, podrías obtenerlos de otra API
+            destination: "Destino",
+            departure_time: new Date(travel.time).toISOString().split('T')[0],
+          },
+        }))
+
+        setTravels(processedTravels)
+        setFilteredTravels(processedTravels)
       } catch (error) {
-        console.error("Error al cargar viajes:", error)
+        console.error("Error al cargar viajes desde la API:", error)
+        
+        // Fallback a datos simulados en caso de error
+        const mockTravels: Travel[] = [
+          {
+            id: 1,
+            time: "2025-05-20T14:30:00Z",
+            travel_state: "active",
+            price: 5000,
+            driver: {
+              user: {
+                id: 1,
+                full_name: "Carlos Rodríguez",
+                institutional_mail: "carlos@universidad.edu",
+                student_code: "20191001",
+                user_type: "student",
+              },
+              validate_state: "approved",
+            },
+            vehicle: {
+              id: 1,
+              plate: "ABC123",
+              brand: "Toyota",
+              model: "Corolla",
+              vehicle_type: "Sedan",
+              category: "Particular",
+              soat: "SOAT12345",
+              tecnomechanical: "TM12345",
+              capacity: 4,
+              driver: 1,
+            },
+            driver_score: "4.8",
+            available_seats: "3",
+            route: {
+              origin: "Campus Principal",
+              destination: "Terminal de Transporte",
+              departure_time: "2025-05-20",
+            },
+            availableSeats: 3,
+          },
+          {
+            id: 2,
+            time: "2025-05-20T16:00:00Z",
+            travel_state: "active",
+            price: 4500,
+            driver: {
+              user: {
+                id: 2,
+                full_name: "Ana Martínez",
+                institutional_mail: "ana@universidad.edu",
+                student_code: "20191002",
+                user_type: "student",
+              },
+              validate_state: "approved",
+            },
+            vehicle: {
+              id: 2,
+              plate: "XYZ789",
+              brand: "Honda",
+              model: "CR-V",
+              vehicle_type: "SUV",
+              category: "Particular",
+              soat: "SOAT67890",
+              tecnomechanical: "TM67890",
+              capacity: 5,
+              driver: 2,
+            },
+            driver_score: "4.5",
+            available_seats: "2",
+            route: {
+              origin: "Biblioteca Central",
+              destination: "Centro Comercial",
+              departure_time: "2025-05-20",
+            },
+            availableSeats: 2,
+          },
+        ]
+        
+        setTravels(mockTravels)
+        setFilteredTravels(mockTravels)
       }
     }
 
@@ -375,7 +293,7 @@ const UserDashboard = () => {
         (travel) =>
           travel.route?.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
           travel.route?.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          travel.driver?.full_name.toLowerCase().includes(searchTerm.toLowerCase()),
+          travel.driver?.user?.full_name.toLowerCase().includes(searchTerm.toLowerCase()),
       )
     }
 
@@ -429,10 +347,11 @@ const UserDashboard = () => {
       setTimeout(() => {
         // Actualizar los asientos disponibles en el viaje reservado
         const updatedTravels = travels.map((travel) => {
-          if (travel.id_travel === travelId && travel.availableSeats && travel.availableSeats > 0) {
+          if (travel.id === travelId && travel.availableSeats && travel.availableSeats > 0) {
             return {
               ...travel,
               availableSeats: travel.availableSeats - 1,
+              available_seats: (travel.availableSeats - 1).toString(),
             }
           }
           return travel
@@ -710,7 +629,7 @@ const UserDashboard = () => {
             {filteredTravels.length > 0 ? (
               <div className="trips-grid">
                 {filteredTravels.map((travel) => (
-                  <div key={travel.id_travel} className="trip-card">
+                  <div key={travel.id} className="trip-card">
                     <div className="trip-header">
                       <div className="trip-route">
                         <div className="origin">
@@ -728,15 +647,18 @@ const UserDashboard = () => {
                     <div className="trip-details">
                       <div className="detail-item">
                         <Clock size={16} />
-                        <span>{travel.time}</span>
+                        <span>{new Date(travel.time).toLocaleTimeString('es-ES', { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}</span>
                       </div>
                       <div className="detail-item">
                         <Calendar size={16} />
-                        <span>{new Date(travel.route?.departure_time || "").toLocaleDateString()}</span>
+                        <span>{new Date(travel.time).toLocaleDateString('es-ES')}</span>
                       </div>
                       <div className="detail-item">
                         <User size={16} />
-                        <span>{travel.driver?.full_name}</span>
+                        <span>{travel.driver?.user?.full_name}</span>
                       </div>
                       <div className="detail-item">
                         <Car size={16} />
@@ -744,7 +666,7 @@ const UserDashboard = () => {
                       </div>
                       <div className="detail-item">
                         <Star size={16} />
-                        <span>{travel.driver?.rating.toFixed(1)}</span>
+                        <span>{travel.driver_score}</span>
                       </div>
                     </div>
 
@@ -754,13 +676,13 @@ const UserDashboard = () => {
                         <span>{travel.availableSeats}</span> asientos disponibles
                       </div>
                       <button
-                        className={`reserve-button ${reservingTravel === travel.id_travel ? reservationStatus : ""}`}
-                        onClick={() => handleReserveTravel(travel.id_travel)}
+                        className={`reserve-button ${reservingTravel === travel.id ? reservationStatus : ""}`}
+                        onClick={() => handleReserveTravel(travel.id)}
                         disabled={
-                          reservingTravel === travel.id_travel || !travel.availableSeats || travel.availableSeats <= 0
+                          reservingTravel === travel.id || !travel.availableSeats || travel.availableSeats <= 0
                         }
                       >
-                        {reservingTravel === travel.id_travel
+                        {reservingTravel === travel.id
                           ? reservationStatus === "loading"
                             ? "Reservando..."
                             : reservationStatus === "success"
