@@ -430,8 +430,20 @@ const UserDashboard = () => {
           return travel
         })
 
+        // Actualizar también los viajes filtrados inmediatamente
+        const updatedFilteredTravels = filteredTravels.map((travel) => {
+          if (travel.id === travelId && travel.availableSeats && travel.availableSeats > 0) {
+            return {
+              ...travel,
+              availableSeats: travel.availableSeats - 1,
+              available_seats: (travel.availableSeats - 1).toString(),
+            }
+          }
+          return travel
+        })
+
         setTravels(updatedTravels)
-        applyFilters() // Actualizar los viajes filtrados
+        setFilteredTravels(updatedFilteredTravels)
         setReservationStatus("success")
 
         // Agregar la nueva reserva al estado local
