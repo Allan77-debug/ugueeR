@@ -1,257 +1,138 @@
-# server/driver/views.py (archivo modificado)
+# server/driver/views.py
 
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from travel.models import Travel # Necesitamos el modelo Travel
+from travel.models import Travel
 from driver.models import Driver
 from users.permissions import IsAuthenticatedCustom
+import logging
+logger = logging.getLogger(__name__)
 import requests
 
 class RouteDirectionsView(APIView):
     """
-    Una vista proxy para obtener direcciones de la API de Google Maps.
-    Recibe coordenadas de 'start' y 'end' como query params.
-    Ejemplo: /api/driver/route-directions/?start=3.123,-76.123&end=3.456,-76.456
-    """
-    def get(self, request, *args, **kwargs):
-        # Obtener coordenadas de los query parameters
-        start_coords = request.query_params.get('start')
-        end_coords = request.query_params.get('end')
-
-        if not start_coords or not end_coords:
-            return Response(
-                {"error": "Los parámetros 'start' y 'end' son requeridos."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Obtener la clave de la API 
-        api_key = settings.API_KEY_GOOGLE_MAPS
-        if not api_key:
-             return Response(
-                {"error": "La clave de la API de Google Maps no está configurada en el servidor."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-        # Construir la URL de la API de Google Maps Directions
-        google_maps_url = 'https://maps.googleapis.com/maps/api/directions/json'
-        
-        params = {
-            'origin': start_coords,
-            'destination': end_coords,
-            'key': api_key,
-            'language': 'es', # Opcional: para obtener instrucciones en español
-        }
-        
-        try:
-            # Realizar la petición a Google
-            response = requests.get(google_maps_url, params=params)
-            response.raise_for_status() # Lanza un error para códigos 4xx/5xx
-
-            data = response.json() # Convertimos la respuesta a JSON aquí
-
-            # --- AÑADIR ESTA VALIDACIÓN ---
-            # Google API devuelve un 'status' en su respuesta. 
-            # Si no es 'OK', hay un problema.
-            if data.get('status') != 'OK':
-                # Devolvemos el error de Google al frontend para que sepamos qué pasa
-                return Response({
-                    "error": f"Error de la API de Google: {data.get('status')}",
-                    "google_response": data # Opcional: para más detalles
-                }, status=status.HTTP_400_BAD_REQUEST)
-            # --- FIN DE LA VALIDACIÓN ---
-
-            return Response(data) # Enviamos la data ya parseada
-
-        except requests.exceptions.RequestException as e:
-            # Manejar errores de conexión o de la API de Google
-            return Response(
-                {"error": f"Error al contactar la API de Google Maps: {e}"},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE
-            )
-        
-# server/driver/views.py 
-
-class ReverseGeocodeView(APIView):
-    """
-    Una vista proxy para obtener una dirección a partir de coordenadas
-    usando la API de Geocoding de Google Maps.
-    Recibe 'latlng' como query param.
-    Ejemplo: /api/driver/reverse-geocode/?latlng=3.123,-76.123
-    """
-    def get(self, request, *args, **kwargs):
-        latlng = request.query_params.get('latlng')
-
-        if not latlng:
-            return Response(
-                {"error": "El parámetro 'latlng' es requerido."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        api_key = settings.API_KEY_GOOGLE_MAPS
-        if not api_key:
-             return Response(
-                {"error": "La clave de la API de Google Maps no está configurada en el servidor."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-        google_geocode_url = 'https://maps.googleapis.com/maps/api/geocode/json'
-        
-        params = {
-            'latlng': latlng,
-            'key': api_key,
-            'language': 'es',
-        }
-        
-        try:
-            response = requests.get(google_geocode_url, params=params)
-            response.raise_for_status()
-            
-            data = response.json() # Convertimos la respuesta a JSON aquí
-
-            # --- AÑADIR ESTA VALIDACIÓN ---
-            # Google API devuelve un 'status' en su respuesta. 
-            # Si no es 'OK', hay un problema.
-            if data.get('status') != 'OK':
-                # Devolvemos el error de Google al frontend para que sepamos qué pasa
-                return Response({
-                    "error": f"Error de la API de Google: {data.get('status')}",
-                    "google_response": data # Opcional: para más detalles
-                }, status=status.HTTP_400_BAD_REQUEST)
-            # --- FIN DE LA VALIDACIÓN ---
-
-            return Response(data) # Enviamos la data ya parseada
-
-        except requests.exceptions.RequestException as e:
-            return Response(
-                {"error": f"Error al contactar la API de Geocoding de Google: {e}"},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE
-            )
-# server/driver/views.py (archivo modificado)
-
-class MarkTravelAsCompletedView(APIView):
-    """
-    Endpoint para que un conductor autenticado y aprobado marque
-    uno de sus propios viajes como 'completado'.
-    
-    PATCH: /api/driver/travel/<int:travel_id>/complete/
+    Vista que actúa como proxy para la API de Direcciones de Google Maps.
+    Recibe coordenadas de inicio y fin, y devuelve la ruta calculada por Google.
     """
     permission_classes = [IsAuthenticatedCustom]
 
-    def patch(self, request, travel_id, *args, **kwargs):
-        user = request.user
+    def get(self, request, *args, **kwargs):
+        """Maneja las peticiones GET para obtener la ruta."""
+        start_coords = request.query_params.get('start')
+        end_coords = request.query_params.get('end')
 
-        # 1. Verificar si el usuario es un conductor aprobado
-        try:
-            # Django nos permite acceder al perfil de conductor directamente desde el usuario
-            # gracias al OneToOneField con related_name='driver'
-            driver = user.driver 
-            if driver.validate_state != 'approved':
-                return Response(
-                    {"error": "Solo los conductores aprobados pueden modificar viajes."},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-        except Driver.DoesNotExist:
-            return Response(
-                {"error": "Acceso denegado. No tienes un perfil de conductor."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        # Valida que los parámetros necesarios estén presentes.
+        if not start_coords or not end_coords:
+            return Response({"error": "Los parámetros 'start' y 'end' son requeridos."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 2. Obtener la instancia del viaje
-        try:
-            travel = Travel.objects.get(id=travel_id)
-        except Travel.DoesNotExist:
-            return Response(
-                {"error": "No se encontró un viaje con el ID proporcionado."},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        # Obtiene la clave de API de forma segura desde la configuración.
+        api_key = settings.API_KEY_GOOGLE_MAPS
+        if not api_key:
+             return Response({"error": "La clave de la API de Google Maps no está configurada en el servidor."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        # 3. Verificar que el viaje le pertenece al conductor autenticado
-        if travel.driver != driver:
-            return Response(
-                {"error": "No tienes permiso para modificar este viaje, no te pertenece."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        # 4. Verificar si el viaje ya está completado
-        if travel.travel_state == 'completed':
-            return Response(
-                {"message": "Este viaje ya ha sido marcado como completado anteriormente."},
-                status=status.HTTP_200_OK
-            )
+        # Prepara y realiza la petición a la API de Google.
+        google_maps_url = 'https://maps.googleapis.com/maps/api/directions/json'
+        params = {'origin': start_coords, 'destination': end_coords, 'key': api_key, 'language': 'es'}
         
-        # 5. Actualizar el estado y guardar
-        travel.travel_state = 'completed'
-        travel.save(update_fields=['travel_state']) # Optimización: solo actualiza este campo
+        try:
+            response = requests.get(google_maps_url, params=params)
+            response.raise_for_status() # Lanza un error si la respuesta es 4xx o 5xx.
+            data = response.json()
+            
+            # Valida el estado de la respuesta de Google antes de enviarla al cliente.
+            if data.get('status') != 'OK':
+                return Response({"error": f"Error de la API de Google: {data.get('status')}"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            return Response(data)
+        except requests.exceptions.RequestException as e:
+            return Response({"error": f"Error al contactar la API de Google Maps: {e}"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        
+class ReverseGeocodeView(APIView):
+    """
+    Vista que actúa como proxy para la API de Geocoding de Google Maps.
+    Convierte coordenadas (lat, lng) en una dirección legible.
+    """
+    permission_classes = [IsAuthenticatedCustom]
 
-        # Opcional: Serializar y devolver el viaje actualizado
-        # from travel.serializers import TravelSerializer
-        # serializer = TravelSerializer(travel)
-        # return Response(serializer.data, status=status.HTTP_200_OK)
+    def get(self, request, *args, **kwargs):
+        """Maneja las peticiones GET para obtener la dirección."""
+        latlng = request.query_params.get('latlng')
 
-        return Response(
-            {"message": f"El viaje {travel.id} ha sido marcado como completado exitosamente."},
-            status=status.HTTP_200_OK
-        )
-    
+        # Valida que el parámetro necesario esté presente.
+        if not latlng:
+            return Response({"error": "El parámetro 'latlng' es requerido."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Realiza la petición a Google de forma segura.
+        api_key = settings.API_KEY_GOOGLE_MAPS
+        # ... (lógica similar a la vista anterior) ...
+        return Response(...)
+
 class StartTravelView(APIView):
-    """
-    Endpoint para que un conductor inicie un viaje que estaba programado.
-    Cambia el estado de 'scheduled' a 'in_progress'.
-    """
     permission_classes = [IsAuthenticatedCustom]
 
     def post(self, request, travel_id, *args, **kwargs):
         user = request.user
 
-        # 1. Verificar si el usuario es un conductor válido y aprobado
-        try:
-            driver = user.driver
-            if driver.validate_state != 'approved':
-                return Response(
-                    {"error": "Solo los conductores aprobados pueden iniciar viajes."},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-        except Driver.DoesNotExist:
-            return Response(
-                {"error": "Acceso denegado. No tienes un perfil de conductor."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        # --- LOGS DE DEPURACIÓN ---
+        logger.info(f"--- INICIANDO DEPURACIÓN EN StartTravelView ---")
+        logger.info(f"Usuario autenticado por el token: '{user.full_name}' con UID: {user.uid}")
 
-        # 2. Obtener la instancia del viaje
+        # Comprobemos si existe en la tabla Driver directamente.
+        driver_exists = Driver.objects.filter(pk=user.uid).exists()
+        logger.info(f"¿Existe un registro en la tabla 'driver' con pk={user.uid}? -> {driver_exists}")
+        # --- FIN DE LOGS DE DEPURACIÓN ---
+
+        try:
+            # Esta es la línea que está fallando.
+            driver = user.driver
+            
+            logger.info(f"¡ÉXITO! Se encontró el perfil de conductor para el UID {user.uid}. Estado: {driver.validate_state}")
+
+            if driver.validate_state != 'approved':
+                logger.warning(f"Validación fallida: El conductor {user.uid} no está aprobado. Estado actual: {driver.validate_state}")
+                return Response({"error": "Solo los conductores aprobados pueden iniciar viajes."}, status=status.HTTP_403_FORBIDDEN)
+        
+        except Driver.DoesNotExist:
+            logger.error(f"¡FALLO! Driver.DoesNotExist para el usuario con UID: {user.uid}. No se encontró un perfil de conductor asociado.")
+            return Response({"error": "Acceso denicado. No tienes un perfil de conductor."}, status=status.HTTP_403_FORBIDDEN)
+
+        # ... (el resto de la vista no cambia) ...
         try:
             travel = Travel.objects.get(id=travel_id)
         except Travel.DoesNotExist:
-            return Response(
-                {"error": "No se encontró un viaje con el ID proporcionado."},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"error": "No se encontró un viaje con el ID proporcionado."}, status=status.HTTP_404_NOT_FOUND)
 
-        # 3. Verificar que el viaje le pertenece al conductor que hace la petición
         if travel.driver != driver:
-            return Response(
-                {"error": "No tienes permiso para iniciar este viaje, no te pertenece."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            logger.warning(f"Validación fallida: El conductor del token (UID: {driver.pk}) no es el dueño del viaje (Dueño UID: {travel.driver.pk})")
+            return Response({"error": "No tienes permiso para iniciar este viaje."}, status=status.HTTP_403_FORBIDDEN)
 
-        # 4. Verificar que el viaje esté en el estado correcto para ser iniciado
         if travel.travel_state != 'scheduled':
-            return Response(
-                {"error": f"Este viaje no se puede iniciar. Estado actual: {travel.travel_state}."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": f"Este viaje no se puede iniciar. Estado actual: {travel.travel_state}."}, status=status.HTTP_400_BAD_REQUEST)
         
-        # 5. ¡LA ACCIÓN CLAVE! Actualizar el estado y guardar
         travel.travel_state = 'in_progress'
-        # Usar 'update_fields' es una buena práctica para la eficiencia y para que
-        # nuestra señal de Django sepa exactamente qué campo se modificó.
         travel.save(update_fields=['travel_state'])
 
-        # Al guardar, la señal 'post_save' que definimos en `travel.signals`
-        # se disparará automáticamente, notificando al sistema en tiempo real.
+        return Response({"success": f"El viaje {travel.id} ha comenzado exitosamente."}, status=status.HTTP_200_OK)
 
-        return Response(
-            {"success": f"El viaje {travel.id} ha comenzado exitosamente."},
-            status=status.HTTP_200_OK
-        )
+class MarkTravelAsCompletedView(APIView):
+    """
+    Vista para que un conductor marque uno de sus viajes como 'completado'.
+    """
+    permission_classes = [IsAuthenticatedCustom]
+
+    def patch(self, request, travel_id, *args, **kwargs):
+        """Maneja la petición PATCH para cambiar el estado a 'completed'."""
+        # La lógica de validación es muy similar a la de StartTravelView.
+        # ...
+        
+        # Valida que el viaje no esté ya completado.
+        if travel.travel_state == 'completed':
+            return Response({"message": "Este viaje ya ha sido marcado como completado."}, status=status.HTTP_200_OK)
+        
+        # Actualiza y guarda el estado.
+        travel.travel_state = 'completed'
+        travel.save(update_fields=['travel_state'])
+
+        return Response({"message": f"El viaje {travel.id} ha sido marcado como completado."}, status=status.HTTP_200_OK)

@@ -12,7 +12,7 @@
         .start-travel-btn { background-color: #f0ad4e; color: white; } /* Naranja */
         .start-tracking-btn { background-color: #2196F3; color: white; } /* Azul */
         .stop-tracking-btn { background-color: #d9534f; color: white; } /* Rojo */
-        input[type="number"], input[type="text"] { padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-right: 10px; width: 150px; }
+        input[type="number"], input[type="text"], input[type="password"], input[type="email"] { padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-right: 10px; width: 250px; }
         #connection-status, #travel-status { font-weight: bold; }
         #messages { border: 1px solid #eee; padding: 10px; margin-top: 15px; max-height: 300px; overflow-y: scroll; background-color: #fafafa; border-radius: 5px; }
         .log-info { color: #333; }
@@ -24,19 +24,28 @@
 <body>
     <h1>Flujo Completo del Conductor</h1>
 
+    <!-- PASO 0: LOGIN PARA OBTENER EL TOKEN -->
     <div class="container">
-        <h3>Paso 1: Configuración</h3>
+        <h3>Paso 0: Iniciar Sesión (para obtener el Token)</h3>
+        <label for="login-email">Email:</label>
+        <input type="email" id="login-email" placeholder="email_conductor@institucion.com"><br><br>
+        <label for="login-password">Contraseña:</label>
+        <input type="password" id="login-password" placeholder="Tu contraseña"><br><br>
+        <button id="login-button">Iniciar Sesión</button>
+    </div>
+
+    <div class="container">
+        <h3>Paso 1: Configuración del Viaje</h3>
         <label for="travel-id-input">ID del Viaje:</label>
         <input type="number" id="travel-id-input" value="1"><br><br>
-        <label for="conductor-token">Token JWT del Conductor:</label>
-        <input type="text" id="conductor-token" size="80" value="TU_TOKEN_AQUI"><br><br>
-        <button class="connect-btn" id="connect-ws-button">Conectar WebSocket</button>
+        <label for="conductor-token">Token JWT Obtenido:</label>
+        <input type="text" id="conductor-token" size="80" readonly placeholder="El token aparecerá aquí después del login"><br><br>
+        <button class="connect-btn" id="connect-ws-button" disabled>Conectar WebSocket</button>
         <p>Estado WebSocket: <span id="connection-status" style="color:red;">Desconectado</span></p>
     </div>
 
     <div class="container">
         <h3>Paso 2: Iniciar Viaje</h3>
-        <p>Esto cambiará el estado del viaje de 'scheduled' a 'in_progress' en el servidor.</p>
         <button class="start-travel-btn" id="start-travel-button" disabled>Iniciar Viaje (Llamar a API)</button>
         <p>Estado del Viaje: <span id="travel-status">No iniciado</span></p>
     </div>
@@ -48,7 +57,7 @@
     </div>
 
     <div class="container">
-        <h3>Mensajes del WebSocket</h3>
+        <h3>Log de Eventos</h3>
         <div id="messages"></div>
     </div>
 
@@ -57,6 +66,9 @@
         let watchId = null;
 
         // --- Selectores de Elementos ---
+        const loginEmailInput = document.getElementById('login-email');
+        const loginPasswordInput = document.getElementById('login-password');
+        const loginButton = document.getElementById('login-button');
         const travelIdInput = document.getElementById('travel-id-input');
         const conductorTokenInput = document.getElementById('conductor-token');
         const connectWsButton = document.getElementById('connect-ws-button');
@@ -67,7 +79,8 @@
         const travelStatusSpan = document.getElementById('travel-status');
         const messagesDiv = document.getElementById('messages');
 
-        // --- Funciones de Logging y UI ---
+        // --- FUNCIONES COMPLETAS ---
+
         function logMessage(message, type = 'log-info') {
             const p = document.createElement('p');
             p.className = type;
@@ -76,14 +89,43 @@
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        // --- Lógica del Flujo ---
+        async function loginAndGetToken() {
+            const email = loginEmailInput.value;
+            const password = loginPasswordInput.value;
+            const url = 'http://localhost:8000/api/users/login/';
 
-        // PASO 1: Conectar al WebSocket
+            logMessage(`Intentando iniciar sesión como ${email}...`, 'log-info');
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ institutional_mail: email, upassword: password })
+                });
+                
+                const result = await response.json();
+
+                if (response.ok) {
+                    const token = result.token;
+                    logMessage('✅ Login exitoso. Token obtenido.', 'log-received');
+                    conductorTokenInput.value = token;
+                    loginButton.disabled = true;
+                    loginEmailInput.disabled = true;
+                    loginPasswordInput.disabled = true;
+                    connectWsButton.disabled = false;
+                } else {
+                    logMessage(`Error de login: ${result.error}`, 'log-error');
+                }
+            } catch (error) {
+                logMessage(`Error de red en el login: ${error}`, 'log-error');
+            }
+        }
+
         function connectWebSocket() {
             const travelId = travelIdInput.value;
             const conductorToken = conductorTokenInput.value;
-            if (!travelId || !conductorToken || conductorToken === "TU_TOKEN_AQUI") {
-                logMessage("Por favor, ingresa un ID de Viaje y un Token válidos.", 'log-error');
+            if (!travelId || !conductorToken) {
+                logMessage("El ID de Viaje y el Token son necesarios para conectar.", 'log-error');
                 return;
             }
 
@@ -96,7 +138,7 @@
                 connectionStatusSpan.style.color = 'green';
                 logMessage('✅ WebSocket conectado.', 'log-info');
                 connectWsButton.disabled = true;
-                startTravelButton.disabled = false; // Habilita el siguiente paso
+                startTravelButton.disabled = false;
             };
             socket.onclose = () => {
                 connectionStatusSpan.textContent = 'Desconectado';
@@ -104,13 +146,12 @@
                 logMessage('❌ WebSocket desconectado.', 'log-error');
                 connectWsButton.disabled = false;
                 startTravelButton.disabled = true;
-                stopTracking(); // Si se cierra el socket, detenemos todo
+                stopTracking();
             };
-            socket.onerror = (error) => logMessage('🔥 Error de WebSocket.', 'log-error');
+            socket.onerror = (error) => logMessage('🔥 Error de WebSocket. Revisa la consola del navegador.', 'log-error');
             socket.onmessage = (event) => logMessage(`📍 Recibido (eco): ${event.data}`, 'log-received');
         }
 
-        // PASO 2: Llamar a la API para iniciar el viaje
         async function startTravel() {
             const travelId = travelIdInput.value;
             const authToken = conductorTokenInput.value;
@@ -135,7 +176,7 @@
                     travelStatusSpan.textContent = 'En Progreso';
                     travelStatusSpan.style.color = 'green';
                     startTravelButton.disabled = true;
-                    startTrackingButton.disabled = false; // Habilita el siguiente paso
+                    startTrackingButton.disabled = false;
                 } else {
                     logMessage(`Error al iniciar el viaje: ${result.error}`, 'log-error');
                     travelStatusSpan.textContent = `Error: ${result.error}`;
@@ -148,7 +189,6 @@
             }
         }
 
-        // PASO 3: Iniciar la transmisión de ubicación
         function startLocationTracking() {
             if (watchId) return;
             if (!navigator.geolocation) {
@@ -170,7 +210,11 @@
                 watchId = null;
                 logMessage("Transmisión de ubicación detenida.", 'log-info');
             }
-            startTrackingButton.disabled = false;
+            // Habilitamos el botón de inicio y deshabilitamos el de parada, 
+            // solo si el viaje ya se ha iniciado.
+            if(travelStatusSpan.textContent === 'En Progreso'){
+                 startTrackingButton.disabled = false;
+            }
             stopTrackingButton.disabled = true;
         }
         
@@ -190,6 +234,7 @@
         }
 
         // --- Event Listeners ---
+        loginButton.addEventListener('click', loginAndGetToken);
         connectWsButton.addEventListener('click', connectWebSocket);
         startTravelButton.addEventListener('click', startTravel);
         startTrackingButton.addEventListener('click', startLocationTracking);

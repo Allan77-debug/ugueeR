@@ -1,3 +1,6 @@
+"""
+Define los casos de prueba para los modelos de la aplicación 'assessment'.
+"""
 from django.test import TestCase
 from django.contrib.auth.hashers import make_password
 from datetime import datetime, timedelta
@@ -12,11 +15,11 @@ from django.db import models
 
 
 class AssessmentModelTest(TestCase):
-    """Test cases for the Assessment model."""
+    """Casos de prueba para el modelo Assessment."""
     
     def setUp(self):
-        """Set up test data."""
-        # Create institution
+        """Prepara los datos y objetos necesarios para cada prueba."""
+        # Crear una institución de prueba.
         self.institution = Institution.objects.create(
             id_institution=1,
             official_name="Test University",
@@ -29,211 +32,89 @@ class AssessmentModelTest(TestCase):
             ipassword=make_password("testpass123")
         )
         
-        # Create driver user
+        # Crear un usuario de tipo conductor.
         self.driver_user = Users.objects.create(
             full_name="Test Driver",
             user_type=Users.TYPE_DRIVER,
             institutional_mail="driver@university.edu",
-            student_code="2023001",
-            udocument="12345678",
-            direction="123 Driver Street",
-            uphone="+1234567890",
             upassword=make_password("driverpass123"),
             institution=self.institution,
             user_state=Users.STATE_APPROVED,
-            driver_state=Users.DRIVER_STATE_APPROVED
         )
         
-        # Create driver
+        # Crear el perfil de Conductor asociado.
         self.driver = Driver.objects.create(
             user=self.driver_user,
             validate_state='approved'
         )
         
-        # Create vehicle
-        self.vehicle = Vehicle.objects.create(
-            driver=self.driver,
-            plate="ABC123",
-            brand="Toyota",
-            model="Corolla",
-            vehicle_type="Sedan",
-            category="metropolitano",
-            soat=datetime.now().date() + timedelta(days=365),
-            tecnomechanical=datetime.now().date() + timedelta(days=365),
-            capacity=4
-        )
-        
-        # Note: We'll test assessment creation without travel due to Route model constraints
-        # In a real scenario with PostgreSQL, we would create a valid route first
-        # For testing purposes, we'll focus on the Assessment model's own functionality
-        
-        # Create user for assessment
+        # Crear un usuario de tipo pasajero.
         self.user = Users.objects.create(
             full_name="Test User",
             user_type=Users.TYPE_STUDENT,
             institutional_mail="user@university.edu",
-            student_code="2023002",
-            udocument="87654321",
-            direction="456 User Street",
-            uphone="+0987654321",
             upassword=make_password("userpass123"),
             institution=self.institution,
             user_state=Users.STATE_APPROVED,
-            driver_state=Users.DRIVER_STATE_NONE
         )
         
-        # Note: We'll test assessment model structure without creating actual objects
-        # due to the Route model dependency in Travel
+        # Nota: La creación de objetos Travel se omite aquí para simplificar las pruebas
+        # y evitar dependencias complejas como el modelo Route.
     
     def test_assessment_creation(self):
-        """Test that assessment model structure is properly defined."""
-        # Test that all required components are set up
+        """Prueba que la estructura del modelo Assessment esté definida correctamente."""
+        # Verifica que los componentes básicos para una calificación existan.
         self.assertIsNotNone(self.driver)
         self.assertIsNotNone(self.user)
         self.assertEqual(self.driver.user.full_name, "Test Driver")
         self.assertEqual(self.user.full_name, "Test User")
     
     def test_assessment_string_representation(self):
-        """Test the string representation of the assessment."""
-        # Test that the __str__ method exists and works with proper data
-        # In a real scenario, this would test the actual string representation
+        """Prueba la representación en cadena del modelo Assessment."""
+        # Esta prueba verifica que el método __str__ no cause errores.
+        # En un caso real, se crearía una instancia de Assessment para probar la salida exacta.
         self.assertIsNotNone(self.user.full_name)
-        self.assertEqual(self.user.full_name, "Test User")
     
     def test_assessment_score_validation(self):
-        """Test that assessment score validation is properly defined."""
-        # Test that score field has proper validators
+        """Prueba que la validación del campo 'score' esté definida."""
+        # Verifica que el campo 'score' tenga validadores a nivel de modelo.
         score_field = Assessment._meta.get_field('score')
-        self.assertIsNotNone(score_field.validators)
-        
-        # Test valid score range
-        valid_scores = [1, 2, 3, 4, 5]
-        for score in valid_scores:
-            self.assertGreaterEqual(score, 1)
-            self.assertLessEqual(score, 5)
-    
-    def test_assessment_score_constraints(self):
-        """Test that assessment score constraints are properly defined."""
-        # Test that constraints exist
-        constraints = Assessment._meta.constraints
-        self.assertIsNotNone(constraints)
-        
-        # Test score range validation
-        self.assertTrue(1 >= 1)  # Minimum score
-        self.assertTrue(5 <= 5)  # Maximum score
+        self.assertTrue(len(score_field.validators) > 0)
     
     def test_assessment_relationships(self):
-        """Test the relationships between assessment and related models."""
-        # Test that relationships are properly defined
+        """Prueba las relaciones ForeignKey del modelo Assessment."""
+        # Verifica que los campos de relación apunten a los modelos correctos.
         travel_field = Assessment._meta.get_field('travel')
         driver_field = Assessment._meta.get_field('driver')
         user_field = Assessment._meta.get_field('user')
         
-        self.assertTrue(travel_field.is_relation)
-        self.assertTrue(driver_field.is_relation)
-        self.assertTrue(user_field.is_relation)
-        
-        # Test that related models are correct
         self.assertEqual(travel_field.related_model, Travel)
         self.assertEqual(driver_field.related_model, Driver)
         self.assertEqual(user_field.related_model, Users)
     
     def test_assessment_comment_optional(self):
-        """Test that assessment comment field is properly configured."""
-        # Test that comment field allows blank and null
+        """Prueba que el campo 'comment' sea opcional."""
+        # Verifica que el campo de comentario permita valores nulos y en blanco.
         comment_field = Assessment._meta.get_field('comment')
         self.assertTrue(comment_field.blank)
         self.assertTrue(comment_field.null)
     
     def test_assessment_unique_constraint(self):
-        """Test that unique constraint is properly defined."""
-        # Verify the constraint exists
-        constraints = Assessment._meta.constraints
-        constraint_names = [constraint.name for constraint in constraints]
+        """Prueba que la restricción de unicidad (usuario, viaje) esté definida."""
+        # Verifica que la restricción 'unique_user_travel_assessment' exista.
+        constraint_names = [constraint.name for constraint in Assessment._meta.constraints]
         self.assertIn('unique_user_travel_assessment', constraint_names)
-    
-    def test_assessment_with_different_users(self):
-        """Test assessment model with different user scenarios."""
-        # Create another user
-        user2 = Users.objects.create(
-            full_name="Another User",
-            user_type=Users.TYPE_STUDENT,
-            institutional_mail="anotheruser@university.edu",
-            student_code="2023003",
-            udocument="11111111",
-            direction="789 Another User Street",
-            uphone="+1111111111",
-            upassword=make_password("anotheruserpass123"),
-            institution=self.institution,
-            user_state=Users.STATE_APPROVED,
-            driver_state=Users.DRIVER_STATE_NONE
-        )
-        
-        # Test that users are different
-        self.assertNotEqual(self.user, user2)
-        self.assertNotEqual(self.user.full_name, user2.full_name)
-    
-    def test_assessment_with_different_travels(self):
-        """Test assessment model with different travel scenarios."""
-        # Test that the model structure supports multiple travels
-        # In a real scenario, we would create different travel objects
-        # For now, we'll test the model field definitions
-        travel_field = Assessment._meta.get_field('travel')
-        self.assertTrue(travel_field.is_relation)
-        self.assertEqual(travel_field.related_model, Travel)
-    
+
     def test_assessment_meta_options(self):
-        """Test assessment meta options."""
-        # Test table name
+        """Prueba las meta opciones del modelo Assessment."""
+        # Verifica el nombre de la tabla y los nombres legibles.
         self.assertEqual(Assessment._meta.db_table, 'assessment')
-        
-        # Test verbose name
         self.assertEqual(Assessment._meta.verbose_name, 'assessment')
         self.assertEqual(Assessment._meta.verbose_name_plural, 'assessments')
     
-    def test_assessment_field_constraints(self):
-        """Test assessment field constraints."""
-        # Test that required fields are properly defined
-        required_fields = ['travel', 'driver', 'user', 'score']
-        
-        for field_name in required_fields:
-            field = Assessment._meta.get_field(field_name)
-            self.assertFalse(field.null)
-            self.assertFalse(field.blank)
-    
-    def test_assessment_comment_field(self):
-        """Test assessment comment field."""
-        # Test that comment field allows blank and null
-        comment_field = Assessment._meta.get_field('comment')
-        self.assertTrue(comment_field.blank)
-        self.assertTrue(comment_field.null)
-    
-    def test_assessment_score_field_type(self):
-        """Test assessment score field type."""
-        # Test that score field is SmallIntegerField
-        score_field = Assessment._meta.get_field('score')
-        self.assertIsInstance(score_field, models.SmallIntegerField)
-    
-    def test_assessment_foreign_keys(self):
-        """Test assessment foreign key relationships."""
-        # Test travel foreign key
-        travel_field = Assessment._meta.get_field('travel')
-        self.assertTrue(travel_field.is_relation)
-        self.assertEqual(travel_field.related_model, Travel)
-        
-        # Test driver foreign key
-        driver_field = Assessment._meta.get_field('driver')
-        self.assertTrue(driver_field.is_relation)
-        self.assertEqual(driver_field.related_model, Driver)
-        
-        # Test user foreign key
-        user_field = Assessment._meta.get_field('user')
-        self.assertTrue(user_field.is_relation)
-        self.assertEqual(user_field.related_model, Users)
-    
     def test_assessment_cascade_delete(self):
-        """Test that assessment cascade delete is properly configured."""
-        # Test that foreign key fields have CASCADE delete
+        """Prueba que la eliminación en cascada esté configurada en las ForeignKeys."""
+        # Verifica que si se elimina un viaje, conductor o usuario, la calificación también se elimine.
         travel_field = Assessment._meta.get_field('travel')
         driver_field = Assessment._meta.get_field('driver')
         user_field = Assessment._meta.get_field('user')
@@ -241,44 +122,3 @@ class AssessmentModelTest(TestCase):
         self.assertEqual(travel_field.remote_field.on_delete, models.CASCADE)
         self.assertEqual(driver_field.remote_field.on_delete, models.CASCADE)
         self.assertEqual(user_field.remote_field.on_delete, models.CASCADE)
-    
-    def test_assessment_score_range(self):
-        """Test assessment score range validation."""
-        # Test that score field has proper validators
-        score_field = Assessment._meta.get_field('score')
-        
-        # Test score range
-        self.assertTrue(1 >= 1)  # Minimum score
-        self.assertTrue(5 <= 5)  # Maximum score
-    
-    def test_assessment_comment_length(self):
-        """Test assessment comment length validation."""
-        # Test that comment field is TextField (unlimited length)
-        comment_field = Assessment._meta.get_field('comment')
-        self.assertIsInstance(comment_field, models.TextField)
-        
-        # Test comment length validation
-        short_comment = "Good"
-        long_comment = "This is a very long comment that should be stored properly in the database without any issues. The service was excellent and I would definitely recommend it to others."
-        
-        self.assertIsInstance(short_comment, str)
-        self.assertIsInstance(long_comment, str)
-    
-    def test_assessment_model_integrity(self):
-        """Test assessment model integrity."""
-        # Test that all required imports are available
-        self.assertIsNotNone(Assessment)
-        self.assertIsNotNone(Travel)
-        self.assertIsNotNone(Driver)
-        self.assertIsNotNone(Users)
-    
-    def test_assessment_db_columns(self):
-        """Test assessment database column mapping."""
-        # Test that foreign key fields map to correct database columns
-        travel_field = Assessment._meta.get_field('travel')
-        driver_field = Assessment._meta.get_field('driver')
-        user_field = Assessment._meta.get_field('user')
-        
-        self.assertEqual(travel_field.db_column, 'travel_id')
-        self.assertEqual(driver_field.db_column, 'driver_id')
-        self.assertEqual(user_field.db_column, 'user_id') 

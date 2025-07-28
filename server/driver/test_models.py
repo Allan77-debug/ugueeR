@@ -1,17 +1,24 @@
 from django.test import TestCase
 from django.contrib.auth.hashers import make_password
 from datetime import timedelta
+from django.utils import timezone
 from driver.models import Driver
 from users.models import Users
 from institutions.models import Institution
 
 
 class DriverModelTest(TestCase):
-    """Test cases for the Driver model."""
+    """
+    Casos de prueba para el modelo Driver.
+    Verifica la creación, relaciones, restricciones y comportamiento del modelo.
+    """
     
     def setUp(self):
-        """Set up test data."""
-        # Create institution
+        """
+        Prepara los datos necesarios para cada test.
+        Este método se ejecuta antes de cada método 'test_*'.
+        """
+        # Crear una institución de prueba.
         self.institution = Institution.objects.create(
             id_institution=1,
             official_name="Test University",
@@ -24,7 +31,7 @@ class DriverModelTest(TestCase):
             ipassword=make_password("testpass123")
         )
         
-        # Create user
+        # Crear un usuario de prueba para el conductor.
         self.user = Users.objects.create(
             full_name="Test Driver",
             user_type=Users.TYPE_DRIVER,
@@ -39,60 +46,59 @@ class DriverModelTest(TestCase):
             driver_state=Users.DRIVER_STATE_APPROVED
         )
         
-        # Create driver
+        # Crear el perfil de conductor asociado al usuario.
         self.driver = Driver.objects.create(
             user=self.user,
             validate_state='approved'
         )
     
     def test_driver_creation(self):
-        """Test that a driver can be created successfully."""
+        """Prueba que un perfil de conductor se puede crear correctamente."""
         self.assertEqual(self.driver.user, self.user)
         self.assertEqual(self.driver.validate_state, 'approved')
         self.assertIsNotNone(self.driver.created_at)
     
     def test_driver_string_representation(self):
-        """Test the string representation of the driver."""
-        # Since there's no __str__ method, test the object creation
-        self.assertIsNotNone(self.driver)
-        self.assertEqual(self.driver.user, self.user)
+        """Prueba la representación en cadena del conductor."""
+        # El método __str__ del modelo Driver debe devolver el nombre completo del usuario.
+        self.assertEqual(str(self.driver), "Test Driver")
     
     def test_driver_choices(self):
-        """Test that driver validate state choices are correctly defined."""
+        """Prueba que las opciones de estado de validación están definidas correctamente."""
         validate_states = [choice[0] for choice in Driver.VALIDATE_STATE_CHOICES]
         self.assertIn('pending', validate_states)
         self.assertIn('approved', validate_states)
         self.assertIn('rejected', validate_states)
     
     def test_driver_user_relationship(self):
-        """Test the relationship between driver and user."""
+        """Prueba la relación uno a uno entre Driver y Users."""
         self.assertEqual(self.driver.user, self.user)
         self.assertEqual(self.driver.user.full_name, "Test Driver")
         self.assertEqual(self.driver.user.user_type, Users.TYPE_DRIVER)
         
-        # Test reverse relationship
+        # Prueba la relación inversa (desde el usuario hacia el conductor).
         self.assertEqual(self.user.driver, self.driver)
     
     def test_driver_validate_state_transitions(self):
-        """Test driver validate state transitions."""
-        # Test approved -> pending
+        """Prueba que el estado de validación del conductor puede cambiar."""
+        # Prueba la transición de 'approved' a 'pending'.
         self.driver.validate_state = 'pending'
         self.driver.save()
         self.assertEqual(self.driver.validate_state, 'pending')
         
-        # Test pending -> rejected
+        # Prueba la transición de 'pending' a 'rejected'.
         self.driver.validate_state = 'rejected'
         self.driver.save()
         self.assertEqual(self.driver.validate_state, 'rejected')
         
-        # Test rejected -> approved
+        # Prueba la transición de 'rejected' a 'approved'.
         self.driver.validate_state = 'approved'
         self.driver.save()
         self.assertEqual(self.driver.validate_state, 'approved')
     
     def test_driver_created_at_auto_set(self):
-        """Test that created_at is set automatically."""
-        # Create a new driver to test auto_now_add
+        """Prueba que el campo 'created_at' se establece automáticamente al crear."""
+        # Crea un nuevo conductor para probar la funcionalidad 'auto_now_add'.
         new_user = Users.objects.create(
             full_name="New Driver",
             user_type=Users.TYPE_DRIVER,
@@ -115,30 +121,30 @@ class DriverModelTest(TestCase):
         self.assertIsNotNone(new_driver.created_at)
     
     def test_driver_constraints(self):
-        """Test that driver constraints are working."""
-        # Test valid validate states
+        """Prueba que las restricciones del modelo funcionan."""
+        # Prueba que se pueden guardar los estados de validación válidos.
         valid_states = ['pending', 'approved', 'rejected']
         for state in valid_states:
             self.driver.validate_state = state
-            self.driver.save()
+            self.driver.save() # No debería lanzar una excepción.
             self.assertEqual(self.driver.validate_state, state)
     
     def test_driver_user_primary_key(self):
-        """Test that driver uses user as primary key."""
+        """Prueba que el Driver usa el ID del Usuario como su clave primaria."""
         self.assertEqual(self.driver.pk, self.user.uid)
         self.assertEqual(self.driver.user.uid, self.user.uid)
     
     def test_driver_user_one_to_one_relationship(self):
-        """Test the one-to-one relationship between driver and user."""
-        # Test that each user can only have one driver record
+        """Prueba la unicidad de la relación uno a uno."""
+        # Comprueba que cada usuario solo puede tener un registro de conductor.
         self.assertEqual(self.user.driver, self.driver)
         
-        # Test that each driver belongs to exactly one user
+        # Comprueba que cada conductor pertenece exactamente a un usuario.
         self.assertEqual(self.driver.user, self.user)
     
     def test_driver_with_different_users(self):
-        """Test driver with different users."""
-        # Create another user
+        """Prueba la creación de perfiles de conductor para diferentes usuarios."""
+        # Crea otro usuario.
         user2 = Users.objects.create(
             full_name="Another Driver",
             user_type=Users.TYPE_DRIVER,
@@ -153,7 +159,7 @@ class DriverModelTest(TestCase):
             driver_state=Users.DRIVER_STATE_APPROVED
         )
         
-        # Create driver for second user
+        # Crea un conductor para el segundo usuario.
         driver2 = Driver.objects.create(
             user=user2,
             validate_state='pending'
@@ -163,59 +169,58 @@ class DriverModelTest(TestCase):
         self.assertNotEqual(self.driver, driver2)
     
     def test_driver_validate_state_consistency(self):
-        """Test that driver validate state is consistent."""
-        # Test that validate state matches the choices
+        """Prueba que el estado de validación guardado es consistente con las opciones."""
         valid_states = [choice[0] for choice in Driver.VALIDATE_STATE_CHOICES]
         self.assertIn(self.driver.validate_state, valid_states)
     
     def test_driver_created_at_immutability(self):
-        """Test that created_at is immutable after creation."""
+        """Prueba que 'created_at' no cambia al actualizar el objeto."""
         original_created_at = self.driver.created_at
         
-        # Try to modify created_at (should not change)
-        from django.utils import timezone
-        self.driver.created_at = timezone.now()
+        # Intenta modificar y guardar el objeto.
+        self.driver.validate_state = 'pending'
         self.driver.save()
+        self.driver.refresh_from_db() # Recarga el objeto desde la BD.
         
-        # The created_at should remain the same (with small tolerance for microseconds)
+        # El valor de 'created_at' debería permanecer igual.
         self.assertAlmostEqual(self.driver.created_at, original_created_at, delta=timedelta(seconds=1))
     
     def test_driver_user_type_validation(self):
-        """Test that driver user has correct user type."""
-        # Test that driver user is of type driver
+        """Prueba que el usuario asociado a un conductor tiene el tipo y estado correctos."""
+        # Comprueba que el tipo de usuario es 'driver'.
         self.assertEqual(self.driver.user.user_type, Users.TYPE_DRIVER)
         
-        # Test that driver user is approved
+        # Comprueba que el estado del usuario es 'aprobado'.
         self.assertEqual(self.driver.user.user_state, Users.STATE_APPROVED)
     
     def test_driver_meta_options(self):
-        """Test driver meta options."""
-        # Test table name
+        """Prueba las meta opciones del modelo, como el nombre de la tabla."""
+        # Comprueba el nombre de la tabla en la base de datos.
         self.assertEqual(Driver._meta.db_table, 'driver')
         
-        # Test verbose name
+        # Comprueba los nombres para el admin de Django.
         self.assertEqual(Driver._meta.verbose_name, 'driver')
         self.assertEqual(Driver._meta.verbose_name_plural, 'drivers')
     
     def test_driver_constraint_name(self):
-        """Test that the constraint name is correct."""
-        # Check if the constraint exists
+        """Prueba que el nombre de la restricción de la BD es el esperado."""
+        # Comprueba si la restricción definida en Meta existe.
         constraints = Driver._meta.constraints
         constraint_names = [constraint.name for constraint in constraints]
         self.assertIn('validate_state_check', constraint_names)
     
     def test_driver_user_cascade_delete(self):
-        """Test that driver is deleted when user is deleted."""
+        """Prueba que el Driver se elimina cuando se elimina su User asociado (on_delete=CASCADE)."""
         driver_id = self.driver.pk
         user_id = self.user.uid
         
-        # Delete the user
+        # Elimina el usuario.
         self.user.delete()
         
-        # Check that driver is also deleted
+        # Comprueba que el conductor también fue eliminado.
         with self.assertRaises(Driver.DoesNotExist):
             Driver.objects.get(pk=driver_id)
         
-        # Check that user is also deleted
+        # Comprueba que el usuario también fue eliminado.
         with self.assertRaises(Users.DoesNotExist):
-            Users.objects.get(uid=user_id) 
+            Users.objects.get(uid=user_id)
