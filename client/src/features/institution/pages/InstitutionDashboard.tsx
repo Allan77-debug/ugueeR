@@ -7,6 +7,7 @@ import UserDetailsModal from "../components/UserDetailsModal"
 import "../styles/InstitutionDashboard.css"
 import { Users, Car, LogOut, Search, Sun, Moon } from "lucide-react"
 import axios from "axios"
+import authService from "../../../services/authService"
 
 export interface InstitutionUser {
   uid: number
@@ -69,16 +70,17 @@ const InstitutionDashboard = () => {
 
   // Verificar autenticación y obtener datos de la institución
   useEffect(() => {
-    const token = localStorage.getItem("institutionToken")
-    const institutionInfo = localStorage.getItem("institutionData")
-
-    if (!token) {
+    // Usar authService para verificar autenticación
+    if (!authService.isInstitutionAuthenticated()) {
       navigate("/login")
       return
     }
 
+    // Obtener datos de la institución usando authService
+    const institutionInfo = authService.getInstitutionData()
+
     if (institutionInfo) {
-      setInstitutionData(JSON.parse(institutionInfo))
+      setInstitutionData(institutionInfo as Institution)
     } else {
       // Para pruebas, usar datos falsos
       const fakeInstitutionData = {
@@ -88,7 +90,7 @@ const InstitutionDashboard = () => {
         email: "admin@unal.edu.co",
       }
       setInstitutionData(fakeInstitutionData)
-      localStorage.setItem("institutionData", JSON.stringify(fakeInstitutionData))
+      authService.setInstitutionData(fakeInstitutionData)
     }
   }, [navigate])
 
@@ -100,24 +102,26 @@ const InstitutionDashboard = () => {
       setLoading(true)
       setError("")
 
-      const response = await axios.get(
-        `http://127.0.0.1:8000/api/institutions/listUser/${institutionData.id_institution}/users/`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("institutionToken")}`,
-          },
-        },
-      )
+      // Determinar qué endpoint usar según la pestaña activa
+      const endpoint = activeTab === "drivers" 
+        ? `http://127.0.0.1:8000/api/institutions/driver-applications/`
+        : `http://127.0.0.1:8000/api/institutions/users/`
+
+      const response = await axios.get(endpoint, {
+        headers: authService.getInstitutionAuthHeaders(),
+      })
 
       // Asegura que todos los usuarios tengan la propiedad 'user_state'
       const apiUsers = response.data.map((user: InstitutionUser) => ({
         ...user,
-        user_state: user.user_state || user.user_state, // Compatibilidad
+        user_state: user.user_state || "pendiente", // Default a pendiente si no está definido
+        user_type: activeTab === "drivers" ? "driver" : user.user_type || "student", // Asegurar tipo correcto
       }))
+      
       setUsers(apiUsers)
     } catch (err) {
       console.error("Error al cargar usuarios:", err)
-      setError("No se pudieron cargar los usuarios. Por favor, intente de nuevo.")
+      setError(`No se pudieron cargar ${activeTab === "drivers" ? "las aplicaciones de conductores" : "los usuarios"}. Por favor, intente de nuevo.`)
     } finally {
       setLoading(false)
     }
@@ -127,7 +131,7 @@ const InstitutionDashboard = () => {
     if (institutionData) {
       fetchUsers()
     }
-  }, [institutionData])
+  }, [institutionData, activeTab]) // Agregar activeTab como dependencia para recargar al cambiar de pestaña
 
   // Obtener usuarios según la pestaña activa
   const getCurrentTabUsers = () => {
@@ -185,69 +189,66 @@ const InstitutionDashboard = () => {
     setSearchQuery("")
   }, [activeTab])
 
-  // Aprobar usuario
+  // Aprobar usuario o conductor
   const handleApproveUser = async (uid: number) => {
     if (!institutionData) return
 
     try {
-      await axios.post(
-        `http://127.0.0.1:8000/api/institutions/approveUser/${institutionData.id_institution}/${uid}/`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("institutionToken")}`,
-          },
-        },
-      )
+      // Determinar el endpoint según el tipo de usuario
+      const endpoint = activeTab === "drivers"
+        ? `http://127.0.0.1:8000/api/institutions/driver-applications/${uid}/approve/`
+        : `http://127.0.0.1:8000/api/institutions/approveUser/${institutionData.id_institution}/${uid}/`
+
+      await axios.post(endpoint, {}, {
+        headers: authService.getInstitutionAuthHeaders(),
+      })
 
       // Actualizar el estado local
       setUsers(users.map((user) => (user.uid === uid ? { ...user, user_state: "aprobado" as const } : user)))
 
       setSelectedUser(null)
-      alert("Usuario aprobado exitosamente")
+      alert(`${activeTab === "drivers" ? "Conductor" : "Usuario"} aprobado exitosamente`)
     } catch (error) {
-      console.error("Error al aprobar usuario:", error)
+      console.error(`Error al aprobar ${activeTab === "drivers" ? "conductor" : "usuario"}:`, error)
 
       // Para pruebas, simular aprobación exitosa
       setUsers(users.map((user) => (user.uid === uid ? { ...user, user_state: "aprobado" as const } : user)))
       setSelectedUser(null)
-      alert("Usuario aprobado exitosamente")
+      alert(`${activeTab === "drivers" ? "Conductor" : "Usuario"} aprobado exitosamente`)
     }
   }
 
-  // Rechazar usuario
+  // Rechazar usuario o conductor
   const handleRejectUser = async (uid: number, reason: string) => {
     if (!institutionData) return
 
     try {
-      await axios.post(
-        `http://127.0.0.1:8000/api/institutions/rejectUser/${institutionData.id_institution}/${uid}/`,
-        { reason },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("institutionToken")}`,
-          },
-        },
-      )
+      // Determinar el endpoint según el tipo de usuario
+      const endpoint = activeTab === "drivers"
+        ? `http://127.0.0.1:8000/api/institutions/driver-applications/${uid}/reject/`
+        : `http://127.0.0.1:8000/api/institutions/rejectUser/${institutionData.id_institution}/${uid}/`
+
+      await axios.post(endpoint, { reason }, {
+        headers: authService.getInstitutionAuthHeaders(),
+      })
 
       // Actualizar el estado local
       setUsers(users.map((user) => (user.uid === uid ? { ...user, user_state: "rechazado" as const } : user)))
 
       setSelectedUser(null)
-      alert("Usuario rechazado exitosamente")
+      alert(`${activeTab === "drivers" ? "Conductor" : "Usuario"} rechazado exitosamente`)
     } catch (error) {
-      console.error("Error al rechazar usuario:", error)
+      console.error(`Error al rechazar ${activeTab === "drivers" ? "conductor" : "usuario"}:`, error)
 
       // Para pruebas, simular rechazo exitoso
       setUsers(users.map((user) => (user.uid === uid ? { ...user, user_state: "rechazado" as const } : user)))
       setSelectedUser(null)
-      alert("Usuario rechazado exitosamente")
+      alert(`${activeTab === "drivers" ? "Conductor" : "Usuario"} rechazado exitosamente`)
     }
   }
 
   const handleLogout = () => {
-    localStorage.removeItem("institutionToken")
-    localStorage.removeItem("institutionData")
+    authService.logout()
     navigate("/login")
   }
 
@@ -275,6 +276,7 @@ const InstitutionDashboard = () => {
             <div className="institution-info">
               <h2>{institutionData?.short_name || "Institución"}</h2>
               <p>{institutionData?.official_name}</p>
+              <span className="institution-email">{institutionData?.email || "email@institucion.edu"}</span>
             </div>
             {/* Toggle de tema */}
             <button

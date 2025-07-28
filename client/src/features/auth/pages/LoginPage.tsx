@@ -88,29 +88,64 @@ const LoginPage: React.FC = () => {
       console.log("Inicio de sesión institución:", response.data)
 
       if (response.status === 200) {
-        // Obtener el token de la respuesta (ajusta según la estructura real de tu respuesta)
-        const token = response.data.token || "fake-institution-token-123"
+        // Extraer el token JWT de la respuesta (similar al login de usuarios)
+        const token = response.data.access || response.data.token || response.data.access_token
         
-        // Guardar token de institución
-        localStorage.setItem("institutionToken", token)
-        
-        // Obtener los datos de la institución del formulario (o de la respuesta si están disponibles)
-        const institutionData = {
-          id_institution: response.data.id_institution,
-          official_name: response.data.official_name,
-          short_name: response.data.short_name,
-          email: response.data.email
+        if (token) {
+          // Guardar el token JWT de la institución usando authService
+          authService.setInstitutionToken(token)
+          console.log("Token JWT de institución guardado:", token)
+        } else {
+          console.warn("No se encontró token JWT en la respuesta de la institución")
+          // Fallback al token anterior si no hay JWT
+          const fallbackToken = response.data.token || "fake-institution-token-123"
+          authService.setInstitutionToken(fallbackToken)
         }
         
-        localStorage.setItem("institutionData", JSON.stringify(institutionData))
+        // Obtener los datos de la institución de la respuesta
+        const institutionData = {
+          id_institution: response.data.id_institution || response.data.id,
+          official_name: response.data.official_name || response.data.name,
+          short_name: response.data.short_name || response.data.short_name,
+          email: response.data.email || registerData.email
+        }
+        
+        // Guardar datos de la institución usando authService
+        authService.setInstitutionData(institutionData)
 
+        alert("¡Inicio de sesión de institución exitoso!")
         // Redireccionar al dashboard de institución
         window.location.href = "/institucion-dashboard"
       } else {
         setRegisterError("Error al iniciar sesión")
-        console.error("Error:", Error)
       }
-      console.error("Error de inicio de sesión institución:", Error)
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        // Manejo de errores similar al login de usuarios
+        const responseData = error.response.data
+
+        if (error.response.status === 404) {
+          setRegisterError("Institución no encontrada. Por favor, verifique su correo.")
+        } else if (error.response.status === 401) {
+          setRegisterError("Contraseña incorrecta. Por favor, inténtelo de nuevo.")
+        } else if (error.response.status === 400) {
+          // Errores de validación
+          if (responseData.email) {
+            setRegisterError(responseData.email[0])
+          } else if (responseData.ipassword) {
+            setRegisterError(responseData.ipassword[0])
+          } else if (responseData.error) {
+            setRegisterError(responseData.error)
+          } else {
+            setRegisterError("Por favor, complete correctamente todos los campos.")
+          }
+        } else {
+          setRegisterError("Error en el servidor. Por favor, inténtelo más tarde.")
+        }
+      } else {
+        setRegisterError("Error de conexión. Por favor, inténtelo más tarde.")
+      }
+      console.error("Error de inicio de sesión institución:", error)
     } finally {
       setIsLoading(false)
     }
