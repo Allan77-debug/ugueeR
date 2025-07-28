@@ -84,6 +84,14 @@ interface Reservation {
   status: string // pending, confirmed, cancelled
 }
 
+interface Realize {
+  id: number
+  uid: number
+  id_travel: number
+  status: string // Enum con los estados disponibles de la API
+  reservation_status?: string // Campo opcional que podría estar presente en la respuesta
+}
+
 const UserDashboard = () => {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<"trips" | "map">("trips")
@@ -101,6 +109,7 @@ const UserDashboard = () => {
   const [showFilters, setShowFilters] = useState(false)
   const [reservingTravel, setReservingTravel] = useState<number | null>(null)
   const [reservationStatus, setReservationStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
+  const [userReservations, setUserReservations] = useState<Realize[]>([]) // Reservas del usuario
 
   // Estado para el tema
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -283,6 +292,39 @@ const UserDashboard = () => {
     fetchTravels()
   }, [])
 
+  // Función para cargar las reservas del usuario
+  const fetchUserReservations = async () => {
+    try {
+      if (!userData?.uid) return
+
+      // Usar el endpoint específico para las reservas del usuario autenticado
+      const response = await axios.get('http://127.0.0.1:8000/api/realize/my-reservations/', {
+        headers: authService.getAuthHeaders(),
+      })
+
+      setUserReservations(response.data)
+      console.log("Reservas del usuario cargadas:", response.data)
+    } catch (error) {
+      console.error("Error al cargar reservas del usuario:", error)
+      setUserReservations([])
+    }
+  }
+
+  // Cargar reservas cuando se carga el usuario
+  useEffect(() => {
+    if (userData) {
+      fetchUserReservations()
+    }
+  }, [userData])
+
+  // Función para verificar si el usuario ya tiene una reserva activa para un viaje
+  const hasActiveReservation = (travelId: number): boolean => {
+    return userReservations.some(reservation => 
+      reservation.id_travel === travelId && 
+      (reservation.status === 'pending' || reservation.status === 'confirmed')
+    )
+  }
+
   // Función para aplicar filtros
   const applyFilters = () => {
     let filtered = [...travels]
@@ -336,15 +378,46 @@ const UserDashboard = () => {
     setReservationStatus("loading")
 
     try {
-      // En una implementación real, esto sería una llamada a la API
-      // const response = await axios.post('/api/reservations', {
-      //   id_user: userData.uid,
-      //   id_travel: travelId,
-      //   status: 'confirmed'
-      // });
+      // Llamada a la API real para crear la reserva
+      const response = await axios.post<Realize>('http://127.0.0.1:8000/api/realize/create/', {
+        id_travel: travelId
+      }, {
+        headers: authService.getAuthHeaders(),
+      })
 
-      // Simulación de reserva exitosa
-      setTimeout(() => {
+      console.log("Reserva creada exitosamente:", response.data)
+      console.log("Estructura completa de la respuesta:", JSON.stringify(response.data, null, 2))
+
+      // Ser más flexible con la estructura de respuesta
+      const responseData = response.data
+      let reservation: Realize
+
+      // Verificar si la respuesta tiene la estructura esperada directamente
+      if (responseData.id && responseData.id_travel) {
+        reservation = responseData
+      }
+      // O si está anidada en algún campo
+      else if (responseData.data && responseData.data.id && responseData.data.id_travel) {
+        reservation = responseData.data
+      }
+      // O si tiene una estructura diferente pero contiene los campos necesarios
+      else if (responseData.reservation && responseData.reservation.id) {
+        reservation = responseData.reservation
+      }
+      else {
+        console.error("Estructura de respuesta inesperada:", responseData)
+        // Intentar extraer los campos manualmente si existen
+        reservation = {
+          id: responseData.id || responseData.reservation_id || 0,
+          uid: responseData.uid || responseData.user_id || userData.uid,
+          id_travel: responseData.id_travel || (responseData as any).travel_id || travelId,
+          status: responseData.status || responseData.reservation_status || 'pending'
+        }
+      }
+
+      console.log("Datos de reserva procesados:", reservation)
+
+      if (reservation.id && reservation.id_travel === travelId) {
         // Actualizar los asientos disponibles en el viaje reservado
         const updatedTravels = travels.map((travel) => {
           if (travel.id === travelId && travel.availableSeats && travel.availableSeats > 0) {
@@ -361,25 +434,59 @@ const UserDashboard = () => {
         applyFilters() // Actualizar los viajes filtrados
         setReservationStatus("success")
 
-        // Mostrar mensaje de éxito
-        alert("¡Viaje reservado con éxito! Puedes ver los detalles en tu historial de viajes.")
+        // Agregar la nueva reserva al estado local
+        setUserReservations(prevReservations => [...prevReservations, reservation])
 
-        // Resetear el estado
-        setTimeout(() => {
-          setReservingTravel(null)
-          setReservationStatus("idle")
-        }, 2000)
-      }, 1500)
-    } catch (error) {
-      console.error("Error al reservar viaje:", error)
-      setReservationStatus("error")
-      alert("No se pudo completar la reserva. Por favor, inténtalo de nuevo.")
+        // Mostrar mensaje de éxito con información de la reserva
+        alert(`¡Viaje reservado con éxito!\nID de reserva: ${reservation.id}\nEstado: ${reservation.status}\nPara confirmar la reserva, escanea el código QR en la aplicación móvil.`)
+      } else {
+        throw new Error("La respuesta de la API no contiene los datos esperados")
+      }
 
-      // Resetear el estado
+      // Resetear el estado después de 2 segundos
       setTimeout(() => {
         setReservingTravel(null)
         setReservationStatus("idle")
       }, 2000)
+
+    } catch (error) {
+      console.error("Error completo al reservar viaje:", error)
+      
+      if (axios.isAxiosError(error)) {
+        console.error("Detalles del error de Axios:")
+        console.error("- Status:", error.response?.status)
+        console.error("- Status Text:", error.response?.statusText)
+        console.error("- Data:", error.response?.data)
+        console.error("- Headers:", error.response?.headers)
+        
+        setReservationStatus("error")
+        
+        if (error.response?.status === 400) {
+          const errorMsg = error.response?.data?.detail || error.response?.data?.message || "No se pudo completar la reserva"
+          alert(`Error 400: ${errorMsg}`)
+        } else if (error.response?.status === 404) {
+          alert("Error 404: El viaje seleccionado no fue encontrado.")
+        } else if (error.response?.status === 409) {
+          alert("Error 409: Ya tienes una reserva activa para este viaje.")
+        } else if (error.response?.status === 401) {
+          alert("Error 401: Tu sesión ha expirado. Por favor, inicia sesión nuevamente.")
+        } else if (error.response?.status === 500) {
+          alert("Error 500: Error interno del servidor. Por favor, inténtalo más tarde.")
+        } else {
+          const errorDetail = error.response?.data?.detail || error.response?.data?.message || 'Error desconocido'
+          alert(`Error del servidor (${error.response?.status}): ${errorDetail}`)
+        }
+      } else {
+        console.error("Error no-Axios:", error)
+        setReservationStatus("error")
+        alert("Error de conexión. Por favor, verifica tu conexión a internet e inténtalo de nuevo.")
+      }
+
+      // Resetear el estado después de 3 segundos en caso de error
+      setTimeout(() => {
+        setReservingTravel(null)
+        setReservationStatus("idle")
+      }, 3000)
     }
   }
 
@@ -676,21 +783,26 @@ const UserDashboard = () => {
                         <span>{travel.availableSeats}</span> asientos disponibles
                       </div>
                       <button
-                        className={`reserve-button ${reservingTravel === travel.id ? reservationStatus : ""}`}
+                        className={`reserve-button ${reservingTravel === travel.id ? reservationStatus : ""} ${hasActiveReservation(travel.id) ? "reserved" : ""}`}
                         onClick={() => handleReserveTravel(travel.id)}
                         disabled={
-                          reservingTravel === travel.id || !travel.availableSeats || travel.availableSeats <= 0
+                          reservingTravel === travel.id || 
+                          !travel.availableSeats || 
+                          travel.availableSeats <= 0 ||
+                          hasActiveReservation(travel.id)
                         }
                       >
-                        {reservingTravel === travel.id
-                          ? reservationStatus === "loading"
-                            ? "Reservando..."
-                            : reservationStatus === "success"
-                              ? "¡Reservado!"
-                              : "Error"
-                          : travel.availableSeats && travel.availableSeats > 0
-                            ? "Reservar"
-                            : "No disponible"}
+                        {hasActiveReservation(travel.id)
+                          ? "Ya Reservado"
+                          : reservingTravel === travel.id
+                            ? reservationStatus === "loading"
+                              ? "Reservando..."
+                              : reservationStatus === "success"
+                                ? "¡Reservado!"
+                                : "Error"
+                            : travel.availableSeats && travel.availableSeats > 0
+                              ? "Reservar"
+                              : "No disponible"}
                       </button>
                     </div>
                   </div>
