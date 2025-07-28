@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Route, Slot, useRouter } from "expo-router";
+import { Route, Slot, usePathname, useRouter } from "expo-router";
 import {
   Text,
   ScrollView,
@@ -14,13 +14,15 @@ import ProfileHeader from "./organism/ProfileHeader";
 import QuickActions from "./molecules/QuickActions";
 import * as Burnt from "burnt";
 import { useSession } from "@/hooks/ctx";
+import QuickActionsDriver from "./molecules/QuickActionsDriver";
 
 const UserDashboard = () => {
   const router = useRouter();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const { session, signOut } = useSession();
-  
+  const pathname = usePathname();
+
   useEffect(() => {
     // Lógica para obtener datos del usuario y viajes (similar a tu código web)
     const fetchData = async () => {
@@ -113,12 +115,21 @@ const UserDashboard = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
-      <ProfileHeader userData={userData} onLogout={handleLogout} />
-      <QuickActions
-        driverState={userData?.driver_state}
-        onNavigate={(path) => router.push(path)}
-        onApply={handleDriverApplication}
-      />
+      <ProfileHeader userData={userData} onLogout={handleLogout} pathname={pathname} />
+      {pathname.includes("driver") ? (
+        <QuickActionsDriver
+          driverState={userData?.driver_state}
+          onNavigate={(path) => router.push(path)}
+          onApply={handleDriverApplication}
+        />
+      ) : (
+        <QuickActions
+          driverState={userData?.driver_state}
+          onNavigate={(path) => router.push(path)}
+          onApply={handleDriverApplication}
+        />
+      )}
+
       <Slot />
     </SafeAreaView>
   );

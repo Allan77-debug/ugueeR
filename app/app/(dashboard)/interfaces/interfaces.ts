@@ -49,6 +49,49 @@ interface Travel {
   available_seats: number
 }
 
+interface DriverTrip {
+  id: number;
+  startLocation: string;
+  destination: string;
+  vehicleType: string;
+  price: number;
+  departureDateTime: string;
+  availableSeats: number;
+  travelState: "scheduled" | "in_progress" | "completed" | "cancelled";
+}
+
+interface DriverRoute {
+  id: number;
+  startLocation: string;
+  destination: string;
+  startPointCoords: number[];
+  endPointCoords: number[];
+}
+
+interface DriverVehicle {
+  id: number;
+  category: string;
+  brand: string;
+  capacity: number;
+  vehicleType: string;
+}
+
+interface AddTripPayload {
+  driver: number;
+  route: number;
+  vehicle: number;
+  price: number;
+  time: string;
+  travel_state: string;
+}
+
+interface TripFormData {
+  selectedRouteId: number;
+  selectedVehicleId: number;
+  price: number;
+  departureDateTime: string;
+}
+
 // --- Prop Types ---
 interface IconProps {
   icon: React.ElementType
@@ -76,7 +119,8 @@ interface TripCardProps {
 }
 
 interface ProfileHeaderProps {
-  userData: UserData | null
+  userData: UserData | null,
+  pathname: string,
   onLogout: () => void
 }
 
@@ -89,7 +133,8 @@ interface QuickActionsProps {
 interface TravelFeedProps {
   travels: Travel[]
   onReserve: (travelId: number) => void
-  reservingTravel: number | null
+  reservingTravel: number | null,
+  reservedTravels?: { id: number; uid: number; status: string }[],
   isDriverView?: boolean,
 }
 
@@ -105,5 +150,9 @@ export type {
     TripCardProps,
     ProfileHeaderProps,
     QuickActionsProps,
-    TravelFeedProps
+    TravelFeedProps,
+    DriverTrip,
+    DriverRoute,
+    AddTripPayload,
+    TripFormData
 }

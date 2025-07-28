@@ -40,7 +40,13 @@
         }
       ],
       "expo-build-properties",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Permite a la app acceder a tu ubicación para mostrar tu posición en tiempo real."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

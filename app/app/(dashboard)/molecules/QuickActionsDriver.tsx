@@ -28,7 +28,7 @@ const QuickActionsDriver: React.FC<QuickActionsProps> = ({ onNavigate, onApply }
       </ButtonTouchable>
       <ButtonTouchable
         className="items-center"
-        onPress={() => onNavigate("/driver/MyVehicles")}
+        onPress={() => onNavigate("/driver/MyTrips")}
       >
         <Icon icon={List} color="#4f46e5" />
         <Text className="mt-1 text-xs font-semibold text-gray-700">
