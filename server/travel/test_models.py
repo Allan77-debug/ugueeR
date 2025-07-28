@@ -9,7 +9,7 @@ from driver.models import Driver
 from vehicle.models import Vehicle
 from users.models import Users
 from institutions.models import Institution
-from route.models import Route # Importado para pruebas completas
+from route.models import Route 
 from django.contrib.auth.hashers import make_password
 
 class TravelModelTest(TestCase):
