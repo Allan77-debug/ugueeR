@@ -1,7 +1,10 @@
-import { View, Text } from "react-native";
-import { TravelFeedProps } from "../interfaces/interfaces";
+import { View, Text, Alert } from "react-native";
+import { TravelFeedProps, UserData } from "../interfaces/interfaces";
 import TripCard from "./TripCard";
 import MyRoutesScreen from "../driver/MyRoutes";
+import { useEffect, useState } from "react";
+import { useSession } from "@/hooks/ctx";
+import axios from "axios";
 
 const TravelFeed: React.FC<TravelFeedProps> = ({
   travels,
@@ -9,8 +12,42 @@ const TravelFeed: React.FC<TravelFeedProps> = ({
   reservingTravel,
   isDriverView,
 }) => {
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const { session } = useSession();
+
+ useEffect(() => {
+    // Lógica para obtener datos del usuario y viajes (similar a tu código web)
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Simulación de llamadas a la API
+        const { data: userRes } = await axios.get<UserData>(
+          `http://192.168.56.1:8000/api/users/profile/${session?.uid}`,
+          {
+            headers: {
+              Authorization: `Bearer ${session?.token}`,
+            },
+          }
+        );
+        setUserData(userRes);
+
+      } catch (error) {
+        Alert.alert("Error", "No se pudieron cargar los datos.");
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (session) {
+      fetchData();
+    }
+  }, [session]);
+
+  console.log("TravelFeed isDriverView:", isDriverView);
+
   if(isDriverView) return(
-    <MyRoutesScreen />
+    <MyRoutesScreen userData={userData} />
   )
   return (
     <View className="p-6">

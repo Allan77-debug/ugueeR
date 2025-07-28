@@ -177,16 +177,6 @@ const LoginScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity onPress={() => router.push("/(dashboard)/user")}>
-          <Text className="text-sm text-primary font-bold ml-1">
-            dashboard user
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push("/(dashboard)/driver")}>
-          <Text className="text-sm text-primary font-bold ml-1">
-            dashboard driver
-          </Text>
-        </TouchableOpacity>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

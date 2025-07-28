@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Slot, useRouter } from "expo-router";
+import { Route, Slot, useRouter } from "expo-router";
 import {
   Text,
   ScrollView,
@@ -20,7 +20,7 @@ const UserDashboard = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const { session, signOut } = useSession();
-
+  
   useEffect(() => {
     // Lógica para obtener datos del usuario y viajes (similar a tu código web)
     const fetchData = async () => {
@@ -28,7 +28,7 @@ const UserDashboard = () => {
       try {
         // Simulación de llamadas a la API
         const { data: userRes } = await axios.get<UserData>(
-          `http://localhost:8000/api/users/profile/${session?.uid}`,
+          `http://192.168.56.1:8000/api/users/profile/${session?.uid}`,
           {
             headers: {
               Authorization: `Bearer ${session?.token}`,
@@ -36,7 +36,6 @@ const UserDashboard = () => {
           }
         );
         setUserData(userRes);
-
       } catch (error) {
         Alert.alert("Error", "No se pudieron cargar los datos.");
         console.error(error);
@@ -49,15 +48,40 @@ const UserDashboard = () => {
     }
   }, [session]);
 
-
-
   const handleDriverApplication = () => {
     Alert.alert(
       "¿Quieres ser conductor?",
-      "Se te redirigirá a la pantalla de solicitud.",
+      "Para ser conductor, debes completar tu perfil y enviar una solicitud.",
       [
         { text: "Cancelar" },
-        // { text: "Aceptar", onPress: () => router.push("/solicitud-conductor") }
+        {
+          text: "Aceptar",
+          onPress: async () => {
+            const response = await axios.post(
+              `http://192.168.56.1:8000/api/users/apply-driver/${session?.uid}/`,
+              {},
+              {
+                headers: {
+                  Authorization: `Bearer ${session?.token}`,
+                },
+              }
+            );
+            if (response.status === 200) {
+              Burnt.toast({
+                title: "Solicitud Enviada",
+                preset: "done",
+                message: "Tu solicitud para ser conductor ha sido enviada.",
+              });
+              router.push("/driver/MyRoutes");
+            } else {
+              Burnt.alert({
+                title: "Error",
+                preset: "error",
+                message: "No se pudo enviar la solicitud.",
+              });
+            }
+          },
+        },
       ]
     );
   };

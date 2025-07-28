@@ -665,6 +665,18 @@
   background: linear-gradient(135deg, var(--danger-color) 0%, #dc2626 100%);
 }
 
+.reserve-button.reserved {
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+  cursor: not-allowed;
+  color: #cbd5e1;
+  box-shadow: none;
+}
+
+.reserve-button.reserved:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 .no-trips {
   background-color: var(--card-bg);
   border-radius: 12px;
