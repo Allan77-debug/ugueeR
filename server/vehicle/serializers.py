@@ -7,3 +7,4 @@ class VehicleSerializer(serializers.ModelSerializer):
         model = Vehicle
         fields = '__all__'
         read_only_fields = ('driver',)
+        ref_name = "VehicleBase"

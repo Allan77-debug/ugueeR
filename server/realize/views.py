@@ -35,16 +35,32 @@ class UserRealizeListView(generics.ListAPIView):
 class RealizeCreateView(generics.CreateAPIView):
     """
     Vista para crear una nueva reserva.
-    Utiliza RealizeCreateSerializer para asegurar que 'status' se establezca por defecto.
+    Ahora verifica la disponibilidad de asientos.
     """
-    serializer_class = RealizeCreateSerializer # Usa el serializador específico para la creación
+    serializer_class = RealizeCreateSerializer
     permission_classes = [IsAuthenticatedCustom]
 
     def perform_create(self, serializer):
-        """
-        Guarda la nueva instancia de reserva, asignando el usuario autenticado.
-        """
-        serializer.save(user=self.request.user) # Aseguramos que el usuario se guarda automáticamente
+        # Primero validamos la disponibilidad antes de guardar
+        travel_instance = serializer.validated_data.get('travel')
+        
+        if travel_instance:
+            # Reutilizamos la misma lógica de cálculo
+            capacity = travel_instance.vehicle.capacity
+            confirmed_reservations = Realize.objects.filter(
+                travel=travel_instance,
+                status=Realize.STATUS_CONFIRMED
+            ).count()
+            
+            available_seats = capacity - confirmed_reservations
+            
+            if available_seats <= 0:
+                # Si no hay asientos, lanzamos un error de validación.
+                # DRF lo convertirá en una respuesta 400 Bad Request.
+                raise ValidationError("No hay asientos disponibles para este viaje.")
+
+        # Si hay asientos, procedemos a guardar la reserva
+        serializer.save(user=self.request.user)
 
 class RealizeCancelView(generics.UpdateAPIView):
     """

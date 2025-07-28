@@ -17,6 +17,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 import jwt
 from .permissions import IsAuthenticatedCustom
 from django.conf import settings
+import datetime
 
 class UsersCreateView(generics.CreateAPIView):
     """ Vista para registrar un nuevo usuario. """
@@ -47,27 +48,45 @@ class UsersLoginView(generics.GenericAPIView):
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
-        try:
-            if serializer.is_valid():
-                email = serializer.validated_data['institutional_mail']
-                password = serializer.validated_data['upassword']
+        if serializer.is_valid():
+            email = serializer.validated_data['institutional_mail']
+            password = serializer.validated_data['upassword']
 
-                user = Users.objects.filter(institutional_mail=email).first()
-                if user is not None and check_password(password, user.upassword):
-                    refresh = RefreshToken.for_user(user)
+            try:
+                user = Users.objects.get(institutional_mail=email)
+
+                if user and check_password(password, user.upassword):
+                    # --- ¡AQUÍ ESTÁ EL CAMBIO CLAVE! ---
+                    # En lugar de usar RefreshToken, creamos el token manualmente.
+                    
+                    # 1. Definimos el payload (el contenido del token)
+                    payload = {
+                        'user_id': user.uid,
+                        
+                        # 2. ¡ESTA ES LA LÍNEA QUE CONTROLA LA DURACIÓN!
+                        # Le decimos que el token expira en 8 horas a partir de ahora.
+                        'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=8), 
+                        
+                        # Es una buena práctica incluir la fecha de creación (issued at)
+                        'iat': datetime.datetime.utcnow(),
+                    }
+
+                    # 3. Codificamos el token con nuestra SECRET_KEY
+                    token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+
+                    # 4. Devolvemos nuestro token personalizado
                     return Response({
-                    'refresh': str(refresh),
-                    'access': str(refresh.access_token),
-                    'uid': user.uid,  # o user.id, según tu modelo
-                    'message': "Login Exitoso"
-                }, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response({"error": "Credenciales invalidas"}, status=status.HTTP_401_UNAUTHORIZED)
+                        'token': token, # Ya no devolvemos 'access' y 'refresh', solo nuestro token.
+                        'uid': user.uid,
+                        'message': "Login Exitoso"
+                    }, status=status.HTTP_200_OK)
+                else:
+                    return Response({"error": "Credenciales inválidas"}, status=status.HTTP_401_UNAUTHORIZED)
+            except Users.DoesNotExist:
+                return Response({"error": "Credenciales inválidas"}, status=status.HTTP_401_UNAUTHORIZED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    
 class UsersDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Users.objects.all()
     serializer_class = UsersSerializer

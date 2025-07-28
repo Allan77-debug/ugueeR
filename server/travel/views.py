@@ -4,7 +4,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Driver, Travel
-from .serializers import TravelSerializer,TravelInfoSerializer
+from .serializers import TravelSerializer,TravelInfoSerializer, TravelDetailSerializer
 from users.permissions import IsAuthenticatedCustom
 
 
@@ -69,37 +69,29 @@ class TravelDeleteView(generics.DestroyAPIView):
     lookup_field = 'id'
 class InstitutionTravelListView(generics.ListAPIView):
     """
-    Endpoint para listar todos los viajes de la institución del usuario autenticado.
-
-    Filtra los viajes para mostrar solo aquellos cuyo conductor pertenece a la
-    misma institución que el usuario que realiza la petición.
+    Endpoint para listar todos los viajes de la institución del usuario autenticado,
+    con información detallada de conductor, vehículo y campos calculados.
     
     GET /api/travel/institution/
     """
     permission_classes = [IsAuthenticatedCustom]
-    serializer_class = TravelInfoSerializer
+    # MODIFICADO: Usamos el nuevo serializador enriquecido
+    serializer_class = TravelDetailSerializer
 
     def get_queryset(self):
-        # 1. Obtenemos el usuario autenticado. Gracias a `IsAuthenticatedCustom`,
-        #    esto ya es una instancia completa de nuestro modelo `Users`.
         user = self.request.user
 
-        # 2. Verificamos que el usuario tenga una institución asignada.
-        #    Si no la tiene, no puede ver viajes de "su" institución.
         if not user.institution:
-            # Retornamos un queryset vacío. Es la forma correcta de no devolver nada.
             return Travel.objects.none()
 
-        # 3. ¡LA MAGIA DEL ORM! Filtramos los viajes.
-        #    La sintaxis de doble guion bajo '__' nos permite "saltar"
-        #    a través de las relaciones entre modelos:
-        #    Travel -> driver (ForeignKey a Driver)
-        #    driver -> user (OneToOneField a Users)
-        #    user -> institution (ForeignKey a Institution)
+        # MODIFICADO: Optimizamos la consulta con prefetch_related y select_related
         queryset = Travel.objects.filter(
             driver__user__institution=user.institution
         ).select_related(
-            'driver__user'  # Optimización para evitar N+1 queries en el serializador
-        ).order_by('-time') # Opcional: ordenar por los más recientes primero
+            'driver__user',  # Trae los datos del User anidado en Driver
+            'vehicle'        # Trae los datos del Vehicle
+        ).prefetch_related(
+            'driver__assessments' # Trae todas las calificaciones del conductor de una vez
+        ).order_by('-time')
 
         return queryset
