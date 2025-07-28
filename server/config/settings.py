@@ -44,7 +44,7 @@ API_KEY_GOOGLE_MAPS = env('API_KEY_GOOGLE_MAPS', default=None)
 DEBUG = True
 
 # Hosts/dominios permitidos para servir la aplicación.
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # --- Configuración de DRF (Django REST Framework) ---
