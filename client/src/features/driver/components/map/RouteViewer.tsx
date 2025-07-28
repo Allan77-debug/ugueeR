@@ -1,15 +1,16 @@
-// client/src/features/driver/components/map/RouteViewer.tsx (NUEVO ARCHIVO)
+
+
+// client/src/features/driver/components/map/RouteViewer.tsx
 
 import React, { useState, useEffect, useRef } from "react";
 import {
   GoogleMap,
   MarkerF,
+  DirectionsRenderer,
   Polyline,
-  useJsApiLoader,
 } from "@react-google-maps/api";
 import { LatLngTuple } from "../../../../types/driver.types";
-
-const LIBRARIES: "geometry"[] = ["geometry"];
+import axios from "axios";
 
 // Reciben como propiedades (props) externas
 interface RouteViewerProps {
@@ -21,78 +22,143 @@ const RouteViewer: React.FC<RouteViewerProps> = ({
   startPointCoords,
   endPointCoords,
 }) => {
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    libraries: LIBRARIES,
-  });
-
+  const [directionsResult, setDirectionsResult] = useState<google.maps.DirectionsResult | null>(null);
   const [routePath, setRoutePath] = useState<google.maps.LatLng[]>([]);
+  const [isLoadingRoute, setIsLoadingRoute] = useState(false);
+  const [useBackendRoute, setUseBackendRoute] = useState(true);
   const mapRef = useRef<google.maps.Map | null>(null);
-  const hasCentered = useRef(false);
 
   const startPoint = { lat: startPointCoords[0], lng: startPointCoords[1] };
   const endPoint = { lat: endPointCoords[0], lng: endPointCoords[1] };
 
+  // Cargar la ruta usando la API del backend primero, si falla usar Google Maps
   useEffect(() => {
-    fetch(
-      `/api/driver/route-directions/?start=${startPointCoords.join(
-        ","
-      )}&end=${endPointCoords.join(",")}`
-    )
-      .then((res) => res.json())
-      .then((data) => {
+    if (startPoint && endPoint) {
+      setIsLoadingRoute(true);
+      
+      // Intentar primero con la API del backend
+      axios.get(`http://localhost:8000/api/driver/route-directions/`, {
+        params: {
+          start: `${startPointCoords[0]},${startPointCoords[1]}`,
+          end: `${endPointCoords[0]},${endPointCoords[1]}`
+        }
+      })
+      .then((response) => {
+        const data = response.data;
         const encoded = data.routes?.[0]?.overview_polyline?.points;
-        if (encoded)
-          setRoutePath(
-            window.google.maps.geometry.encoding.decodePath(encoded)
+        if (encoded && window.google) {
+          console.log("RouteViewer: Ruta obtenida del backend, dibujando polilínea.");
+          const decodedPath = window.google.maps.geometry.encoding.decodePath(encoded);
+          setRoutePath(decodedPath);
+          setUseBackendRoute(true);
+        } else {
+          throw new Error("No se encontró la polilínea en la respuesta del backend");
+        }
+        setIsLoadingRoute(false);
+      })
+      .catch((error) => {
+        console.warn("Error con la API del backend, usando Google Maps Directions:", error);
+        
+        // Fallback a Google Maps Directions API
+        if (window.google) {
+          const directionsService = new window.google.maps.DirectionsService();
+          
+          directionsService.route(
+            {
+              origin: startPoint,
+              destination: endPoint,
+              travelMode: window.google.maps.TravelMode.DRIVING,
+            },
+            (result, status) => {
+              setIsLoadingRoute(false);
+              if (status === "OK" && result) {
+                setDirectionsResult(result);
+                setUseBackendRoute(false);
+              } else {
+                console.warn("No se pudo obtener la ruta de Google Maps:", status);
+              }
+            }
           );
+        }
       });
+    }
   }, [startPointCoords, endPointCoords]);
 
-  useEffect(() => {
-    if (mapRef.current && routePath.length > 0 && !hasCentered.current) {
-      const bounds = new window.google.maps.LatLngBounds();
-      routePath.forEach((point) => bounds.extend(point));
-      mapRef.current.fitBounds(bounds, 50);
-      hasCentered.current = true;
-    }
-  }, [routePath]);
-
-  if (loadError) return <div>Error al cargar el mapa.</div>;
-  if (!isLoaded) return <div>Cargando Mapa...</div>;
-
   return (
-    <GoogleMap
-      mapContainerStyle={{ width: "100%", height: "100%" }}
-      center={startPoint}
-      zoom={12}
-      onLoad={(map) => {
-        mapRef.current = map;
-      }}
-      options={{
-        mapTypeControl: false,
-        streetViewControl: false,
-      }}
-    >
-      <MarkerF
-        position={startPoint}
-        icon={{
-          url: "/usuario.png",
-          scaledSize: new window.google.maps.Size(35, 35),
+    <div style={{ width: "100%", height: "400px" }}>
+      {isLoadingRoute && (
+        <div style={{ padding: "20px", textAlign: "center" }}>
+          Cargando ruta...
+        </div>
+      )}
+      
+      <GoogleMap
+        mapContainerStyle={{ width: "100%", height: "100%" }}
+        center={startPoint}
+        zoom={12}
+        onLoad={(map) => {
+          mapRef.current = map;
+          
+          // Ajustar la vista para mostrar ambos puntos
+          if (startPoint && endPoint) {
+            const bounds = new window.google.maps.LatLngBounds();
+            bounds.extend(startPoint);
+            bounds.extend(endPoint);
+            map.fitBounds(bounds, 50);
+          }
         }}
-      />
-      <MarkerF
-        position={endPoint}
-        icon={{
-          url: "/marcador.png",
-          scaledSize: new window.google.maps.Size(35, 35),
+        options={{
+          mapTypeControl: true,
+          streetViewControl: true,
+          zoomControl: true,
+          fullscreenControl: true,
         }}
-      />
-      <Polyline
-        path={routePath}
-        options={{ strokeColor: "#6a5acd", strokeWeight: 5 }}
-      />
-    </GoogleMap>
+      >
+        {/* Mostrar marcadores siempre */}
+        <MarkerF
+          position={startPoint}
+          icon={{
+            url: "/usuario.png",
+            scaledSize: new window.google.maps.Size(35, 35),
+          }}
+        />
+        <MarkerF
+          position={endPoint}
+          icon={{
+            url: "/marcador.png",
+            scaledSize: new window.google.maps.Size(35, 35),
+          }}
+        />
+        
+        {/* Mostrar la ruta del backend si está disponible */}
+        {useBackendRoute && routePath.length > 0 && (
+          <Polyline
+            path={routePath}
+            options={{ 
+              strokeColor: "#6a5acd", 
+              strokeWeight: 5,
+              strokeOpacity: 0.8,
+              zIndex: 1
+            }}
+          />
+        )}
+        
+        {/* Mostrar la ruta de Google Maps si el backend falló */}
+        {!useBackendRoute && directionsResult && (
+          <DirectionsRenderer
+            directions={directionsResult}
+            options={{
+              suppressMarkers: true, // Usamos nuestros propios marcadores
+              polylineOptions: {
+                strokeColor: "#6a5acd",
+                strokeWeight: 5,
+                strokeOpacity: 0.8,
+              },
+            }}
+          />
+        )}
+      </GoogleMap>
+    </div>
   );
 };
 

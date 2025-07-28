@@ -1,80 +1,154 @@
+/* Variables CSS para temas */
+:root {
+  --driver-form-bg: #ffffff;
+  --driver-form-text: #1e293b;
+  --driver-form-text-secondary: #64748b;
+  --driver-form-border: #e2e8f0;
+  --driver-form-input-bg: #ffffff;
+  --driver-form-input-focus: #3b82f6;
+  --driver-form-error: #ef4444;
+  --driver-form-success: #10b981;
+  --driver-form-shadow: rgba(0, 0, 0, 0.1);
+}
+
+[data-driver-theme="dark"] {
+  --driver-form-bg: #1e293b;
+  --driver-form-text: #f8fafc;
+  --driver-form-text-secondary: #94a3b8;
+  --driver-form-border: #334155;
+  --driver-form-input-bg: #0f172a;
+  --driver-form-input-focus: #60a5fa;
+  --driver-form-error: #f87171;
+  --driver-form-success: #34d399;
+  --driver-form-shadow: rgba(0, 0, 0, 0.3);
+}
+
 .formContainer {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
+  background: var(--driver-form-bg);
+  color: var(--driver-form-text);
+  transition: all 0.3s ease;
 }
 
 .formGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+  margin-bottom: 1.5rem;
 }
 
 .formGroup label {
+  display: block;
+  margin-bottom: 0.5rem;
   font-weight: 500;
-  font-size: 0.9rem;
-  color: #333;
+  color: var(--driver-form-text);
+  font-size: 0.95rem;
 }
 
-.formGroup input[type="text"],
-.formGroup input[type="time"],
-.formGroup input[type="number"],
-.formGroup input[type="datetime-local"],
-.formGroup select {
+.formGroup input,
+.formGroup select,
+.formGroup textarea {
+  width: 100%;
   padding: 0.75rem;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  border: 1px solid var(--driver-form-border);
+  border-radius: 8px;
+  background: var(--driver-form-input-bg);
+  color: var(--driver-form-text);
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
 }
 
 .formGroup input:focus,
-.formGroup select:focus {
+.formGroup select:focus,
+.formGroup textarea:focus {
   outline: none;
-  border-color: #6a5acd;
-  box-shadow: 0 0 0 2px rgba(106, 90, 205, 0.2);
+  border-color: var(--driver-form-input-focus);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.formGroup input.inputError,
-.formGroup select.inputError {
-  border-color: #dc3545;
+[data-driver-theme="dark"] .formGroup input:focus,
+[data-driver-theme="dark"] .formGroup select:focus,
+[data-driver-theme="dark"] .formGroup textarea:focus {
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
 }
-.formGroup input.inputError:focus,
-.formGroup select.inputError:focus {
-  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2);
+
+.formGroup input::placeholder,
+.formGroup textarea::placeholder {
+  color: var(--driver-form-text-secondary);
+}
+
+.inputError {
+  border-color: var(--driver-form-error) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+[data-driver-theme="dark"] .inputError {
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.2) !important;
 }
 
 .errorMessage {
-  font-size: 0.8rem;
-  color: #dc3545;
-  margin: 0.2rem 0 0 0;
+  color: var(--driver-form-error);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+.mapSelectedLocations {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border: 1px solid #0ea5e9;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+[data-driver-theme="dark"] .mapSelectedLocations {
+  background: linear-gradient(135deg, #0c4a6e, #075985);
+  border-color: #0ea5e9;
+  color: #bae6fd;
+}
+
+.mapSelectedLocations p {
+  margin: 0.5rem 0;
+}
+
+.mapSelectedLocations strong {
+  color: var(--driver-form-text);
+  font-weight: 600;
+}
+
+.mapSelectedLocations em {
+  color: var(--driver-form-text-secondary);
+  font-style: italic;
 }
 
 .formActions {
   display: flex;
+  gap: 1rem;
   justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--driver-form-border);
 }
 
-.mapSelectedLocations {
-  margin-top: 0.75rem;
-  padding: 0.75rem;
-  background-color: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 4px;
-  font-size: 0.9rem;
+/* Responsive */
+@media (max-width: 768px) {
+  .formActions {
+    flex-direction: column-reverse;
+  }
+
+  .formActions button {
+    width: 100%;
+  }
 }
 
-.mapSelectedLocations p {
-  margin: 0.3rem 0;
-  color: #495057;
+/* Efectos especiales para modo oscuro */
+[data-driver-theme="dark"] .formGroup input,
+[data-driver-theme="dark"] .formGroup select,
+[data-driver-theme="dark"] .formGroup textarea {
+  background: linear-gradient(135deg, var(--driver-form-input-bg), #1e293b);
+  border-color: var(--driver-form-border);
 }
 
-.mapSelectedLocations p strong {
-  color: #212529;
-}
-
-.mapSelectedLocations p em {
-  color: #6c757d;
+[data-driver-theme="dark"] .formGroup input:hover,
+[data-driver-theme="dark"] .formGroup select:hover,
+[data-driver-theme="dark"] .formGroup textarea:hover {
+  border-color: #475569;
+  box-shadow: 0 0 10px rgba(96, 165, 250, 0.1);
 }

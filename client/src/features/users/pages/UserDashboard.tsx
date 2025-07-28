@@ -69,8 +69,8 @@ interface Travel {
   id_user: number // Usuario que creó el viaje (conductor)
   time: string // Hora específica del viaje
   travel_state: string // Estado del viaje (activo, cancelado, completado)
-  price: number // Campo añadido para el precio
-  // Campos calculados o relacionados
+  price: number // Campo para el precio
+  // Campos relacionados
   route?: Route
   vehicle?: Vehicle
   driver?: Driver

@@ -1,25 +1,45 @@
+/* Variables CSS para temas */
+:root {
+  --driver-route-card-bg: #ffffff;
+  --driver-route-card-text: #1e293b;
+  --driver-route-card-text-secondary: #64748b;
+  --driver-route-card-border: #e2e8f0;
+  --driver-route-card-hover-bg: #f8fafc;
+  --driver-route-card-arrow: #6366f1;
+}
+
+[data-driver-theme="dark"] {
+  --driver-route-card-bg: #1e293b;
+  --driver-route-card-text: #f1f5f9;
+  --driver-route-card-text-secondary: #cbd5e1;
+  --driver-route-card-border: #334155;
+  --driver-route-card-hover-bg: #334155;
+  --driver-route-card-arrow: #818cf8;
+}
+
 .routeCardContainer {
-  padding: 1rem 1.25rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
+  background: var(--driver-route-card-bg);
+  color: var(--driver-route-card-text);
 }
 
 .routeHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1rem;
 }
 
 .routeInfo {
   display: flex;
   align-items: center;
-
   font-size: 1rem;
-  font-weight: 500;
-  color: #333;
-  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--driver-route-card-text);
+  gap: 0.75rem;
   flex-grow: 1;
   overflow: hidden;
 }
@@ -29,38 +49,63 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--driver-route-card-text);
+  font-weight: 500;
 }
+
 .locationPoint:last-of-type {
   text-align: right;
 }
 
 .arrow {
-  color: #6a5acd;
+  color: var(--driver-route-card-arrow);
   font-weight: bold;
   flex-shrink: 0;
+  font-size: 1.1rem;
 }
 
 .maximizeButton {
-  padding: 0.3rem 0.5rem !important;
+  padding: 0.5rem 0.75rem !important;
   flex-shrink: 0;
-  border: 1px solid #ddd !important;
+  border: 1px solid var(--driver-route-card-border) !important;
+  border-radius: 12px !important;
+  background: var(--driver-route-card-bg) !important;
+  color: var(--driver-route-card-text) !important;
+  transition: all 0.2s ease !important;
 }
+
 .maximizeButton:hover {
-  background-color: #f0f0f0 !important;
+  background-color: var(--driver-route-card-hover-bg) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-driver-theme="dark"] .maximizeButton:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
 }
 
 .miniMapContainer {
   height: 150px;
   width: 100%;
-  border-radius: 4px;
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid #eee;
+  border: 1px solid var(--driver-route-card-border);
   cursor: pointer;
-  background-color: #f0f0f0;
+  background-color: var(--driver-route-card-hover-bg);
+  transition: all 0.2s ease;
+}
+
+.miniMapContainer:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+[data-driver-theme="dark"] .miniMapContainer:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
 .miniMapContainer .leaflet-container {
-  border-radius: 4px;
+  border-radius: 12px;
 }
 
 .mapPlaceholder {
@@ -69,22 +114,28 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: #f8f9fa;
-  border: 1px dashed #ced4da;
-  border-radius: 4px;
-  color: #6c757d;
+  background-color: var(--driver-route-card-hover-bg);
+  border: 2px dashed var(--driver-route-card-border);
+  border-radius: 12px;
+  color: var(--driver-route-card-text-secondary);
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
 }
+
 .mapPlaceholder:hover {
-  background-color: #e9ecef;
+  background-color: var(--driver-route-card-border);
+  border-color: var(--driver-route-card-arrow);
 }
+
 .mapPlaceholder p {
   margin-top: 0.5rem;
   font-size: 0.9rem;
+  color: var(--driver-route-card-text-secondary);
+  font-weight: 500;
 }
+
 .mapElement {
-  height: 100%; /* <--- CRÍTICO: Debe ocupar el 100% de su padre */
+  height: 100%;
   width: 100%;
 }
 
@@ -93,15 +144,17 @@
   justify-content: space-between;
   align-items: center;
   margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid #f0f0f0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--driver-route-card-border);
 }
 
 .departureTime {
-  font-size: 0.9rem;
-  color: #555;
-}
-.departureTime span {
+  font-size: 0.95rem;
+  color: var(--driver-route-card-text-secondary);
   font-weight: 500;
-  color: #333;
+}
+
+.departureTime span {
+  font-weight: 600;
+  color: var(--driver-route-card-text);
 }

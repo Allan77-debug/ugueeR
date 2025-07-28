@@ -1,63 +1,71 @@
-// client/src/features/driver/components/layout/DriverSidebar.tsx (VERSIÓN FINAL CON LOGOUT)
+"use client"
 
-import React, { useState, useEffect } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom"; // 1. Importar useNavigate
-import {
-  List,
-  Car,
-  Route as RouteIcon,
-  Star as StarIcon,
-  LogOut, // 2. Importar el ícono de LogOut
-} from "lucide-react";
-import { DriverProfile } from "../../../../types/driver.types";
-import { getDriverProfile } from "../../../../services/driverDataService";
-import styles from "./DriverSidebar.module.css";
+import type React from "react"
+import { useState, useEffect } from "react"
+import { NavLink, useLocation, useNavigate } from "react-router-dom"
+import { List, Car, RouteIcon, StarIcon, LogOut, Sun, Moon } from "lucide-react"
+import type { DriverProfile } from "../../../../types/driver.types"
+import { getDriverProfile } from "../../../../services/driverDataService"
+import styles from "./DriverSidebar.module.css"
 
 const DriverSidebar: React.FC = () => {
-  const [profile, setProfile] = useState<DriverProfile | null>(null);
-  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [profile, setProfile] = useState<DriverProfile | null>(null)
+  const [loadingProfile, setLoadingProfile] = useState(true)
+  const [theme, setTheme] = useState<"light" | "dark">("light")
 
-  const location = useLocation();
-  const navigate = useNavigate(); // 3. Obtener la función de navegación
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  // Cargar tema desde localStorage
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("driverDashboardTheme") as "light" | "dark"
+    if (savedTheme) {
+      setTheme(savedTheme)
+    }
+  }, [])
+
+  // Aplicar tema al documento
+  useEffect(() => {
+    document.documentElement.setAttribute("data-driver-theme", theme)
+  }, [theme])
+
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light"
+    setTheme(newTheme)
+    localStorage.setItem("driverDashboardTheme", newTheme)
+  }
 
   useEffect(() => {
     const fetchProfile = async () => {
-      setLoadingProfile(true);
+      setLoadingProfile(true)
       try {
-        const profileData = await getDriverProfile();
-        setProfile(profileData);
+        const profileData = await getDriverProfile()
+        setProfile(profileData)
       } catch (error) {
-        console.error("Error fetching driver profile:", error);
+        console.error("Error fetching driver profile:", error)
       } finally {
-        setLoadingProfile(false);
+        setLoadingProfile(false)
       }
-    };
-    fetchProfile();
-  }, []);
-
-  // 4. Crear la función para manejar el cierre de sesión
-  const handleLogout = () => {
-    // 1. Muestra la ventana de confirmación nativa del navegador
-    const isConfirmed = window.confirm(
-      "¿Estás seguro de que quieres cerrar sesión?"
-    );
-
-    // 2. Si el usuario hace clic en "Aceptar" (OK), procede con el cierre de sesión
-    if (isConfirmed) {
-      localStorage.clear();
-      navigate("/");
     }
-    // Si el usuario hace clic en "Cancelar", no hace nada.
-  };
+    fetchProfile()
+  }, [])
 
-  // ... (código de carga y error sin cambios)
+  const handleLogout = () => {
+    const isConfirmed = window.confirm("¿Estás seguro de que quieres cerrar sesión?")
+
+    if (isConfirmed) {
+      localStorage.clear()
+      navigate("/")
+    }
+  }
+
   if (loadingProfile) {
     return (
       <aside className={`${styles.sidebar} ${styles.sidebarLoading}`}>
         <div className={styles.loadingSpinner}></div>
         <p>Cargando perfil...</p>
       </aside>
-    );
+    )
   }
 
   if (!profile) {
@@ -65,13 +73,20 @@ const DriverSidebar: React.FC = () => {
       <aside className={`${styles.sidebar} ${styles.sidebarError}`}>
         <p>No se pudo cargar el perfil.</p>
       </aside>
-    );
+    )
   }
 
   return (
     <aside className={styles.sidebar}>
       <div className={styles.sidebarHeader}>
-        <h2>Uway</h2>
+        <h2>Uway Driver</h2>
+        <button
+          onClick={toggleTheme}
+          className={styles.themeToggle}
+          title={theme === "light" ? "Cambiar a modo oscuro" : "Cambiar a modo claro"}
+        >
+          {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
+        </button>
       </div>
 
       <div className={styles.userProfile}>
@@ -85,51 +100,36 @@ const DriverSidebar: React.FC = () => {
             <StarIcon size={16} className={styles.starIcon} />
             <span>{profile.rating.toFixed(1)}</span>
           </div>
-          {profile.isDriver && (
-            <span className={styles.driverBadge}>Conductor</span>
-          )}
+          {profile.isDriver && <span className={styles.driverBadge}>Conductor</span>}
         </div>
       </div>
 
       <nav className={styles.sidebarNav}>
-        {/* ... (Tus NavLink no cambian) ... */}
         <NavLink
           to="my-routes"
           className={({ isActive }) => {
-            const baseDriverPath = "/driver";
+            const baseDriverPath = "/driver"
             const isAtBaseDriverPath =
-              location.pathname === baseDriverPath ||
-              location.pathname === `${baseDriverPath}/`;
-            const isLinkActive = isActive || isAtBaseDriverPath;
-            return `${styles.navButton} ${isLinkActive ? styles.active : ""}`;
+              location.pathname === baseDriverPath || location.pathname === `${baseDriverPath}/`
+            const isLinkActive = isActive || isAtBaseDriverPath
+            return `${styles.navButton} ${isLinkActive ? styles.active : ""}`
           }}
         >
           <RouteIcon size={20} />
           <span>Mis Rutas</span>
         </NavLink>
 
-        <NavLink
-          to="my-vehicles"
-          className={({ isActive }) =>
-            `${styles.navButton} ${isActive ? styles.active : ""}`
-          }
-        >
+        <NavLink to="my-vehicles" className={({ isActive }) => `${styles.navButton} ${isActive ? styles.active : ""}`}>
           <Car size={20} />
           <span>Mis Vehículos</span>
         </NavLink>
 
-        <NavLink
-          to="my-trips"
-          className={({ isActive }) =>
-            `${styles.navButton} ${isActive ? styles.active : ""}`
-          }
-        >
+        <NavLink to="my-trips" className={({ isActive }) => `${styles.navButton} ${isActive ? styles.active : ""}`}>
           <List size={20} />
           <span>Mis Viajes</span>
         </NavLink>
       </nav>
 
-      {/* 5. AÑADIR EL BOTÓN DE CERRAR SESIÓN AL FINAL */}
       <div className={styles.sidebarFooter}>
         <button className={styles.logoutButton} onClick={handleLogout}>
           <LogOut size={18} />
@@ -137,7 +137,7 @@ const DriverSidebar: React.FC = () => {
         </button>
       </div>
     </aside>
-  );
-};
+  )
+}
 
-export default DriverSidebar;
+export default DriverSidebar

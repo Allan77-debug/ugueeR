@@ -1,39 +1,79 @@
+/* Variables CSS para temas */
+:root {
+  --driver-bg-primary: #ffffff;
+  --driver-bg-secondary: #f8fafc;
+  --driver-text-primary: #1e293b;
+  --driver-text-secondary: #64748b;
+  --driver-border: #e2e8f0;
+  --driver-shadow: rgba(0, 0, 0, 0.1);
+  --driver-card-bg: #ffffff;
+}
+
+[data-driver-theme="dark"] {
+  --driver-bg-primary: #0f172a;
+  --driver-bg-secondary: #1e293b;
+  --driver-text-primary: #ffffff;
+  --driver-text-secondary: #ffffff;
+  --driver-border: #334155;
+  --driver-shadow: rgba(0, 0, 0, 0.3);
+  --driver-card-bg: #1e293b;
+}
+
 .dashboardLayout {
   display: flex;
-  min-height: 100vh; /* Asegura que ocupe al menos toda la altura de la ventana */
-  background-color: #f8f9fa; /* Un fondo general para el área de contenido, como en UserDashboard */
+  min-height: 100vh;
+  background: var(--driver-bg-secondary);
+  transition: all 0.3s ease;
 }
 
 .mainContent {
-  flex-grow: 1; /* Hace que el contenido principal ocupe el espacio restante */
-  padding: 1.5rem; /* Espaciado interno para el contenido */
-  overflow-y: auto; /* Permite scroll vertical si el contenido es muy largo */
-  /* Si quieres que el header de las páginas tenga una altura fija y el contenido debajo haga scroll:
-  display: flex;
-  flex-direction: column;
-  max-height: 100vh;
-  */
+  flex: 1;
+  margin-left: 280px;
+  background: var(--driver-bg-secondary);
+  min-height: 100vh;
+  transition: all 0.3s ease;
+  padding: 2rem;
 }
 
-/* Consideraciones responsivas (similares a tu UserDashboard.css) */
-@media (max-width: 992px) { /* Punto de quiebre para tablets/móviles */
-  .dashboardLayout {
-    flex-direction: column; /* Sidebar encima del contenido */
-  }
+.contentWrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+}
 
-  /* En el DriverSidebar.module.css ya deberías tener estilos responsivos
-     para que la sidebar se ajuste a width: 100% y height: auto cuando la
-     dirección del flex cambia. Si no, puedes añadir aquí:
-  .sidebar {
-    width: 100%;
-    height: auto;
-    position: static; // O relative, para que no sea sticky
-    border-right: none;
-    border-bottom: 1px solid #e9ecef;
-  }
-  */
-
+/* Responsive */
+@media (max-width: 768px) {
   .mainContent {
-    padding: 1rem; /* Menos padding en pantallas pequeñas */
+    margin-left: 0;
+    padding: 1rem;
   }
+
+  .contentWrapper {
+    padding: 1rem;
+  }
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--driver-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--driver-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--driver-text-secondary);
+}
+
+[data-driver-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+[data-driver-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }

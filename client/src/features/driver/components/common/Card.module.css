@@ -1,24 +1,85 @@
-.cardBase {
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-  overflow: hidden;
-  /* El padding específico (si lo hay) se suele manejar en las tarjetas derivadas
-     (e.g., DriverRouteCard, DriverVehicleCard) para mayor flexibilidad,
-     o puedes añadir un padding base aquí si todas tus tarjetas lo compartirán.
-     Ejemplo: padding: 1rem;
-  */
+/* Variables CSS para temas */
+:root {
+  --driver-card-bg: #ffffff;
+  --driver-card-border: #e2e8f0;
+  --driver-card-shadow: rgba(0, 0, 0, 0.1);
+  --driver-card-text: #1e293b;
+  --driver-card-hover-shadow: rgba(0, 0, 0, 0.15);
 }
 
-/* Estilos opcionales para cuando la tarjeta es clickeable */
+[data-driver-theme="dark"] {
+  --driver-card-bg: #1e293b;
+  --driver-card-border: #334155;
+  --driver-card-shadow: rgba(0, 0, 0, 0.3);
+  --driver-card-text: #f8fafc;
+  --driver-card-hover-shadow: rgba(0, 0, 0, 0.4);
+}
+
+.cardBase {
+  background: var(--driver-card-bg);
+  border: 1px solid var(--driver-card-border);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px var(--driver-card-shadow);
+  transition: all 0.3s ease;
+  color: var(--driver-card-text);
+  position: relative;
+  overflow: hidden;
+}
+
+.cardBase::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.cardBase:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px var(--driver-card-hover-shadow);
+}
+
+.cardBase:hover::before {
+  opacity: 1;
+}
+
+[data-driver-theme="dark"] .cardBase {
+  background: linear-gradient(135deg, var(--driver-card-bg), #334155);
+}
+
+[data-driver-theme="dark"] .cardBase:hover {
+  box-shadow: 0 8px 25px var(--driver-card-hover-shadow), 0 0 20px rgba(96, 165, 250, 0.1);
+}
+
 .clickable {
   cursor: pointer;
 }
 
-.cardBase:hover {
-  /* Un efecto de hover sutil, puedes ajustarlo o quitarlo si prefieres
-     que las tarjetas derivadas manejen su propio hover. */
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.07);
+.clickable:hover {
+  transform: translateY(-4px);
+}
+
+.clickable:active {
+  transform: translateY(-1px);
+}
+
+/* Efectos especiales para modo oscuro */
+[data-driver-theme="dark"] .cardBase::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(96, 165, 250, 0.05), transparent);
+  transition: left 0.6s ease;
+  pointer-events: none;
+}
+
+[data-driver-theme="dark"] .cardBase:hover::after {
+  left: 100%;
 }

@@ -1,22 +1,50 @@
+/* Variables CSS para temas */
+:root {
+  --driver-vehicle-card-bg: #ffffff;
+  --driver-vehicle-card-text: #1e293b;
+  --driver-vehicle-card-text-secondary: #64748b;
+  --driver-vehicle-card-border: #e2e8f0;
+  --driver-vehicle-card-placeholder-bg: #f1f5f9;
+  --driver-vehicle-card-icon: #6366f1;
+}
+
+[data-driver-theme="dark"] {
+  --driver-vehicle-card-bg: #1e293b;
+  --driver-vehicle-card-text: #f1f5f9;
+  --driver-vehicle-card-text-secondary: #cbd5e1;
+  --driver-vehicle-card-border: #334155;
+  --driver-vehicle-card-placeholder-bg: #334155;
+  --driver-vehicle-card-icon: #818cf8;
+}
+
 .vehicleCardContainer {
-  padding: 1rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 0.75rem;
+  gap: 1rem;
+  background: var(--driver-vehicle-card-bg);
+  color: var(--driver-vehicle-card-text);
 }
 
 .vehicleVisual {
-  width: 80px;
-  height: 80px;
+  width: 90px;
+  height: 90px;
   border-radius: 50%;
   overflow: hidden;
-  background-color: #e9ecef;
+  background-color: var(--driver-vehicle-card-placeholder-bg);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+  border: 2px solid var(--driver-vehicle-card-border);
+  transition: all 0.2s ease;
+}
+
+.vehicleVisual:hover {
+  transform: scale(1.05);
+  border-color: var(--driver-vehicle-card-icon);
 }
 
 .vehicleImage {
@@ -26,8 +54,8 @@
 }
 
 .vehicleImagePlaceholder {
-  font-size: 2rem;
-  color: #6a5acd;
+  font-size: 2.5rem;
+  color: var(--driver-vehicle-card-icon);
   font-weight: bold;
 }
 
@@ -36,22 +64,23 @@
 }
 
 .vehicleCategory {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #212529;
-  margin: 0 0 0.25rem 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--driver-vehicle-card-text);
+  margin: 0 0 0.5rem 0;
 }
 
 .vehicleBrand {
-  font-size: 0.9rem;
-  color: #6c757d;
+  font-size: 1rem;
+  color: var(--driver-vehicle-card-text-secondary);
   margin: 0;
+  font-weight: 500;
 }
 
 .actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
   justify-content: center;
   width: 100%;
-  margin-top: auto;
+  margin-top: 1rem;
 }

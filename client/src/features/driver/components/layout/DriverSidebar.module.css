@@ -1,162 +1,247 @@
-/* Inspirado en UserDashboard.css y tu maqueta */
+/* Variables CSS para temas */
+:root {
+  --driver-sidebar-bg: #ffffff;
+  --driver-sidebar-text: #1e293b;
+  --driver-sidebar-text-secondary: #64748b;
+  --driver-sidebar-border: #e2e8f0;
+  --driver-sidebar-hover: #f1f5f9;
+  --driver-sidebar-active: #3b82f6;
+  --driver-sidebar-active-bg: #eff6ff;
+  --driver-sidebar-shadow: rgba(0, 0, 0, 0.1);
+}
+
+[data-driver-theme="dark"] {
+  --driver-sidebar-bg: #0f172a;
+  --driver-sidebar-text: #ffffff;
+  --driver-sidebar-text-secondary: #ffffff;
+  --driver-sidebar-border: #334155;
+  --driver-sidebar-hover: #1e293b;
+  --driver-sidebar-active: #60a5fa;
+  --driver-sidebar-active-bg: #1e3a8a;
+  --driver-sidebar-shadow: rgba(0, 0, 0, 0.3);
+}
+
 .sidebar {
-  width: 260px; /* Ajusta según tu maqueta */
-  background-color: white;
-  border-right: 1px solid #e9ecef; /* Borde suave */
+  width: 280px;
+  height: 100vh;
+  background: var(--driver-sidebar-bg);
+  border-right: 1px solid var(--driver-sidebar-border);
   display: flex;
   flex-direction: column;
-  height: 100vh; /* Ocupa toda la altura */
-  position: sticky; /* Para que se quede fijo al hacer scroll en el contenido principal */
+  position: fixed;
+  left: 0;
   top: 0;
-  padding: 1.5rem 0; /* Padding superior e inferior */
-  transition: width 0.3s ease; /* Para futuras expansiones/colapsos */
+  z-index: 1000;
+  box-shadow: 2px 0 10px var(--driver-sidebar-shadow);
+  transition: all 0.3s ease;
 }
 
 .sidebarHeader {
-  padding: 0 1.5rem 1.5rem; /* Padding horizontal y abajo */
-  border-bottom: 1px solid #e9ecef;
-  text-align: center; /* O a la izquierda */
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--driver-sidebar-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .sidebarHeader h2 {
-  color: #6a5acd; /* Color Uway */
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--driver-sidebar-text);
   margin: 0;
-  font-size: 1.6rem;
-  font-weight: bold;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.themeToggle {
+  background: none;
+  border: 1px solid var(--driver-sidebar-border);
+  border-radius: 12px;
+  padding: 8px;
+  cursor: pointer;
+  color: var(--driver-sidebar-text);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.themeToggle:hover {
+  background: var(--driver-sidebar-hover);
+  transform: scale(1.05);
+}
+
+[data-driver-theme="dark"] .themeToggle:hover {
+  box-shadow: 0 0 15px rgba(96, 165, 250, 0.3);
 }
 
 .userProfile {
   padding: 1.5rem;
+  border-bottom: 1px solid var(--driver-sidebar-border);
   display: flex;
   align-items: center;
-  gap: 1rem; /* Espacio entre avatar e info */
-  border-bottom: 1px solid #e9ecef;
+  gap: 1rem;
 }
 
 .userAvatar {
   width: 50px;
   height: 50px;
-  min-width: 50px; /* Evita que se encoja */
-  background-color: #6a5acd; /* Color Uway para el placeholder */
-  color: white;
   border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem; /* Tamaño de la inicial */
-  font-weight: bold;
-  overflow: hidden; /* Para que la imagen no se salga del círculo */
-}
-
-.userAvatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  color: white;
+  font-weight: 600;
+  font-size: 1.2rem;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .userInfo h3 {
-  margin: 0 0 0.25rem;
-  font-size: 1rem;
-  color: #212529;
+  margin: 0 0 0.25rem 0;
+  font-size: 1.1rem;
   font-weight: 600;
+  color: var(--driver-sidebar-text);
 }
 
 .userInfo p {
-  margin: 0 0 0.5rem;
-  font-size: 0.8rem; /* Más pequeño como en la maqueta */
-  color: #6c757d;
+  margin: 0 0 0.5rem 0;
+  font-size: 0.875rem;
+  color: var(--driver-sidebar-text-secondary);
 }
 
 .rating {
   display: flex;
   align-items: center;
-  font-size: 0.9rem;
-  color: #495057;
+  gap: 0.25rem;
   margin-bottom: 0.5rem;
 }
 
 .starIcon {
-  color: #ffc107; /* Amarillo para la estrella */
-  margin-right: 0.3rem;
+  color: #fbbf24;
+}
+
+.rating span {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--driver-sidebar-text);
 }
 
 .driverBadge {
-  display: inline-block;
-  padding: 0.25rem 0.6rem;
-  background-color: #e6f7ff; /* Un color suave para el badge */
-  color: #0070f3; /* Color de texto para el badge */
-  border: 1px solid #0070f3;
-  border-radius: 12px; /* Más redondeado */
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 500;
+  display: inline-block;
 }
 
 .sidebarNav {
-  padding: 1.5rem;
-  flex-grow: 1; /* Para que ocupe el espacio restante */
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem; /* Espacio entre botones de navegación */
+  flex: 1;
+  padding: 1rem 0;
+  overflow-y: auto;
 }
 
 .navButton {
   display: flex;
   align-items: center;
-  width: 100%;
-  padding: 0.75rem 1rem; /* Padding interno */
-  background: none;
+  gap: 0.75rem;
+  padding: 0.875rem 1.5rem;
+  color: var(--driver-sidebar-text-secondary);
+  text-decoration: none;
+  transition: all 0.2s ease;
   border: none;
-  border-radius: 6px; /* Bordes más suaves */
-  color: #495057; /* Color de texto normal */
-  text-align: left;
-  cursor: pointer;
-  transition: background-color 0.2s, color 0.2s;
-  font-size: 0.9rem;
-  text-decoration: none; /* Quitar subrayado de NavLink */
+  background: none;
+  width: 100%;
+  font-size: 0.95rem;
+  font-weight: 500;
+  position: relative;
 }
 
 .navButton:hover {
-  background-color: #f0f0ff; /* Color Uway claro al hacer hover */
-  color: #6a5acd;
+  background: var(--driver-sidebar-hover);
+  color: var(--driver-sidebar-text);
+  transform: translateX(4px);
 }
 
 .navButton.active {
-  background-color: #6a5acd; /* Color Uway principal para activo */
-  color: white;
-  font-weight: 500;
+  background: var(--driver-sidebar-active-bg);
+  color: var(--driver-sidebar-active);
+  font-weight: 600;
 }
 
-.navButton.active svg {
-  color: white; /* Para que el icono también sea blanco */
+.navButton.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--driver-sidebar-active);
+  border-radius: 0 2px 2px 0;
 }
 
-.navButton svg {
-  margin-right: 0.75rem;
-  color: #6c757d; /* Color de iconos por defecto */
-  transition: color 0.2s;
-}
-.navButton:hover svg,
-.navButton.active:hover svg {
-  color: inherit; /* Hereda el color del texto del botón */
+[data-driver-theme="dark"] .navButton:hover {
+  box-shadow: inset 4px 0 0 rgba(96, 165, 250, 0.3);
 }
 
-/* Estilos de carga y error */
+[data-driver-theme="dark"] .navButton.active {
+  box-shadow: inset 4px 0 0 var(--driver-sidebar-active), 0 0 20px rgba(96, 165, 250, 0.2);
+}
+
+.sidebarFooter {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--driver-sidebar-border);
+}
+
+.logoutButton {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem;
+  background: none;
+  border: 1px solid var(--driver-sidebar-border);
+  border-radius: 12px;
+  color: var(--driver-sidebar-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  font-size: 0.95rem;
+}
+
+.logoutButton:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #dc2626;
+  transform: translateY(-1px);
+}
+
+[data-driver-theme="dark"] .logoutButton:hover {
+  background: #7f1d1d;
+  border-color: #dc2626;
+  color: #fca5a5;
+  box-shadow: 0 0 15px rgba(220, 38, 38, 0.3);
+}
+
 .sidebarLoading,
 .sidebarError {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding: 2rem;
   text-align: center;
-  height: 100%;
-  color: #6c757d;
+  color: var(--driver-sidebar-text-secondary);
 }
 
 .loadingSpinner {
-  width: 30px;
-  height: 30px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #6a5acd;
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--driver-sidebar-border);
+  border-top: 3px solid var(--driver-sidebar-active);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
@@ -170,53 +255,15 @@
     transform: rotate(360deg);
   }
 }
-/* --- Media Query para Responsividad (debe coincidir con DriverPageLayout.module.css) --- */
-@media (max-width: 992px) {
+
+/* Responsive */
+@media (max-width: 768px) {
   .sidebar {
-    width: 100%; /* Ocupa todo el ancho */
-    height: auto; /* La altura se ajusta al contenido */
-    position: static; /* Ya no es pegajosa (sticky) */
-    border-right: none; /* Quitamos el borde derecho */
-    border-bottom: 1px solid #e9ecef; /* Añadimos un borde inferior para separarlo del contenido */
-    padding: 1rem 0; /* Menos padding vertical en móvil */
+    width: 100%;
+    transform: translateX(-100%);
   }
 
-  .userProfile {
-    padding: 1rem 1.5rem; /* Ajusta padding si es necesario */
+  .sidebar.open {
+    transform: translateX(0);
   }
-
-  .sidebarNav {
-    /* Si quieres que los enlaces se muestren horizontalmente en móvil (como tabs) */
-    /* display: flex;
-    justify-content: space-around;
-    padding: 0.5rem; */
-  }
-}
-
-/* AÑADE ESTOS NUEVOS ESTILOS AL FINAL DE TU ARCHIVO CSS */
-
-.sidebarFooter {
-  padding: 20px;
-  margin-top: auto; /* Otra forma de asegurar que esté al fondo */
-}
-
-.logoutButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  border: none;
-  background-color: #d9534f; /* Un rojo estándar para "peligro" */
-  color: white;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  gap: 8px; /* Espacio entre el ícono y el texto */
-}
-
-.logoutButton:hover {
-  background-color: #c9302c; /* Un rojo un poco más oscuro al pasar el mouse */
 }

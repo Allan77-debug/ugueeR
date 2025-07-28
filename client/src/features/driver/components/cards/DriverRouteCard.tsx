@@ -1,37 +1,30 @@
-// client/src/features/driver/components/cards/DriverRouteCard.tsx (CÓDIGO FINAL Y REFORZADO)
-
 import React from "react";
 import {
   GoogleMap,
   MarkerF,
-  Polyline,
-  useJsApiLoader,
 } from "@react-google-maps/api";
 import { DriverRoute } from "../../../../types/driver.types";
 import Button from "../common/Button";
 import Card from "../common/Card";
 import styles from "./DriverRouteCard.module.css";
 import { MapPin, Maximize2 } from "lucide-react";
-import RoutePreview from "./RoutePreview"; // Asegúrate de que este archivo exista
-
-const LIBRARIES: "geometry"[] = ["geometry"];
+import RoutePreview from "./RoutePreview";
 
 interface DriverRouteCardProps {
   route: DriverRoute;
   onDelete: (id: number) => void;
   onShowMap: (route: DriverRoute) => void;
+  isLoaded: boolean;
+  loadError: Error | undefined;
 }
 
 const DriverRouteCard: React.FC<DriverRouteCardProps> = ({
   route,
   onDelete,
   onShowMap,
+  isLoaded,
+  loadError,
 }) => {
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    libraries: LIBRARIES,
-  });
-
   const canDisplayMiniMap = route.startPointCoords && route.endPointCoords;
   const startMarkerPos = canDisplayMiniMap
     ? { lat: route.startPointCoords![0], lng: route.startPointCoords![1] }
@@ -43,7 +36,6 @@ const DriverRouteCard: React.FC<DriverRouteCardProps> = ({
   return (
     <Card className={styles.routeCardContainer}>
       <div className={styles.routeHeader}>
-        {/* ... (código del header sin cambios) ... */}
         <div className={styles.routeInfo}>
           <span className={styles.locationPoint} title={route.startLocation}>
             {route.startLocation}
@@ -65,14 +57,23 @@ const DriverRouteCard: React.FC<DriverRouteCardProps> = ({
 
       {canDisplayMiniMap ? (
         <div className={styles.miniMapContainer}>
-          {loadError && <div>Error al cargar.</div>}
-          {!isLoaded && <div>Cargando...</div>}
+          {loadError && <div>Error al cargar mapa.</div>}
+          {!isLoaded && <div>Cargando mapa...</div>}
           {isLoaded && (
             <GoogleMap
               mapContainerClassName={styles.mapElement}
               center={startMarkerPos || { lat: 0, lng: 0 }}
               zoom={12}
-              options={{ disableDefaultUI: true, gestureHandling: "none" }}
+              options={{ 
+                disableDefaultUI: true, 
+                gestureHandling: "none",
+                zoomControl: false,
+                mapTypeControl: false,
+                scaleControl: false,
+                streetViewControl: false,
+                rotateControl: false,
+                fullscreenControl: false
+              }}
               onLoad={(map) => {
                 if (startMarkerPos && endMarkerPos) {
                   const bounds = new window.google.maps.LatLngBounds();
@@ -82,12 +83,13 @@ const DriverRouteCard: React.FC<DriverRouteCardProps> = ({
                 }
               }}
             >
+              {/* Mostrar marcadores */}
               {startMarkerPos && (
                 <MarkerF
                   position={startMarkerPos}
                   icon={{
-                    url: "/usuario.png", // <- Tu imagen para el inicio
-                    scaledSize: new window.google.maps.Size(25, 25), // <- Tamaño para el mapa pequeño
+                    url: "/usuario.png",
+                    scaledSize: new window.google.maps.Size(25, 25),
                   }}
                 />
               )}
@@ -95,11 +97,13 @@ const DriverRouteCard: React.FC<DriverRouteCardProps> = ({
                 <MarkerF
                   position={endMarkerPos}
                   icon={{
-                    url: "/marcador.png", // <- Tu imagen para el destino
-                    scaledSize: new window.google.maps.Size(25, 25), // <- Tamaño para el mapa pequeño
+                    url: "/marcador.png",
+                    scaledSize: new window.google.maps.Size(25, 25),
                   }}
                 />
               )}
+              
+              {/* Mostrar la ruta usando RoutePreview */}
               <RoutePreview
                 start={route.startPointCoords!}
                 end={route.endPointCoords!}
@@ -115,7 +119,6 @@ const DriverRouteCard: React.FC<DriverRouteCardProps> = ({
       )}
 
       <div className={styles.footerInfo}>
-        {/* ... (código del footer sin cambios) ... */}
         <div className={styles.actions}>
           <Button
             onClick={() => onDelete(route.id)}
