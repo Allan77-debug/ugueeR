@@ -1,16 +1,8 @@
-# server/users/models.py
 from django.db import models
 
+
 class Users(models.Model):
-    """
-    Representa a un usuario en el sistema.
 
-    Este modelo almacena toda la información fundamental de un usuario, incluyendo
-    su tipo, estado de validación, información personal y la institución a la que
-    pertenece. Es la tabla central para la gestión de identidades.
-    """
-
-    # --- Opciones para el estado general del usuario ---
     STATE_PENDING = 'pendiente'
     STATE_APPROVED = 'aprobado'
     STATE_REJECTED = 'rechazado'
@@ -20,74 +12,63 @@ class Users(models.Model):
         (STATE_REJECTED, 'Rechazado'),
     ]
 
-    # --- Opciones para el estado de la solicitud de conductor ---
     DRIVER_STATE_NONE = 'ninguno'
     DRIVER_STATE_APPROVED = 'aprobado'
     DRIVER_STATE_REJECTED = 'rechazado'
     DRIVER_STATE_PENDING = 'pendiente'
+
     DRIVER_STATE_CHOICES = [
-        (DRIVER_STATE_NONE, 'Ninguno'),
-        (DRIVER_STATE_APPROVED, 'Aprobado'),
-        (DRIVER_STATE_REJECTED, 'Rechazado'),
-        (DRIVER_STATE_PENDING, 'Pendiente'),
+        (DRIVER_STATE_NONE, 'ninguno'),
+        (DRIVER_STATE_APPROVED, 'aprobado'),
+        (DRIVER_STATE_REJECTED, 'rechazado'),
+        (DRIVER_STATE_PENDING, 'pendiente'),
     ]
 
-    # --- Opciones para el tipo de usuario ---
     TYPE_ADMIN = 'admin'
     TYPE_DRIVER = 'driver'
     TYPE_STUDENT = 'student'
     TYPE_EMPLOYEE = 'employee'
     TYPE_TEACHER = 'teacher'
     USER_TYPE_CHOICES = [
-        (TYPE_ADMIN, 'Administrador'),
-        (TYPE_DRIVER, 'Conductor/a'),    
-        (TYPE_STUDENT, 'Estudiante'),
-        (TYPE_EMPLOYEE, 'Empleado/a'),
-        (TYPE_TEACHER, 'Profesor/a'),
+    (TYPE_ADMIN, 'Administrador'),
+    (TYPE_DRIVER, 'Conductor/a'),    
+    (TYPE_STUDENT,'Estudiante'),
+    (TYPE_EMPLOYEE, 'Empleado/a'),
+    (TYPE_TEACHER, 'Profesor/a'),
     ]    
 
-    # --- Campos del Modelo ---
     uid = models.AutoField(primary_key=True)
     full_name = models.CharField(max_length=255)
     user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES)
 
-    institutional_mail = models.EmailField(unique=True) # Es buena práctica que el email sea único.
+    institutional_mail = models.EmailField()
     student_code = models.CharField(max_length=100)
     udocument = models.CharField(max_length=50)
     institutional_carne = models.ImageField(upload_to='carne/', null=True, blank=True)
     direction = models.TextField()
     uphone = models.CharField(max_length=50)
-    upassword = models.CharField(max_length=255) # Almacena la contraseña hasheada.
-
-    # Relación con el modelo Institution
+    upassword = models.CharField(max_length=255)
     institution = models.ForeignKey(
-        'institutions.Institution',   # Referencia al modelo Institution en la app 'institutions'.
-        on_delete=models.SET_NULL,    # Si la institución se elimina, este campo se pondrá a NULL.
-        null=True,                    # Permite valores nulos en la BD.
-        blank=True,                   # Permite que el campo esté vacío en los formularios.
-        related_name='members',       # Permite acceder a los usuarios desde una instancia de institución (ej: institucion.members.all()).
-        db_column='institution_id'    # Especifica el nombre de la columna en la base de datos.
+        'institutions.Institution',   # String reference to your Institution model
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='members',       # Allows institution_instance.members.all()
+        db_column='institution_id'    # Tells Django this field uses the DB column named 'institution_id'
     )
-    
     user_state = models.CharField(
         max_length=50,
         choices=USER_STATE_CHOICES,
-        default=STATE_PENDING  # Por defecto, un usuario nuevo está pendiente de aprobación.
+        default=STATE_PENDING  # Default to 'pendiente' when a new user is created
     )
 
     driver_state = models.CharField(
         max_length=50,
-        choices=DRIVER_STATE_CHOICES, # Es buena práctica asociar las choices aquí también.
-        default=DRIVER_STATE_NONE  # Por defecto, un usuario no es conductor.
+        default=DRIVER_STATE_NONE  # Default to 'ninguno' when a new user is created
     )
     
     class Meta:
-        """Metadatos para el modelo Users."""
-        db_table = 'users' # Nombre de la tabla en la base de datos.
+        db_table = 'users'
 
     def __str__(self):
-        """
-        Representación en cadena del objeto.
-        Devuelve el nombre completo del usuario, útil en el panel de administración de Django.
-        """
         return self.full_name
