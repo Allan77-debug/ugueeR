@@ -30,7 +30,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               <Icon icon={User} color="white" />
             </ButtonTouchable>
             <Text className="text-white text-sm font-bold">
-              {pathname.includes("driver") ? "Conductor" : "Usuario"}
+              {pathname.includes("driver") ? "Usuario" : "Conductor"}
             </Text>
           </View>
 

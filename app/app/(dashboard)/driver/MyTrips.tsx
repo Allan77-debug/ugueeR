@@ -20,13 +20,14 @@ import {
   DriverRoute,
   AddTripPayload,
   TripFormData,
-  Vehicle
+  Vehicle,
+  Travel
 } from '../interfaces/interfaces';
 import Icon from '../atoms/icon';
 
 const MyTripsScreen = () => {
   const { session } = useSession();
-  const [trips, setTrips] = useState<DriverTrip[]>([]);
+  const [trips, setTrips] = useState<Travel[]>([]);
   const [availableRoutes, setAvailableRoutes] = useState<DriverRoute[]>([]);
   const [availableVehicles, setAvailableVehicles] = useState<Vehicle[]>([]);
   
@@ -43,48 +44,15 @@ const MyTripsScreen = () => {
     setError(null);
 
     try {
-      const [tripsResponse, routesResponse, vehiclesResponse] = await Promise.all([
-        axios.get<DriverTrip[]>(`http://192.168.56.1:8000/api/travel/info/${session?.uid}`, {
+      const [tripsResponse] = await Promise.all([
+        axios.get<Travel[]>(`http://192.168.56.1:8000/api/travel/info/${session?.uid}`, {
           headers: { Authorization: `Bearer ${session?.token}` }
         }),
-        axios.get<DriverRoute[]>(`http://192.168.56.1:8000/api/route/my-routes`, {
-          headers: { Authorization: `Bearer ${session?.token}` }
-        }),
-        axios.get<Vehicle[]>(`http://192.168.56.1:8000/api/vehicle/my-vehicles/`, {
-          headers: { Authorization: `Bearer ${session?.token}` }
-        })
       ]);
 
       const tripsData = tripsResponse.data;
-      const routesData = routesResponse.data;
-      const vehiclesData = vehiclesResponse.data;
 
-      // Crear mapas para búsqueda rápida
-      const routesMap = new Map(routesData.map((route: any) => [route.id, route]));
-      const vehiclesMap = new Map(vehiclesData.map((vehicle: any) => [vehicle.id, vehicle]));
-
-      // Ensamblar los datos para la UI
-      const assembledTrips: DriverTrip[] = tripsData.map((trip: any) => {
-        const routeDetails = routesMap.get(trip.route);
-        const vehicleDetails = vehiclesMap.get(trip.vehicle);
-
-        return {
-          id: trip.id,
-          startLocation: routeDetails?.startLocation || "Origen no disponible",
-          destination: routeDetails?.destination || "Destino no disponible",
-          vehicleType: vehicleDetails
-            ? `${vehicleDetails.category} - ${vehicleDetails.brand}`.trim()
-            : "Vehículo no disponible",
-          price: trip.price,
-          departureDateTime: trip.time,
-          availableSeats: vehicleDetails?.capacity ?? 0,
-          travelState: trip.travel_state,
-        };
-      });
-
-      setTrips(assembledTrips);
-      setAvailableRoutes(routesData);
-      setAvailableVehicles(vehiclesData);
+      setTrips(tripsData);
     } catch (err) {
       console.error("Error fetching page data:", err);
       setError("No se pudieron cargar los datos. Inténtalo de nuevo.");

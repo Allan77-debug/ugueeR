@@ -9,16 +9,18 @@ import {
 } from "react-native";
 import { MapPin, Clock, Car, Users, Trash2 } from "lucide-react-native";
 import Icon from "./icon";
-import { DriverTrip } from "../interfaces/interfaces";
+import { Travel } from "../interfaces/interfaces";
 import QRCode from "react-native-qrcode-svg";
+import { useRouter } from "expo-router";
 
 interface TripCardDriverProps {
-  trip: DriverTrip;
+  trip: Travel;
   onDelete: (tripId: number) => void;
 }
 
 const TripCardDriver: React.FC<TripCardDriverProps> = ({ trip, onDelete }) => {
   const [showAddModal, setShowAddModal] = React.useState(false);
+  const router = useRouter();
 
   const formatDate = (dateTimeString: string) => {
     const date = new Date(dateTimeString);
@@ -68,6 +70,8 @@ const TripCardDriver: React.FC<TripCardDriverProps> = ({ trip, onDelete }) => {
     }
   };
 
+  console.log(trip);
+
   return (
     <TouchableOpacity
       className="bg-white rounded-lg p-4 mb-4 shadow-md border border-gray-200"
@@ -77,7 +81,7 @@ const TripCardDriver: React.FC<TripCardDriverProps> = ({ trip, onDelete }) => {
       <View className="flex-row items-center mb-3">
         <Icon icon={MapPin} size={18} color="#4f46e5" />
         <Text className="ml-2 font-bold text-lg flex-1" numberOfLines={2}>
-          {trip.startLocation} → {trip.destination}
+          {trip.route?.startLocation} → {trip.route?.destination}
         </Text>
       </View>
 
@@ -86,20 +90,19 @@ const TripCardDriver: React.FC<TripCardDriverProps> = ({ trip, onDelete }) => {
         <View className="flex-row items-center">
           <Icon icon={Clock} size={16} color="#6b7280" />
           <Text className="ml-2 text-gray-700">
-            {formatDate(trip.departureDateTime)} -{" "}
-            {formatTime(trip.departureDateTime)}
+            {formatDate(trip.time)}
           </Text>
         </View>
 
         <View className="flex-row items-center">
           <Icon icon={Car} size={16} color="#6b7280" />
-          <Text className="ml-2 text-gray-700">{trip.vehicleType}</Text>
+          <Text className="ml-2 text-gray-700">{trip.vehicle?.vehicle_type}</Text>
         </View>
 
         <View className="flex-row items-center">
           <Icon icon={Users} size={16} color="#6b7280" />
           <Text className="ml-2 text-gray-700">
-            {trip.availableSeats} asientos disponibles
+            {trip.available_seats} asientos disponibles
           </Text>
         </View>
       </View>
@@ -111,15 +114,15 @@ const TripCardDriver: React.FC<TripCardDriverProps> = ({ trip, onDelete }) => {
             ${trip.price.toLocaleString()}
           </Text>
           <View
-            className={`px-2 py-1 rounded-full ${getStateColor(trip.travelState)}`}
+            className={`px-2 py-1 rounded-full ${getStateColor(trip.travel_state)}`}
           >
             <Text className="text-xs font-medium">
-              {getStateText(trip.travelState)}
+              {getStateText(trip.travel_state )}
             </Text>
           </View>
         </View>
 
-        {trip.travelState === "scheduled" && (
+        {trip.travel_state === "scheduled" && (
           <TouchableOpacity
             onPress={() => onDelete(trip.id)}
             className="p-2 bg-red-50 rounded-lg"
@@ -139,13 +142,15 @@ const TripCardDriver: React.FC<TripCardDriverProps> = ({ trip, onDelete }) => {
             <View className="flex flex-col items-center mb-4">
               <Text className="text-xl font-bold mb-2">Detalles del Viaje</Text>
               <Text className="text-gray-700 mb-1">
-                {trip.startLocation} → {trip.destination}
+                {trip.route?.startLocation} → {trip.route?.destination}
               </Text>
               <Text className="text-gray-500">
-                {formatDate(trip.departureDateTime)} -{" "}
-                {formatTime(trip.departureDateTime)}
+                {formatDate(trip.time)}
               </Text>
-              <QRCode value={JSON.stringify(trip)} size={300} />
+              <QRCode
+                value={`http://192.168.56.1:8000/realize/confirm/${trip.reservations?.[0]?.id}`}
+                size={300}
+              />
 
               <TouchableOpacity
                 className="mt-4 bg-primary rounded-lg px-5 py-2"
@@ -154,6 +159,14 @@ const TripCardDriver: React.FC<TripCardDriverProps> = ({ trip, onDelete }) => {
                 <Text className="text-white font-semibold">Cerrar</Text>
               </TouchableOpacity>
 
+              <TouchableOpacity
+                className="mt-4 bg-primary rounded-lg px-5 py-2"
+                onPress={() =>
+                  router.push(`/driver/maps/${trip.id}` as any)
+                }
+              >
+                <Text className="text-white font-semibold">Ir al Viaje</Text>
+              </TouchableOpacity>
             </View>
           </ScrollView>
         </SafeAreaView>

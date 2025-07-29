@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./server
+    container_name: backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./server:/app
+
+  frontend:
+    build: ./client
+    container_name: frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    depends_on:
+      - backend

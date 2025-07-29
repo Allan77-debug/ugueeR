@@ -1,52 +1,62 @@
-import { Route } from "expo-router"
+import { Route } from "expo-router";
 
 interface UserData {
-  uid: number
-  full_name: string
-  user_type: string
-  institutional_mail: string
-  student_code: string
-  institution_name?: string
-  has_applied_driver?: boolean
-  driver_state?: string
-  uphone?: string
+  uid: number;
+  full_name: string;
+  user_type: string;
+  institutional_mail: string;
+  student_code: string;
+  institution_name?: string;
+  has_applied_driver?: boolean;
+  driver_state?: string;
+  uphone?: string;
 }
 
 interface RouteInfo {
-  id: number
-  startLocation: string
-  destination: string
-  departure_time: string
+  id: number;
+  startLocation: string;
+  destination: string;
+  departure_time: string;
 }
 
 interface Vehicle {
-  id: number
-  driver: number
-  plate: string
-  brand: string
-  model: string
-  vehicle_type: string
-  category: string
-  soat?: string
-  tecnomechanical?: string
-  capacity: number
+  id: number;
+  driver: number;
+  plate: string;
+  brand: string;
+  model: string;
+  vehicle_type: string;
+  category: string;
+  soat?: string;
+  tecnomechanical?: string;
+  capacity: number;
 }
 
 interface Driver {
-  user: UserData
-  validate_state: string
+  user: UserData;
+  validate_state: string;
 }
 
 interface Travel {
-  id: number
-  time: string
-  travel_state: string
-  price: number
-  driver: Driver
-  vehicle: Vehicle
-  route?: RouteInfo
-  driver_score: number | null
-  available_seats: number
+  id: number;
+  time: string;
+  travel_state: string;
+  price: number;
+  driver: Driver;
+  vehicle: Vehicle;
+  route?: RouteInfo;
+  driver_score: number | null;
+  available_seats: number;
+  reservations?: {
+    id: number;
+    user: {
+      uid: number;
+      full_name: string;
+      uphone: string;
+      institutional_mail: string;
+    };
+    status: string;
+  }[];
 }
 
 interface DriverTrip {
@@ -58,6 +68,16 @@ interface DriverTrip {
   departureDateTime: string;
   availableSeats: number;
   travelState: "scheduled" | "in_progress" | "completed" | "cancelled";
+  reservations?: {
+    id: number;
+    user: {
+      uid: number;
+      full_name: string;
+      uphone: string;
+      institutional_mail: string;
+    };
+    status: string;
+  }[];
 }
 
 interface DriverRoute {
@@ -94,65 +114,70 @@ interface TripFormData {
 
 // --- Prop Types ---
 interface IconProps {
-  icon: React.ElementType
-  size?: number
-  color?: string
+  icon: React.ElementType;
+  size?: number;
+  color?: string;
 }
 
 interface ButtonProps {
-  onPress: () => void
-  children: React.ReactNode
-  className?: string
-  disabled?: boolean
+  onPress: () => void;
+  children: React.ReactNode;
+  className?: string;
+  disabled?: boolean;
 }
 
 interface StatCardProps {
-  icon: React.ElementType
-  label: string
-  value: string | number
+  icon: React.ElementType;
+  label: string;
+  value: string | number;
 }
 
 interface TripCardProps {
-  travel: Travel
-  onReserve: (travelId: number) => void
-  isReserving: boolean
+  travel: Travel;
+  onReserve: (travelId: number) => void;
+  isReserving: boolean;
+  isReserved?: boolean;
+  session?: {
+    token: string;
+    uid: number;
+  } | null;
 }
 
 interface ProfileHeaderProps {
-  userData: UserData | null,
-  pathname: string,
-  onLogout: () => void
+  userData: UserData | null;
+  pathname: string;
+  onLogout: () => void;
 }
 
 interface QuickActionsProps {
-  driverState?: string
-  onNavigate: (path: Route) => void
-  onApply: () => void
+  driverState?: string;
+  onNavigate: (path: Route) => void;
+  onApply: () => void;
 }
 
 interface TravelFeedProps {
-  travels: Travel[]
-  onReserve: (travelId: number) => void
-  reservingTravel: number | null,
-  reservedTravels?: { id: number; uid: number; status: string }[],
-  isDriverView?: boolean,
+  travels: Travel[];
+  onReserve: (travelId: number) => void;
+  reservingTravel: number | null;
+
+  isDriverView?: boolean;
 }
 
 export type {
-    UserData,
-    RouteInfo,
-    Vehicle,
-    Driver,
-    Travel,
-    IconProps,
-    ButtonProps,
-    StatCardProps,
-    TripCardProps,
-    ProfileHeaderProps,
-    QuickActionsProps,
-    TravelFeedProps,
-    DriverTrip,
-    DriverRoute,
-    AddTripPayload,
-    TripFormData
-}
+  UserData,
+  RouteInfo,
+  Vehicle,
+  Driver,
+  Travel,
+  IconProps,
+  ButtonProps,
+  StatCardProps,
+  TripCardProps,
+  ProfileHeaderProps,
+  QuickActionsProps,
+  TravelFeedProps,
+  DriverTrip,
+  DriverRoute,
+  AddTripPayload,
+  TripFormData,
+};

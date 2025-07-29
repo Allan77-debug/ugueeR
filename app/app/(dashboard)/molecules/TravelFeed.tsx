@@ -1,4 +1,4 @@
-import { View, Text, Alert } from "react-native";
+import { View, Text, Alert, ScrollView } from "react-native";
 import { TravelFeedProps, UserData } from "../interfaces/interfaces";
 import TripCard from "./TripCard";
 import MyRoutesScreen from "../driver/MyRoutes";
@@ -9,7 +9,6 @@ const TravelFeed: React.FC<TravelFeedProps> = ({
   travels,
   onReserve,
   reservingTravel,
-  reservedTravels = [],
   isDriverView,
 }) => {
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -47,26 +46,30 @@ const TravelFeed: React.FC<TravelFeedProps> = ({
 
   if (isDriverView) return <MyRoutesScreen userData={userData} />;
   return (
-    <View className="p-6">
+    <ScrollView className="p-6">
       <Text className="text-xl font-bold text-gray-800 mb-4">
         Viajes Reservados
       </Text>
-      
-      {reservedTravels.length > 0 ? (
+
+      {travels.filter((travel) =>
+        travel.reservations?.some(
+          (reservation) => reservation.user.uid === session?.uid
+        )
+      ).length > 0 ? (
         travels
           .filter((travel) =>
-            reservedTravels.includes({
-              id: travel.id,
-              uid: session?.uid || 0,
-              status: "reserved",
-            })
+            travel.reservations?.some(
+              (reservation) => reservation.user.uid === session?.uid
+            )
           )
           .map((travel) => (
             <TripCard
               key={`reserved-${travel.id}`}
               travel={travel}
+              session={session}
               onReserve={() => {}}
               isReserving={false}
+              isReserved={true}
             />
           ))
       ) : (
@@ -79,20 +82,27 @@ const TravelFeed: React.FC<TravelFeedProps> = ({
         Viajes Disponibles
       </Text>
       {travels.length > 0 ? (
-        travels.map((travel) => (
-          <TripCard
-            key={travel.id}
-            travel={travel}
-            onReserve={onReserve}
-            isReserving={reservingTravel === travel.id}
-          />
-        ))
+        travels
+          .filter(
+            (travel) =>
+              !travel.reservations?.some(
+                (reservation) => reservation.user.uid === session?.uid
+              )
+          )
+          .map((travel) => (
+            <TripCard
+              key={travel.id}
+              travel={travel}
+              onReserve={onReserve}
+              isReserving={reservingTravel === travel.id}
+            />
+          ))
       ) : (
         <Text className="text-center text-gray-500 mt-8">
           No hay viajes disponibles por ahora.
         </Text>
       )}
-    </View>
+    </ScrollView>
   );
 };
 

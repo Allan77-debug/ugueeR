@@ -135,7 +135,6 @@ const UserDashboard = () => {
 
   return (
     <TravelFeed
-      reservedTravels={reservedTravels}
       travels={travels}
       onReserve={handleReserveTravel}
       reservingTravel={reservingTravel}
